@@ -1,0 +1,6 @@
+@lumina_HostAddress = http://localhost:5063
+
+GET {{lumina_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
