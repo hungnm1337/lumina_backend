@@ -1,4 +1,8 @@
 
+using DataLayer.Models;
+using Microsoft.EntityFrameworkCore;
+using Services.Upload;
+
 namespace lumina
 {
     public class Program
@@ -8,6 +12,20 @@ namespace lumina
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
+            builder.Services.AddDbContext<LuminaSystemContext>(options =>
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+            builder.Services.AddCors(options =>
+            {
+                options.AddDefaultPolicy(policy =>
+                {
+                    policy.WithOrigins("http://localhost:4200", "https://localhost:4200") // ? Specific origin
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials();
+                });
+            });
+
+            builder.Services.AddScoped<IUploadService, UploadService>();
 
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
