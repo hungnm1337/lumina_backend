@@ -355,6 +355,4 @@ FodyWeavers.xsd
 .idea/
 *.sln.iml
 
-# Custom: Ignore appsettings.json files
-appsettings.json
-appsettings.*.json
+
