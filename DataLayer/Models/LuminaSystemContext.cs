@@ -623,6 +623,7 @@ public partial class LuminaSystemContext : DbContext
                 .HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.Name).HasMaxLength(255);
             entity.Property(e => e.Status).HasMaxLength(15);
+
             entity.Property(e => e.UpdateAt).HasPrecision(3);
 
             entity.HasOne(d => d.MakeByNavigation).WithMany(p => p.VocabularyLists)
