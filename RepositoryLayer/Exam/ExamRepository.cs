@@ -110,6 +110,13 @@ namespace RepositoryLayer.Exam
                         QuestionExplain = q.QuestionExplain,
                         Time = q.Time,
                         QuestionNumber = q.QuestionNumber,
+                        Options = q.Options.Select(o => new OptionDTO
+                        {
+                            OptionId = o.OptionId,
+                            QuestionId = o.QuestionId,
+                            Content = o.Content,
+                            IsCorrect = o.IsCorrect
+                        }).ToList(),
                         Prompt = q.Prompt == null ? null : new PromptDTO
                         {
                             PromptId = q.Prompt.PromptId,
