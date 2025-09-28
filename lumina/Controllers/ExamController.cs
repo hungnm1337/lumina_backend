@@ -19,7 +19,7 @@ namespace lumina.Controllers
 
         // GET: api/exam
         // Lấy danh sách tất cả các bài thi (không bao gồm các phần Part)
-        [HttpGet("all-exam")]
+        [HttpGet]
         public async Task<ActionResult<List<ExamDTO>>> GetAllExams()
         {
             var exams = await _examService.GetAllExams();

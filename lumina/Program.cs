@@ -31,7 +31,7 @@ namespace lumina
             {
                 options.AddDefaultPolicy(policy =>
                 {
-                    policy.WithOrigins("http://localhost:4200", "https://localhost:4200")
+                    policy.WithOrigins("https://localhost:4200", "http://localhost:4200")
                         .AllowAnyHeader()
                         .AllowAnyMethod()
                         .AllowCredentials();
@@ -82,6 +82,8 @@ namespace lumina
             }
 
             app.UseHttpsRedirection();
+
+            app.UseCors();
 
             app.UseAuthentication();
             app.UseAuthorization();

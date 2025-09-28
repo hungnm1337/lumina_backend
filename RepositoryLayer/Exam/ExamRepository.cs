@@ -25,24 +25,32 @@ namespace RepositoryLayer.Exam
         /// <returns>Danh sách các bài thi </returns>
         public async Task<List<ExamDTO>> GetAllExams()
         {
-            var exams = await _luminaSystemContext.Exams
-                .Where(e => e.IsActive == true)
-                .Select(e => new ExamDTO
-                {
-                    ExamId = e.ExamId,
-                    ExamType = e.ExamType,
-                    Name = e.Name,
-                    Description = e.Description,
-                    IsActive = e.IsActive,
-                    CreatedBy = e.CreatedBy,
-                    UpdateBy = e.UpdateBy,
-                    CreatedAt = e.CreatedAt,
-                    UpdateAt = e.UpdateAt,
-                    ExamParts = null // Không bao gồm thông tin của các part
-                })
-                .ToListAsync();
-            return exams;
+            var exams = await _luminaSystemContext.Exams.Where(e => e.IsActive == true).ToListAsync();
+
+            var userIds = exams.Select(e => e.CreatedBy).Distinct();
+            var users = await _luminaSystemContext.Users
+                          .Where(u => userIds.Contains(u.UserId))
+                          .ToDictionaryAsync(u => u.UserId, u => u.FullName);
+
+            var examDtos = exams.Select(e => new ExamDTO
+            {
+                ExamId = e.ExamId,
+                ExamType = e.ExamType,
+                Name = e.Name,
+                Description = e.Description,
+                IsActive = e.IsActive,
+                CreatedBy = e.CreatedBy,
+                CreatedByName = users.ContainsKey(e.CreatedBy) ? users[e.CreatedBy] : "Unknown",
+                UpdateBy = e.UpdateBy,
+                UpdateByName = e.UpdateBy.HasValue && users.ContainsKey(e.UpdateBy.Value) ? users[e.UpdateBy.Value] : null,
+                CreatedAt = e.CreatedAt,
+                UpdateAt = e.UpdateAt,
+                ExamParts = null
+            }).ToList();
+
+            return examDtos;
         }
+
 
         /// <summary>
         /// Lấy thông tin của Exam và Thông tin của các Exam part của exam đó
@@ -53,33 +61,48 @@ namespace RepositoryLayer.Exam
         /// <exception cref="NotImplementedException"></exception>
         public async Task<ExamDTO> GetExamDetailAndExamPartByExamID(int examId)
         {
-            var examDetail = await _luminaSystemContext.Exams
+            var exam = await _luminaSystemContext.Exams
                 .Where(e => e.ExamId == examId && e.IsActive == true)
-                .Select(e => new ExamDTO
-                {
-                    ExamId = e.ExamId,
-                    ExamType = e.ExamType,
-                    Name = e.Name,
-                    Description = e.Description,
-                    IsActive = e.IsActive,
-                    CreatedBy = e.CreatedBy,
-                    UpdateBy = e.UpdateBy,
-                    CreatedAt = e.CreatedAt,
-                    UpdateAt = e.UpdateAt,
-                    ExamParts = e.ExamParts.Select(ep => new ExamPartDTO
-                    {
-                        PartId = ep.PartId,
-                        ExamId = ep.ExamId,
-                        PartCode = ep.PartCode,
-                        Title = ep.Title,
-                        OrderIndex = ep.OrderIndex,
-                        Questions = null // Không load câu hỏi ở đây
-                    }).ToList()
-                })
+                .Include(e => e.ExamParts)
                 .FirstOrDefaultAsync();
+
+            if (exam == null) return null;
+
+            var userIds = new List<int> { exam.CreatedBy };
+            if (exam.UpdateBy.HasValue)
+                userIds.Add(exam.UpdateBy.Value);
+
+            var users = await _luminaSystemContext.Users
+                .Where(u => userIds.Contains(u.UserId))
+                .ToDictionaryAsync(u => u.UserId, u => u.FullName);
+
+            var examDetail = new ExamDTO
+            {
+                ExamId = exam.ExamId,
+                ExamType = exam.ExamType,
+                Name = exam.Name,
+                Description = exam.Description,
+                IsActive = exam.IsActive,
+                CreatedBy = exam.CreatedBy,
+                CreatedByName = users.ContainsKey(exam.CreatedBy) ? users[exam.CreatedBy] : "Unknown",
+                UpdateBy = exam.UpdateBy,
+                UpdateByName = exam.UpdateBy.HasValue && users.ContainsKey(exam.UpdateBy.Value) ? users[exam.UpdateBy.Value] : null,
+                CreatedAt = exam.CreatedAt,
+                UpdateAt = exam.UpdateAt,
+                ExamParts = exam.ExamParts.Select(ep => new ExamPartDTO
+                {
+                    PartId = ep.PartId,
+                    ExamId = ep.ExamId,
+                    PartCode = ep.PartCode,
+                    Title = ep.Title,
+                    OrderIndex = ep.OrderIndex,
+                    Questions = null // Không load câu hỏi
+                }).ToList()
+            };
 
             return examDetail;
         }
+
 
 
 

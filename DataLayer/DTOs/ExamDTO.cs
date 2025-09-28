@@ -21,7 +21,10 @@ namespace DataLayer.DTOs
 
         public int CreatedBy { get; set; }
 
+        public string? CreatedByName { get; set; }
+
         public int? UpdateBy { get; set; }
+        public string? UpdateByName { get; set; }
 
         public DateTime CreatedAt { get; set; }
 
