@@ -31,8 +31,8 @@ namespace lumina
                 {
                     policy.WithOrigins("http://localhost:4200", "https://localhost:4200")
                         .AllowAnyHeader()
-                        .AllowAnyMethod()
-                        .AllowCredentials();
+                        .AllowAnyMethod();
+                        //.AllowCredentials();
                 });
             });
 
@@ -73,8 +73,8 @@ namespace lumina
                 app.UseSwaggerUI();
             }
 
-            app.UseHttpsRedirection();
-
+            //app.UseHttpsRedirection();
+            app.UseCors();
             app.UseAuthentication();
             app.UseAuthorization();
 

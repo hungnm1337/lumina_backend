@@ -114,10 +114,8 @@ public partial class LuminaSystemContext : DbContext
                 .HasMaxLength(100)
                 .IsUnicode(false);
             entity.Property(e => e.AccessToken)
-                .HasMaxLength(1024)
                 .IsUnicode(false);
             entity.Property(e => e.RefreshToken)
-                .HasMaxLength(1024)
                 .IsUnicode(false);
             entity.Property(e => e.TokenExpiresAt)
                 .HasPrecision(3);
