@@ -1,6 +1,8 @@
 
 using DataLayer.Models;
 using Microsoft.EntityFrameworkCore;
+using RepositoryLayer.Exam;
+using ServiceLayer.Exam;
 using Services.Upload;
 
 namespace lumina
@@ -26,6 +28,8 @@ namespace lumina
             });
 
             builder.Services.AddScoped<IUploadService, UploadService>();
+            builder.Services.AddScoped<IExamService, ExamService>();
+            builder.Services.AddScoped<IExamRepository, ExamRepository>();
 
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
