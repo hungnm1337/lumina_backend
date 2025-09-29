@@ -145,7 +145,11 @@ public class AuthService : IAuthService
                 throw AuthServiceException.ServerError("Unable to complete Google login.");
             }
         }
-
+        if (account.User.Role == null)
+        {
+            account.User.Role = await _context.Roles.FindAsync(new object[] { account.User.RoleId }, cancellationToken)
+                                ?? throw new InvalidOperationException($"Role with ID {account.User.RoleId} not found.");
+        }
         if (account.User.IsActive is false)
         {
             throw AuthServiceException.Unauthorized("Account is inactive");
@@ -254,10 +258,10 @@ public class AuthService : IAuthService
     }
 
     private async Task<Account> UpsertGoogleAccountAsync(
-        GoogleJsonWebSignature.Payload payload,
-        string normalizedEmail,
-        string accessToken,
-        CancellationToken cancellationToken)
+    GoogleJsonWebSignature.Payload payload,
+    string normalizedEmail,
+    string accessToken,
+    CancellationToken cancellationToken)
     {
         await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
         try
@@ -320,9 +324,8 @@ public class AuthService : IAuthService
             await _context.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
 
-            return await _context.Accounts
-                .Include(a => a.User)
-                .FirstAsync(a => a.AccountId == account.AccountId, cancellationToken);
+            account.User = user;
+            return account;
         }
         catch (DbUpdateException ex)
         {
