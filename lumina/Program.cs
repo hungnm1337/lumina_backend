@@ -1,6 +1,8 @@
 using DataLayer.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using RepositoryLayer.Exam;
+using ServiceLayer.Exam;
 using Microsoft.IdentityModel.Tokens;
 using ServiceLayer.Auth;
 using ServiceLayer.Email;
@@ -36,12 +38,17 @@ namespace lumina
             {
                 options.AddDefaultPolicy(policy =>
                 {
-                    policy.WithOrigins("http://localhost:4200", "https://localhost:4200")
+                    policy.WithOrigins("https://localhost:4200", "http://localhost:4200")
                         .AllowAnyHeader()
                         .AllowAnyMethod();
                         //.AllowCredentials();
                 });
             });
+
+
+            builder.Services.AddScoped<IUploadService, UploadService>();
+            builder.Services.AddScoped<IExamService, ExamService>();
+            builder.Services.AddScoped<IExamRepository, ExamRepository>();
 
             var jwtSection = builder.Configuration.GetSection("Jwt");
             var jwtSecret = jwtSection["SecretKey"] ?? throw new InvalidOperationException("JWT secret key is not configured.");
@@ -66,6 +73,7 @@ namespace lumina
 
             builder.Services.AddAuthorization();
 
+
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
@@ -81,6 +89,8 @@ namespace lumina
             }
 
             //app.UseHttpsRedirection();
+            app.UseCors();
+
             app.UseCors();
 
             app.UseAuthentication();
