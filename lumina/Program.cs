@@ -38,8 +38,8 @@ namespace lumina
                 {
                     policy.WithOrigins("http://localhost:4200", "https://localhost:4200")
                         .AllowAnyHeader()
-                        .AllowAnyMethod()
-                        .AllowCredentials();
+                        .AllowAnyMethod();
+                        //.AllowCredentials();
                 });
             });
 
