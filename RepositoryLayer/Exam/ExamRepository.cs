@@ -140,17 +140,17 @@ namespace RepositoryLayer.Exam
                             Content = o.Content,
                             IsCorrect = o.IsCorrect
                         }).ToList(),
-                        Prompt = q.Prompt == null ? null : new PromptDTO
+                        Prompt = q.PromptId == null ? null : new PromptDTO 
                         {
-                            PromptId = q.Prompt.PromptId,
+                            PromptId = q.Prompt.PromptId, 
                             PassageId = q.Prompt.PassageId,
                             Skill = q.Prompt.Skill,
                             PromptText = q.Prompt.PromptText,
                             ReferenceImageUrl = q.Prompt.ReferenceImageUrl,
                             ReferenceAudioUrl = q.Prompt.ReferenceAudioUrl,
-                            Passage = q.Prompt.Passage == null ? null : new PassageDTO
+                            Passage = q.Prompt.PassageId == null ? null : new PassageDTO 
                             {
-                                PassageId = q.Prompt.Passage.PassageId,
+                                PassageId = q.Prompt.Passage.PassageId, 
                                 Title = q.Prompt.Passage.Title,
                                 ContentText = q.Prompt.Passage.ContentText
                             }
