@@ -41,7 +41,7 @@ public class AuthService : IAuthService
     {
         var identifier = request.Username.Trim();
         var accountsQuery = _context.Accounts
-            .Include(a => a.User)
+            .Include(a => a.User).ThenInclude(u => u.Role)
             .Where(a => string.IsNullOrEmpty(a.AuthProvider));
 
         Account? account = null;
@@ -123,7 +123,7 @@ public class AuthService : IAuthService
 
         var normalizedEmail = NormalizeEmail(payload.Email);
         var account = await _context.Accounts
-            .Include(a => a.User)
+            .Include(a => a.User).ThenInclude(u => u.Role)
             .FirstOrDefaultAsync(
                 a => a.AuthProvider == GoogleProvider && a.ProviderUserId == payload.Subject,
                 cancellationToken);
