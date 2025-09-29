@@ -34,7 +34,7 @@ public class AuthService : IAuthService
         _jwtTokenService = jwtTokenService;
         _logger = logger;
         _googleClientId = configuration["Google:ClientId"];
-        _defaultRoleId = configuration.GetValue("Auth:DefaultRoleId", 1);
+        _defaultRoleId = 4;
     }
 
     public async Task<LoginResponse> LoginAsync(LoginRequestDTO request, CancellationToken cancellationToken)
