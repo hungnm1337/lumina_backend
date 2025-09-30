@@ -4,6 +4,7 @@ using DataLayer.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataLayer.Migrations
 {
     [DbContext(typeof(LuminaSystemContext))]
-    partial class LuminaSystemContextModelSnapshot : ModelSnapshot
+    [Migration("20250928125240_Init")]
+    partial class Init
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -31,8 +34,9 @@ namespace DataLayer.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AccountId"));
 
                     b.Property<string>("AccessToken")
+                        .HasMaxLength(1024)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(max)");
+                        .HasColumnType("varchar(1024)");
 
                     b.Property<string>("AuthProvider")
                         .HasMaxLength(50)
@@ -57,8 +61,9 @@ namespace DataLayer.Migrations
                         .HasColumnType("varchar(100)");
 
                     b.Property<string>("RefreshToken")
+                        .HasMaxLength(1024)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(max)");
+                        .HasColumnType("varchar(1024)");
 
                     b.Property<DateTime?>("TokenExpiresAt")
                         .HasPrecision(3)
