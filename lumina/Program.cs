@@ -2,8 +2,10 @@ using DataLayer.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using RepositoryLayer.Event;
 using ServiceLayer.Auth;
 using ServiceLayer.Email;
+using ServiceLayer.Event;
 using Services.Upload;
 using System.Text;
 
@@ -24,6 +26,8 @@ namespace lumina
             builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
             builder.Services.AddScoped<IUploadService, UploadService>();
             builder.Services.AddTransient<IEmailSender, SmtpEmailSender>();
+            builder.Services.AddScoped<IEventService,EventService>();
+            builder.Services.AddScoped<IEventRepository, EventRepository>();
 
             builder.Services.AddCors(options =>
             {
