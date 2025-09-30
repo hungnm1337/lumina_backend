@@ -1,11 +1,14 @@
 using DataLayer.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using RepositoryLayer.Exam;
-using ServiceLayer.Exam;
 using Microsoft.IdentityModel.Tokens;
+using RepositoryLayer;
+using RepositoryLayer.Exam;
+using RepositoryLayer.UnitOfWork;
+using ServiceLayer.Article;
 using ServiceLayer.Auth;
 using ServiceLayer.Email;
+using ServiceLayer.Exam;
 using Services.Upload;
 using System.Text;
 
@@ -33,7 +36,13 @@ namespace lumina
             builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
             builder.Services.AddScoped<IUploadService, UploadService>();
             builder.Services.AddTransient<IEmailSender, SmtpEmailSender>();
+            builder.Services.AddScoped<IArticleRepository, ArticleRepository>();
+            builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+            builder.Services.AddScoped<IUserRepository, UserRepository>();
 
+            builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+            builder.Services.AddScoped<IArticleService, ArticleService>();
             builder.Services.AddCors(options =>
             {
                 options.AddDefaultPolicy(policy =>
@@ -89,7 +98,6 @@ namespace lumina
             }
 
             //app.UseHttpsRedirection();
-            app.UseCors();
 
             app.UseCors();
 
@@ -102,3 +110,5 @@ namespace lumina
         }
     }
 }
+
+
