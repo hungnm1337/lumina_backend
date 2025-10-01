@@ -1,13 +1,18 @@
 using DataLayer.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using RepositoryLayer.Exam;
-using ServiceLayer.Exam;
 using Microsoft.IdentityModel.Tokens;
 using RepositoryLayer.Event;
 using ServiceLayer.Auth;
 using ServiceLayer.Email;
 using ServiceLayer.Event;
+using RepositoryLayer;
+using RepositoryLayer.Exam;
+using RepositoryLayer.UnitOfWork;
+using ServiceLayer.Article;
+using ServiceLayer.Auth;
+using ServiceLayer.Email;
+using ServiceLayer.Exam;
 using Services.Upload;
 using System.Text;
 using RepositoryLayer.Slide;
@@ -27,10 +32,13 @@ namespace lumina
 
 
 
-            builder.Services.AddScoped<IUserRepository, UserRepository>();
             builder.Services.AddScoped<IRoleRepository, RoleRepository>();
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<IRoleService, RoleService>();
+
+            builder.Services.AddScoped<IPackageRepository, PackageRepository>();
+            builder.Services.AddScoped<IPackageService, PackageService>();
+
 
             builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
             builder.Services.AddScoped<IAuthService, AuthService>();
@@ -41,7 +49,13 @@ namespace lumina
             builder.Services.AddScoped<IEventRepository, EventRepository>();
             builder.Services.AddScoped<ISlideService, SlideService>();
             builder.Services.AddScoped<ISlideRepository, SlideRepository>();
+            builder.Services.AddScoped<IArticleRepository, ArticleRepository>();
+            builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+            builder.Services.AddScoped<IUserRepository, UserRepository>();
 
+            builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+            builder.Services.AddScoped<IArticleService, ArticleService>();
             builder.Services.AddCors(options =>
             {
                 options.AddDefaultPolicy(policy =>
@@ -54,7 +68,6 @@ namespace lumina
             });
 
 
-            builder.Services.AddScoped<IUploadService, UploadService>();
             builder.Services.AddScoped<IExamService, ExamService>();
             builder.Services.AddScoped<IExamRepository, ExamRepository>();
 
@@ -96,8 +109,7 @@ namespace lumina
                 app.UseSwaggerUI();
             }
 
-            //app.UseHttpsRedirection();
-            app.UseCors();
+            app.UseHttpsRedirection();
 
             app.UseCors();
 
@@ -110,3 +122,5 @@ namespace lumina
         }
     }
 }
+
+
