@@ -36,11 +36,12 @@ public class UserService : IUserService
             FullName = user.FullName,
             RoleId = user.RoleId,
             RoleName = user.Role?.RoleName,
+            UserName = user.Accounts != null && user.Accounts.Any() ? user.Accounts.First().Username : null,
             AvatarUrl = user.AvatarUrl,
             Bio = user.Bio,
             Phone = user.Phone,
-            IsActive = user.IsActive
-            /*JoinDate = user.Accounts.Any() ? user.Accounts.First().CreateAt.ToString("yyyy-MM-dd") : null*/
+            IsActive = user.IsActive,
+            JoinDate = user.Accounts.Any() ? user.Accounts.First().CreateAt.ToString("yyyy-MM-dd") : null
         };
     }
 
