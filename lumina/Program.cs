@@ -10,6 +10,8 @@ using ServiceLayer.Email;
 using ServiceLayer.Event;
 using Services.Upload;
 using System.Text;
+using RepositoryLayer.Slide;
+using ServiceLayer.Slide;
 
 namespace lumina
 {
@@ -37,6 +39,8 @@ namespace lumina
             builder.Services.AddTransient<IEmailSender, SmtpEmailSender>();
             builder.Services.AddScoped<IEventService,EventService>();
             builder.Services.AddScoped<IEventRepository, EventRepository>();
+            builder.Services.AddScoped<ISlideService, SlideService>();
+            builder.Services.AddScoped<ISlideRepository, SlideRepository>();
 
             builder.Services.AddCors(options =>
             {
