@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using DataLayer.DTOs.User;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace lumina.Controllers
@@ -43,6 +46,53 @@ namespace lumina.Controllers
                 return NotFound(new { message = "User not found." });
             }
             return NoContent(); 
+        }
+
+        [HttpGet("profile")]
+        [Authorize]
+        public async Task<IActionResult> GetProfile()
+        {
+            var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrWhiteSpace(idClaim) || !int.TryParse(idClaim, out var userId))
+            {
+                return Unauthorized(new { message = "Invalid token" });
+            }
+            var dto = await _userService.GetCurrentUserProfileAsync(userId);
+            return dto is null ? NotFound() : Ok(dto);
+        }
+
+        [HttpPut("profile")]
+        [Authorize]
+        public async Task<IActionResult> UpdateProfile([FromBody] UpdateUserDTO request)
+        {
+            var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrWhiteSpace(idClaim) || !int.TryParse(idClaim, out var userId))
+            {
+                return Unauthorized(new { message = "Invalid token" });
+            }
+            var dto = await _userService.UpdateCurrentUserProfileAsync(userId, request);
+            return dto is null ? NotFound() : Ok(dto);
+        }
+
+        [HttpPut("profile/change-password")]
+        [Authorize]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDTO request)
+        {
+            var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrWhiteSpace(idClaim) || !int.TryParse(idClaim, out var userId))
+            {
+                return Unauthorized(new { message = "Invalid token" });
+            }
+
+            try
+            {
+                await _userService.ChangePasswordAsync(userId, request);
+                return NoContent();
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
     }
