@@ -82,6 +82,81 @@ public class UserRepository : IUserRepository
         await _context.SaveChangesAsync();
         return true;
     }
+
+    public async Task<UserDto?> GetCurrentUserProfileAsync(int userId)
+{
+    var u = await _context.Users
+        .Include(x => x.Role)
+        .FirstOrDefaultAsync(x => x.UserId == userId);
+
+    if (u == null) return null;
+
+    return new UserDto
+    {
+        UserId = u.UserId,
+        Email = u.Email,
+        FullName = u.FullName,
+        RoleId = u.RoleId,
+        RoleName = u.Role?.RoleName,
+        AvatarUrl = u.AvatarUrl,
+        Bio = u.Bio,
+        Phone = u.Phone,
+        IsActive = u.IsActive,
+        JoinDate = u.Accounts.Any() ? u.Accounts.First().CreateAt.ToString("yyyy-MM-dd") : null
+    };
+}
+
+public async Task<UserDto?> UpdateUserProfileAsync(int userId, string fullName, string? phone, string? bio, string? avatarUrl)
+{
+    var u = await _context.Users.Include(x => x.Role).FirstOrDefaultAsync(x => x.UserId == userId);
+    if (u == null) return null;
+
+    u.FullName = fullName?.Trim() ?? u.FullName;
+    u.Phone = string.IsNullOrWhiteSpace(phone) ? null : phone.Trim();
+    u.Bio = string.IsNullOrWhiteSpace(bio) ? null : bio.Trim();
+    u.AvatarUrl = string.IsNullOrWhiteSpace(avatarUrl) ? null : avatarUrl.Trim();
+
+    _context.Users.Update(u);
+    await _context.SaveChangesAsync();
+
+    return new UserDto
+    {
+        UserId = u.UserId,
+        Email = u.Email,
+        FullName = u.FullName,
+        RoleId = u.RoleId,
+        RoleName = u.Role?.RoleName,
+        AvatarUrl = u.AvatarUrl,
+        Bio = u.Bio,
+        Phone = u.Phone,
+        IsActive = u.IsActive,
+        JoinDate = u.Accounts.Any() ? u.Accounts.First().CreateAt.ToString("yyyy-MM-dd") : null
+    };
+}
+
+public async Task<bool> ChangePasswordAsync(int userId, string currentPassword, string newPassword)
+{
+    var account = await _context.Accounts
+        .FirstOrDefaultAsync(a => a.UserId == userId && string.IsNullOrEmpty(a.AuthProvider) && a.PasswordHash != null);
+
+    if (account == null)
+    {
+        return false; // Không phải tài khoản local hoặc không có mật khẩu để đổi
+    }
+
+    var ok = BCrypt.Net.BCrypt.Verify(currentPassword, account.PasswordHash);
+    if (!ok)
+    {
+        return false;
+    }
+
+    account.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+    account.UpdateAt = DateTime.UtcNow;
+
+    _context.Accounts.Update(account);
+    await _context.SaveChangesAsync();
+    return true;
+}
 }
 
 

@@ -48,6 +48,51 @@ public class UserService : IUserService
     {
         return await _userRepository.ToggleUserStatusAsync(userId);
     }
+
+public async Task<UserDto?> GetCurrentUserProfileAsync(int currentUserId)
+{
+    return await _userRepository.GetCurrentUserProfileAsync(currentUserId);
+}
+
+public async Task<UserDto?> UpdateCurrentUserProfileAsync(int currentUserId, UpdateUserDTO request)
+{
+    var fullName = (request.FullName ?? string.Empty).Trim();
+    if (string.IsNullOrWhiteSpace(fullName))
+    {
+        throw new ArgumentException("FullName is required.");
+    }
+    if (fullName.Length > 50)
+    {
+        fullName = fullName[..50];
+    }
+
+    return await _userRepository.UpdateUserProfileAsync(
+        currentUserId,
+        fullName,
+        request.Phone,
+        request.Bio,
+        request.AvatarUrl
+    );
+}
+
+public async Task<bool> ChangePasswordAsync(int currentUserId, ChangePasswordDTO request)
+{
+    var newPw = (request.NewPassword ?? string.Empty).Trim();
+    var curPw = (request.CurrentPassword ?? string.Empty).Trim();
+
+    if (string.IsNullOrEmpty(newPw) || newPw.Length < 8)
+        throw new ArgumentException("New password must be at least 8 characters.");
+
+    if (newPw == curPw)
+        throw new ArgumentException("New password must be different from current password.");
+
+
+    var success = await _userRepository.ChangePasswordAsync(currentUserId, curPw, newPw);
+    if (!success)
+        throw new ArgumentException("Current password is incorrect or account type does not support password change.");
+
+    return true;
+}
 }
 
 
