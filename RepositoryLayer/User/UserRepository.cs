@@ -21,6 +21,7 @@ public class UserRepository : IUserRepository
     {
         var query = _context.Users
                             .Include(u => u.Role)
+                             .Where(u => u.RoleId != 1)
                             .AsQueryable();
 
         if (!string.IsNullOrEmpty(searchTerm))
@@ -63,7 +64,7 @@ public class UserRepository : IUserRepository
     {
         return await _context.Users
             .Include(u => u.Role)
-           /* .Include(u => u.Accounts)*/
+            .Include(u => u.Accounts)
             .FirstOrDefaultAsync(u => u.UserId == userId);
     }
 
