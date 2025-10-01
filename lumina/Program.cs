@@ -26,7 +26,6 @@ namespace lumina
 
 
 
-            builder.Services.AddScoped<IUserRepository, UserRepository>();
             builder.Services.AddScoped<IRoleRepository, RoleRepository>();
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<IRoleService, RoleService>();
@@ -55,7 +54,6 @@ namespace lumina
             });
 
 
-            builder.Services.AddScoped<IUploadService, UploadService>();
             builder.Services.AddScoped<IExamService, ExamService>();
             builder.Services.AddScoped<IExamRepository, ExamRepository>();
 
@@ -97,7 +95,7 @@ namespace lumina
                 app.UseSwaggerUI();
             }
 
-            //app.UseHttpsRedirection();
+            app.UseHttpsRedirection();
 
             app.UseCors();
 
