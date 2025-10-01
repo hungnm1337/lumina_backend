@@ -359,3 +359,4 @@ FodyWeavers.xsd
 appsettings.json
 appsettings.*.json
 
+lumina/appsettings.json
