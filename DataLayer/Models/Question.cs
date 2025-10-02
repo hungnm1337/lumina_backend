@@ -23,6 +23,7 @@ public partial class Question
 
     public int QuestionNumber { get; set; }
 
+    public string? SampleAnswer { get; set; }
     public virtual ICollection<Option> Options { get; set; } = new List<Option>();
 
     public virtual ExamPart Part { get; set; } = null!;

@@ -71,6 +71,7 @@ public partial class LuminaSystemContext : DbContext
     public virtual DbSet<UserNotification> UserNotifications { get; set; }
 
     public virtual DbSet<UserSpacedRepetition> UserSpacedRepetitions { get; set; }
+    public virtual DbSet<SpeakingResult> SpeakingResults { get; set; }
 
     public virtual DbSet<Vocabulary> Vocabularies { get; set; }
 
@@ -170,6 +171,10 @@ public partial class LuminaSystemContext : DbContext
                 .HasForeignKey(d => d.CreatedByUserId)
                 .HasConstraintName("FK_ArticleCategories_Users");
         });
+        modelBuilder.Entity<UserAnswer>()
+            .HasOne(a => a.SpeakingResult)
+            .WithOne(s => s.UserAnswer)
+            .HasForeignKey<SpeakingResult>(s => s.UserAnswerId);
 
         modelBuilder.Entity<ArticleSection>(entity =>
         {

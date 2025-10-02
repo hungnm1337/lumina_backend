@@ -24,6 +24,6 @@ public partial class UserAnswer
     public virtual ExamAttempt Attempt { get; set; } = null!;
 
     public virtual Question Question { get; set; } = null!;
-
+    public virtual SpeakingResult? SpeakingResult { get; set; }
     public virtual Option? SelectedOption { get; set; }
 }
