@@ -9,6 +9,7 @@ public interface IUnitOfWork : IDisposable
     ICategoryRepository Categories { get; }
     IUserRepository Users { get; }
     IVocabularyRepository Vocabularies { get; }
+    IVocabularyListRepository VocabularyLists { get; }
 
     Task<int> CompleteAsync();
     Task<IDbContextTransaction> BeginTransactionAsync();
