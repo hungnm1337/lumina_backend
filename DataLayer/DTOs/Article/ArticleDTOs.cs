@@ -57,3 +57,45 @@ public class ArticleResponseDTO
     public string CategoryName { get; set; } = string.Empty;
     public List<ArticleSectionResponseDTO> Sections { get; set; } = new();
 }
+
+// ----- Update / Publish / Query DTOs -----
+
+public class ArticleSectionUpdateDTO
+{
+    public int? SectionId { get; set; }
+    public string SectionTitle { get; set; } = string.Empty;
+    public string SectionContent { get; set; } = string.Empty;
+    public int OrderIndex { get; set; }
+}
+
+public class ArticleUpdateDTO
+{
+    public string Title { get; set; } = string.Empty;
+    public string Summary { get; set; } = string.Empty;
+    public int CategoryId { get; set; }
+    public List<ArticleSectionUpdateDTO> Sections { get; set; } = new();
+}
+
+public class ArticlePublishRequest
+{
+    public bool Publish { get; set; } = true;
+}
+
+public class ArticleQueryParams
+{
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 10;
+    public string? SortBy { get; set; } = "createdAt"; // createdAt | title | category
+    public string? SortDir { get; set; } = "desc"; // asc | desc
+    public string? Search { get; set; }
+    public int? CategoryId { get; set; }
+    public bool? IsPublished { get; set; }
+}
+
+public class PagedResponse<T>
+{
+    public List<T> Items { get; set; } = new();
+    public int Total { get; set; }
+    public int Page { get; set; }
+    public int PageSize { get; set; }
+}

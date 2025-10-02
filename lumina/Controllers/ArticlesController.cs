@@ -72,4 +72,96 @@ public class ArticlesController : ControllerBase
         var list = await _unitOfWork.Categories.GetAllAsync();
         return Ok(list.Select(c => new { id = c.CategoryId, name = c.CategoryName }));
     }
+
+    [HttpGet]
+    [AllowAnonymous]
+    public async Task<ActionResult<List<ArticleResponseDTO>>> GetAllArticles()
+    {
+        try
+        {
+            var articles = await _articleService.GetAllArticlesAsync();
+            return Ok(articles);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An error occurred while retrieving articles.");
+            return StatusCode(500, new ErrorResponse("An internal server error occurred. Please try again later."));
+        }
+    }
+
+    // GET api/articles/query?page=1&pageSize=10&sortBy=createdAt&sortDir=desc&search=...&categoryId=...&isPublished=true
+    [HttpGet("query")]
+    [AllowAnonymous]
+    public async Task<ActionResult<PagedResponse<ArticleResponseDTO>>> Query([FromQuery] ArticleQueryParams query)
+    {
+        try
+        {
+            var result = await _articleService.QueryAsync(query);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An error occurred while querying articles.");
+            return StatusCode(500, new ErrorResponse("An internal server error occurred. Please try again later."));
+        }
+    }
+
+    // PUT api/articles/{id}
+    [HttpPut("{id}")]
+    [Authorize(Roles = "Staff")]
+    public async Task<ActionResult<ArticleResponseDTO>> Update(int id, [FromBody] ArticleUpdateDTO request)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var updaterUserId))
+        {
+            return Unauthorized(new ErrorResponse("Invalid token - User ID could not be determined."));
+        }
+
+        var updated = await _articleService.UpdateArticleAsync(id, request, updaterUserId);
+        if (updated == null)
+        {
+            return NotFound(new ErrorResponse($"Article with ID {id} not found."));
+        }
+        return Ok(updated);
+    }
+
+    // POST api/articles/{id}/publish
+    [HttpPost("{id}/publish")]
+    [Authorize(Roles = "Staff")]
+    public async Task<ActionResult> Publish(int id, [FromBody] ArticlePublishRequest req)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var updaterUserId))
+        {
+            return Unauthorized(new ErrorResponse("Invalid token - User ID could not be determined."));
+        }
+
+        var ok = await _articleService.PublishArticleAsync(id, req.Publish, updaterUserId);
+        if (!ok)
+        {
+            return NotFound(new ErrorResponse($"Article with ID {id} not found."));
+        }
+        return NoContent();
+    }
+
+    [HttpDelete("{id}")]
+    [Authorize(Roles = "Staff")]
+    public async Task<ActionResult> DeleteArticle(int id)
+    {
+        try
+        {
+            var result = await _articleService.DeleteArticleAsync(id);
+            if (!result)
+            {
+                return NotFound(new ErrorResponse($"Article with ID {id} not found."));
+            }
+
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An error occurred while deleting article with ID {ArticleId}.", id);
+            return StatusCode(500, new ErrorResponse("An internal server error occurred. Please try again later."));
+        }
+    }
 }
