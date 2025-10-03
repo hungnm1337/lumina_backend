@@ -8,8 +8,8 @@ namespace ServiceLayer.Slide
     {
         Task<List<SlideDTO>> GetAllAsync(string? keyword = null, bool? isActive = null);
         Task<SlideDTO?> GetByIdAsync(int slideId);
-        Task<int> CreateAsync(SlideDTO dto, int userId);
-        Task<bool> UpdateAsync(int slideId, SlideDTO dto, int userId);
+        Task<int> CreateAsync(SlideDTO dto);
+        Task<bool> UpdateAsync( SlideDTO dto);
         Task<bool> DeleteAsync(int slideId);
     }
 } 

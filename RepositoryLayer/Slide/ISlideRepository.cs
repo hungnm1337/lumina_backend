@@ -9,8 +9,8 @@ namespace RepositoryLayer.Slide
     {
         Task<List<SlideDTO>> GetAllAsync(string? keyword = null, bool? isActive = null);
         Task<SlideDTO?> GetByIdAsync(int slideId);
-        Task<int> CreateAsync(DataLayer.Models.Slide entity);
-        Task<bool> UpdateAsync(DataLayer.Models.Slide entity);
+        Task<int> CreateAsync(SlideDTO model);
+        Task<bool> UpdateAsync(SlideDTO entity);
         Task<bool> DeleteAsync(int slideId);
     }
 } 

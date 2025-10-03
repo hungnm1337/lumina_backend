@@ -40,7 +40,9 @@ namespace lumina.Controllers
         public async Task<ActionResult<int>> Create([FromBody] SlideDTO dto)
         {
             int userId = GetUserId();
-            var id = await _slideService.CreateAsync(dto, userId);
+            // Ensure server controls audit fields
+            dto.CreateBy = userId;
+            var id = await _slideService.CreateAsync(dto);
             return CreatedAtAction(nameof(GetById), new { slideId = id }, id);
         }
 
@@ -48,8 +50,14 @@ namespace lumina.Controllers
         [HttpPut("{slideId:int}")]
         public async Task<ActionResult> Update(int slideId, [FromBody] SlideDTO dto)
         {
+            if(slideId != dto.SlideId)
+            {
+                return BadRequest("Slide ID mismatch");
+            }
             int userId = GetUserId();
-            var ok = await _slideService.UpdateAsync(slideId, dto, userId);
+            // Ensure server controls audit fields
+            dto.UpdateBy = userId;
+            var ok = await _slideService.UpdateAsync(dto);
             if (!ok) return NotFound();
             return NoContent();
         }

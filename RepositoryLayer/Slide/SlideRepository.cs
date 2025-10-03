@@ -65,16 +65,34 @@ namespace RepositoryLayer.Slide
             };
         }
 
-        public async Task<int> CreateAsync(DataLayer.Models.Slide entity)
+        public async Task<int> CreateAsync(SlideDTO entity)
         {
-            _context.Slides.Add(entity);
+            var newSlide = new DataLayer.Models.Slide()
+            {
+                CreateAt = DateTime.UtcNow,
+                CreateBy = entity.CreateBy,
+                IsActive = entity.IsActive,
+                SlideName = entity.SlideName,
+                UpdateBy = null,
+                UpdateAt = null,
+                SlideUrl = entity.SlideUrl
+            };
+            _context.Slides.Add(newSlide);
             await _context.SaveChangesAsync();
-            return entity.SlideId;
+            return newSlide.SlideId;
         }
 
-        public async Task<bool> UpdateAsync(DataLayer.Models.Slide entity)
+        public async Task<bool> UpdateAsync(SlideDTO entity)
         {
-            _context.Slides.Update(entity);
+            var slide = await _context.Slides.FirstOrDefaultAsync(s => s.SlideId == entity.SlideId);
+            if (slide == null) return false;
+            slide.SlideName = entity.SlideName;
+            slide.SlideUrl = entity.SlideUrl;
+            slide.IsActive = entity.IsActive;
+            slide.UpdateBy = entity.UpdateBy;
+            slide.UpdateAt = DateTime.UtcNow;
+
+            _context.Slides.Update(slide);
             var affected = await _context.SaveChangesAsync();
             return affected > 0;
         }

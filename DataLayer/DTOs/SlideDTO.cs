@@ -4,7 +4,7 @@ namespace DataLayer.DTOs
 {
     public class SlideDTO
     {
-        public int SlideId { get; set; }
+        public int? SlideId { get; set; }
         public string SlideUrl { get; set; } = null!;
         public string SlideName { get; set; } = null!;
         public int? UpdateBy { get; set; }

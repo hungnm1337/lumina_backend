@@ -21,36 +21,16 @@ namespace ServiceLayer.Slide
         public Task<SlideDTO?> GetByIdAsync(int slideId)
             => _slideRepository.GetByIdAsync(slideId);
 
-        public async Task<int> CreateAsync(SlideDTO dto, int userId)
+        public async Task<int> CreateAsync(SlideDTO dto)
         {
-            var entity = new DataLayer.Models.Slide
-            {
-                SlideUrl = dto.SlideUrl,
-                SlideName = dto.SlideName,
-                CreateBy = userId,
-                CreateAt = DateTime.UtcNow,
-                IsActive = dto.IsActive ?? true
-            };
-            return await _slideRepository.CreateAsync(entity);
+            
+            return await _slideRepository.CreateAsync(dto);
         }
 
-        public async Task<bool> UpdateAsync(int slideId, SlideDTO dto, int userId)
+        public async Task<bool> UpdateAsync( SlideDTO dto)
         {
-            var existing = await _slideRepository.GetByIdAsync(slideId);
-            if (existing == null) return false;
-
-            var entity = new DataLayer.Models.Slide
-            {
-                SlideId = slideId,
-                SlideUrl = dto.SlideUrl,
-                SlideName = dto.SlideName,
-                CreateBy = existing.CreateBy,
-                CreateAt = existing.CreateAt,
-                UpdateBy = userId,
-                UpdateAt = DateTime.UtcNow,
-                IsActive = dto.IsActive ?? existing.IsActive
-            };
-            return await _slideRepository.UpdateAsync(entity);
+            
+            return await _slideRepository.UpdateAsync(dto);
         }
 
         public Task<bool> DeleteAsync(int slideId)

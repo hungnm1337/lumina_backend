@@ -90,7 +90,19 @@ namespace RepositoryLayer.Event
 
         public async Task<bool> UpdateAsync(DataLayer.Models.Event entity)
         {
-            _context.Events.Update(entity);
+            // Load existing tracked entity to avoid EF Core tracking conflicts
+            var existing = await _context.Events.FirstOrDefaultAsync(e => e.EventId == entity.EventId);
+            if (existing == null) return false;
+
+            // Map fields
+            existing.EventName = entity.EventName;
+            existing.Content = entity.Content;
+            existing.StartDate = entity.StartDate;
+            existing.EndDate = entity.EndDate;
+            existing.UpdateAt = entity.UpdateAt;
+            existing.UpdateBy = entity.UpdateBy;
+            // Preserve existing.CreateAt and existing.CreateBy
+
             var affected = await _context.SaveChangesAsync();
             return affected > 0;
         }
