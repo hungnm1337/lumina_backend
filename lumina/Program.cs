@@ -13,6 +13,7 @@ using ServiceLayer.Article;
 using ServiceLayer.Auth;
 using ServiceLayer.Email;
 using ServiceLayer.Exam;
+using ServiceLayer.Vocabulary;
 using Services.Upload;
 using System.Text;
 using RepositoryLayer.Slide;
@@ -52,9 +53,9 @@ namespace lumina
             builder.Services.AddScoped<IArticleRepository, ArticleRepository>();
             builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
             builder.Services.AddScoped<IUserRepository, UserRepository>();
-
+            builder.Services.AddScoped<IVocabularyListRepository, VocabularyListRepository>();
+            builder.Services.AddScoped<IVocabularyListService, VocabularyListService>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-
             builder.Services.AddScoped<IArticleService, ArticleService>();
             builder.Services.AddCors(options =>
             {

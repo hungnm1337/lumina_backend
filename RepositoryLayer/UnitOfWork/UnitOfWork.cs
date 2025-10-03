@@ -12,6 +12,7 @@ public class UnitOfWork : IUnitOfWork
     public ICategoryRepository Categories { get; private set; }
     public IUserRepository Users { get; private set; }
     public IVocabularyRepository Vocabularies { get; private set; }
+    public IVocabularyListRepository VocabularyLists { get; private set; }
 
     public UnitOfWork(LuminaSystemContext context)
     {
@@ -20,6 +21,7 @@ public class UnitOfWork : IUnitOfWork
         Categories = new CategoryRepository(_context);
         Users = new UserRepository(_context);
         Vocabularies = new VocabularyRepository(_context);
+        VocabularyLists = new VocabularyListRepository(_context);
     }
 
     public async Task<int> CompleteAsync()
