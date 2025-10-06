@@ -132,38 +132,141 @@ namespace ServiceLayer.Speech
             }
             audioInputStream.Close();
 
-            // TEMPORARY FIX: Use simple recognition WITHOUT reference text alignment
-            // This allows us to see what the user actually said
-            // TODO: Later, use pronunciation assessment with user's actual transcript as reference
-            var result = await recognizer.RecognizeOnceAsync();
-            Console.WriteLine($"[AzureSpeech] Actual transcript (no reference): {result.Text}");
-            try
+            // ===== PASS 1: Continuous Recognition to get FULL transcript =====
+            var tcs = new TaskCompletionSource<string>();
+            var fullTranscript = new System.Text.StringBuilder();
+            
+            recognizer.Recognized += (s, e) =>
             {
-                var detailedJson = result.Properties.GetProperty(PropertyId.SpeechServiceResponse_JsonResult);
-                if (!string.IsNullOrWhiteSpace(detailedJson))
+                if (e.Result.Reason == ResultReason.RecognizedSpeech)
                 {
-                    Console.WriteLine($"[AzureSpeech] Detailed JSON: {detailedJson}");
+                    fullTranscript.Append(e.Result.Text);
+                    fullTranscript.Append(" ");
+                    Console.WriteLine($"[AzureSpeech] Pass 1 - Recognized chunk: {e.Result.Text}");
                 }
-            }
-            catch { }
-            if (result.Reason == ResultReason.RecognizedSpeech)
+            };
+
+            recognizer.SessionStopped += (s, e) =>
             {
-                // TEMPORARY: Return transcript without pronunciation scores since we're not using assessment
-                // This allows accurate transcript recognition
+                var transcript = fullTranscript.ToString().Trim();
+                Console.WriteLine($"[AzureSpeech] Pass 1 - Full transcript: {transcript}");
+                tcs.TrySetResult(transcript);
+            };
+
+            recognizer.Canceled += (s, e) =>
+            {
+                Console.WriteLine($"[AzureSpeech] Pass 1 - Recognition canceled: {e.Reason}");
+                if (e.Reason == CancellationReason.Error)
+                {
+                    Console.WriteLine($"[AzureSpeech] Pass 1 - Error: {e.ErrorDetails}");
+                    tcs.TrySetResult(string.Empty);
+                }
+                else
+                {
+                    tcs.TrySetResult(fullTranscript.ToString().Trim());
+                }
+            };
+
+            await recognizer.StartContinuousRecognitionAsync();
+            await Task.Delay(100); // Small delay to ensure recognition starts
+            
+            // Wait up to 30 seconds for recognition to complete
+            var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(TimeSpan.FromSeconds(30)));
+            await recognizer.StopContinuousRecognitionAsync();
+
+            string finalTranscript;
+            if (completedTask == tcs.Task)
+            {
+                finalTranscript = await tcs.Task;
+            }
+            else
+            {
+                Console.WriteLine($"[AzureSpeech] Pass 1 - Timeout. Using partial transcript.");
+                finalTranscript = fullTranscript.ToString().Trim();
+            }
+
+            // If no transcript, return error
+            if (string.IsNullOrWhiteSpace(finalTranscript))
+            {
+                return new SpeechAnalysisDTO { ErrorMessage = "No speech recognized" };
+            }
+
+            // ===== PASS 2: Pronunciation Assessment with full transcript as reference =====
+            Console.WriteLine($"[AzureSpeech] Pass 2 - Starting pronunciation assessment with transcript as reference");
+            
+            // Re-download and process audio for Pass 2
+            using var http2 = new HttpClient();
+            using var response2 = await http2.GetAsync(audioUrl, HttpCompletionOption.ResponseHeadersRead);
+            if (!response2.IsSuccessStatusCode)
+            {
+                // If can't re-download, return transcript with default scores
+                Console.WriteLine($"[AzureSpeech] Pass 2 - Failed to re-download audio. Using default pronunciation scores.");
                 return new SpeechAnalysisDTO
                 {
-                    Transcript = result.Text,
-                    AccuracyScore = 70,  // Placeholder scores for now
+                    Transcript = finalTranscript,
+                    PronunciationScore = 70,
+                    AccuracyScore = 70,
                     FluencyScore = 70,
-                    CompletenessScore = 70,
-                    PronunciationScore = 70
+                    CompletenessScore = 70
+                };
+            }
+
+            var mp3Bytes2 = await response2.Content.ReadAsByteArrayAsync();
+            using var networkStream2 = new System.IO.MemoryStream(mp3Bytes2, writable: false);
+            using var mp3Reader2 = new Mp3FileReader(networkStream2);
+            var pcm16kMonoFormat2 = new WaveFormat(16000, 16, 1);
+            using var resampler2 = new MediaFoundationResampler(mp3Reader2, pcm16kMonoFormat2) { ResamplerQuality = 60 };
+
+            var wavFormat2 = AudioStreamFormat.GetWaveFormatPCM((uint)pcm16kMonoFormat2.SampleRate, (byte)pcm16kMonoFormat2.BitsPerSample, (byte)pcm16kMonoFormat2.Channels);
+            using var audioInputStream2 = AudioInputStream.CreatePushStream(wavFormat2);
+            using var audioConfig2 = AudioConfig.FromStreamInput(audioInputStream2);
+            using var recognizer2 = string.IsNullOrWhiteSpace(language)
+                ? new SpeechRecognizer(_speechConfig, audioConfig2)
+                : new SpeechRecognizer(_speechConfig, language, audioConfig2);
+
+            // Configure Pronunciation Assessment with the ACTUAL transcript as reference
+            var pronunciationConfig = new PronunciationAssessmentConfig(
+                referenceText: finalTranscript,
+                gradingSystem: GradingSystem.HundredMark,
+                granularity: Granularity.Phoneme,
+                enableMiscue: false);
+            pronunciationConfig.ApplyTo(recognizer2);
+
+            byte[] buffer2 = new byte[8192];
+            int bytesRead2;
+            while ((bytesRead2 = resampler2.Read(buffer2, 0, buffer2.Length)) > 0)
+            {
+                audioInputStream2.Write(buffer2, bytesRead2);
+            }
+            audioInputStream2.Close();
+
+            var pronunciationResult = await recognizer2.RecognizeOnceAsync();
+            
+            if (pronunciationResult.Reason == ResultReason.RecognizedSpeech)
+            {
+                var pronAssessment = PronunciationAssessmentResult.FromResult(pronunciationResult);
+                Console.WriteLine($"[AzureSpeech] Pass 2 - Pronunciation scores: P={pronAssessment.PronunciationScore:F1}, A={pronAssessment.AccuracyScore:F1}, F={pronAssessment.FluencyScore:F1}, C={pronAssessment.CompletenessScore:F1}");
+                
+                return new SpeechAnalysisDTO
+                {
+                    Transcript = finalTranscript,
+                    PronunciationScore = pronAssessment.PronunciationScore,
+                    AccuracyScore = pronAssessment.AccuracyScore,
+                    FluencyScore = pronAssessment.FluencyScore,
+                    CompletenessScore = pronAssessment.CompletenessScore
                 };
             }
             else
             {
-                var cancellationDetails = CancellationDetails.FromResult(result);
-                string errorMessage = $"Reason: {result.Reason}. Details: {cancellationDetails.ErrorDetails}";
-                return new SpeechAnalysisDTO { ErrorMessage = errorMessage };
+                Console.WriteLine($"[AzureSpeech] Pass 2 - Pronunciation assessment failed. Using default scores.");
+                return new SpeechAnalysisDTO
+                {
+                    Transcript = finalTranscript,
+                    PronunciationScore = 70,
+                    AccuracyScore = 70,
+                    FluencyScore = 70,
+                    CompletenessScore = 70
+                };
             }
         }
 
