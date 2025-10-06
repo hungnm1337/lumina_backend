@@ -1,4 +1,4 @@
-﻿using DataLayer.DTOs;
+﻿using DataLayer.DTOs.Exam;
 using RepositoryLayer.Exam;
 using System;
 using System.Collections.Generic;
