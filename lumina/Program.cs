@@ -25,7 +25,13 @@ namespace lumina
             builder.Services.AddDbContext<LuminaSystemContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+            builder.Services.AddHttpClient<ImageCaptioningService>(client =>
+            {
+                client.BaseAddress = new Uri("http://localhost:5000");
 
+                client.Timeout = TimeSpan.FromSeconds(30);
+
+            });
 
             builder.Services.AddScoped<IRoleRepository, RoleRepository>();
             builder.Services.AddScoped<IUserService, UserService>();
