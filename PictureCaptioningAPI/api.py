@@ -100,4 +100,4 @@ if __name__ == '__main__':
     # Chạy Flask app. Trong môi trường dev, bạn có thể dùng debug=True.
     # Trong môi trường sản phẩm, hãy dùng một WSGI server như Gunicorn hoặc uWSGI.
     # Đảm bảo cổng này không trùng với ứng dụng ASP.NET của bạn.
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True,use_reloader=False)
