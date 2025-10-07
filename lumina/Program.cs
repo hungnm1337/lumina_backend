@@ -2,6 +2,10 @@ using DataLayer.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using RepositoryLayer.Event;
+using ServiceLayer.Auth;
+using ServiceLayer.Email;
+using ServiceLayer.Event;
 using RepositoryLayer;
 using RepositoryLayer.Exam;
 using RepositoryLayer.UnitOfWork;
@@ -12,6 +16,8 @@ using ServiceLayer.Exam;
 using ServiceLayer.Vocabulary;
 using Services.Upload;
 using System.Text;
+using RepositoryLayer.Slide;
+using ServiceLayer.Slide;
 
 namespace lumina
 {
@@ -40,6 +46,10 @@ namespace lumina
             builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
             builder.Services.AddScoped<IUploadService, UploadService>();
             builder.Services.AddTransient<IEmailSender, SmtpEmailSender>();
+            builder.Services.AddScoped<IEventService,EventService>();
+            builder.Services.AddScoped<IEventRepository, EventRepository>();
+            builder.Services.AddScoped<ISlideService, SlideService>();
+            builder.Services.AddScoped<ISlideRepository, SlideRepository>();
             builder.Services.AddScoped<IArticleRepository, ArticleRepository>();
             builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
             builder.Services.AddScoped<IUserRepository, UserRepository>();
