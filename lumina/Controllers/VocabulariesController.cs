@@ -2,6 +2,7 @@ using DataLayer.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RepositoryLayer.UnitOfWork;
+using ServiceLayer.TextToSpeech; // Thêm using
 
 namespace lumina.Controllers;
 
@@ -10,10 +11,12 @@ namespace lumina.Controllers;
 public class VocabulariesController : ControllerBase
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ITextToSpeechService _ttsService; // Thêm service
 
-    public VocabulariesController(IUnitOfWork unitOfWork)
+    public VocabulariesController(IUnitOfWork unitOfWork, ITextToSpeechService ttsService)
     {
         _unitOfWork = unitOfWork;
+        _ttsService = ttsService; // Inject service
     }
 
   
@@ -29,7 +32,8 @@ public class VocabulariesController : ControllerBase
             word = v.Word,
             type = v.TypeOfWord,
             definition = v.Definition,
-            example = v.Example
+            example = v.Example,
+            audioUrl = v.AudioUrl // Thêm audio URL
         }));
     }
 
@@ -40,6 +44,7 @@ public class VocabulariesController : ControllerBase
         public string TypeOfWord { get; set; } = string.Empty; // noun, verb, adj...
         public string Definition { get; set; } = string.Empty;
         public string? Example { get; set; }
+        public bool GenerateAudio { get; set; } = true; // Thêm option để tạo audio
     }
 
     // POST api/vocabularies
@@ -52,6 +57,23 @@ public class VocabulariesController : ControllerBase
             return BadRequest(ModelState);
         }
 
+        string? audioUrl = null;
+
+        // Tạo audio nếu được yêu cầu
+        if (req.GenerateAudio && !string.IsNullOrEmpty(req.Word))
+        {
+            try
+            {
+                var audioResult = await _ttsService.GenerateAudioAsync(req.Word);
+                audioUrl = audioResult.Url;
+            }
+            catch (Exception ex)
+            {
+                // Log lỗi nhưng vẫn tạo vocabulary
+                Console.WriteLine($"Lỗi tạo audio: {ex.Message}");
+            }
+        }
+
         var vocab = new Vocabulary
         {
             VocabularyListId = req.VocabularyListId,
@@ -59,12 +81,55 @@ public class VocabulariesController : ControllerBase
             TypeOfWord = req.TypeOfWord,
             Definition = req.Definition,
             Example = req.Example,
+            AudioUrl = audioUrl, // Thêm audio URL
             IsDeleted = false
         };
         await _unitOfWork.Vocabularies.AddAsync(vocab);
         await _unitOfWork.CompleteAsync();
 
-        return CreatedAtAction(nameof(GetList), new { listId = req.VocabularyListId }, new { id = vocab.VocabularyId });
+        return CreatedAtAction(nameof(GetList), new { listId = req.VocabularyListId }, new { 
+            id = vocab.VocabularyId,
+            audioUrl = audioUrl
+        });
+    }
+
+    // Thêm endpoint để tạo audio cho từ vựng hiện có
+    [HttpPost("{id}/generate-audio")]
+    [Authorize(Roles = "Staff")]
+    public async Task<IActionResult> GenerateAudio(int id)
+    {
+        try
+        {
+            var vocab = await _unitOfWork.Vocabularies.GetByIdAsync(id);
+            if (vocab == null)
+            {
+                return NotFound(new { message = "Vocabulary not found" });
+            }
+
+            // Kiểm tra từ vựng có rỗng không
+            if (string.IsNullOrWhiteSpace(vocab.Word))
+            {
+                return BadRequest(new { message = "Vocabulary word is empty" });
+            }
+
+            // Tạo audio trực tiếp
+            var audioResult = await _ttsService.GenerateAudioAsync(vocab.Word);
+            vocab.AudioUrl = audioResult.Url;
+            
+            await _unitOfWork.Vocabularies.UpdateAsync(vocab);
+            await _unitOfWork.CompleteAsync();
+
+            return Ok(new { 
+                message = "Audio generated successfully",
+                audioUrl = audioResult.Url
+            });
+        }
+        catch (Exception ex)
+        {
+            // Log chi tiết lỗi
+            Console.WriteLine($"Error in GenerateAudio endpoint: {ex}");
+            return StatusCode(500, new { message = $"Lỗi tạo audio: {ex.Message}" });
+        }
     }
 
     // GET api/vocabularies/{id}

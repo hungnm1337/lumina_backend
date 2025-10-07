@@ -90,6 +90,7 @@ public class ArticleQueryParams
     public string? Search { get; set; }
     public int? CategoryId { get; set; }
     public bool? IsPublished { get; set; }
+    public string? Status { get; set; }
 }
 
 public class PagedResponse<T>
@@ -98,4 +99,10 @@ public class PagedResponse<T>
     public int Total { get; set; }
     public int Page { get; set; }
     public int PageSize { get; set; }
+}
+public class ArticleReviewRequest
+{
+    [Required]
+    public bool IsApproved { get; set; }
+    public string? Comment { get; set; }
 }

@@ -152,9 +152,24 @@ public class ArticleService : IArticleService
         article.UpdatedBy = updaterUserId;
         article.UpdatedAt = DateTime.UtcNow;
 
-        // TODO: cập nhật sections nếu cần (yêu cầu thêm DbSet expose). Tạm thời chỉ cập nhật metadata bài viết
+        // Cập nhật metadata bài viết
         await _unitOfWork.Articles.UpdateAsync(article);
 
+        // Cập nhật sections nếu có
+        if (request.Sections != null && request.Sections.Any())
+        {
+            var newSections = request.Sections.Select(s => new ArticleSection
+            {
+                SectionTitle = s.SectionTitle,
+                SectionContent = s.SectionContent,
+                OrderIndex = s.OrderIndex
+            }).ToList();
+
+            await _unitOfWork.Articles.UpdateSectionsAsync(id, newSections);
+        }
+
+        // Lấy lại article với sections đã cập nhật
+        article = await _unitOfWork.Articles.FindByIdAsync(id);
         var category = await _unitOfWork.Categories.FindByIdAsync(article.CategoryId);
         var author = await _unitOfWork.Users.GetUserByIdAsync(article.CreatedBy);
 
@@ -178,18 +193,35 @@ public class ArticleService : IArticleService
         };
     }
 
-    public async Task<bool> PublishArticleAsync(int id, bool publish, int updaterUserId)
+    //public async Task<bool> PublishArticleAsync(int id, bool publish, int updaterUserId)
+    //{
+    //    var article = await _unitOfWork.Articles.FindByIdAsync(id);
+    //    if (article == null)
+    //    {
+    //        return false;
+    //    }
+
+    //    article.IsPublished = publish;
+    //    article.Status = publish ? "Published" : "Draft";
+    //    article.UpdatedBy = updaterUserId;
+    //    article.UpdatedAt = DateTime.UtcNow;
+    //    await _unitOfWork.Articles.UpdateAsync(article);
+    //    return true;
+    //}
+    public async Task<bool> RequestApprovalAsync(int id, int staffUserId)
     {
         var article = await _unitOfWork.Articles.FindByIdAsync(id);
-        if (article == null)
+        if (article == null || article.Status != "Draft")
         {
+            // Chỉ cho phép gửi duyệt bài viết đang là bản nháp
             return false;
         }
 
-        article.IsPublished = publish;
-        article.Status = publish ? "Published" : "Draft";
-        article.UpdatedBy = updaterUserId;
+        article.Status = "Pending";
+        article.IsPublished = false; // Vẫn là chưa xuất bản
+        article.UpdatedBy = staffUserId;
         article.UpdatedAt = DateTime.UtcNow;
+
         await _unitOfWork.Articles.UpdateAsync(article);
         return true;
     }
@@ -197,8 +229,8 @@ public class ArticleService : IArticleService
     public async Task<PagedResponse<ArticleResponseDTO>> QueryAsync(ArticleQueryParams query)
     {
         var (items, total) = await _unitOfWork.Articles.QueryAsync(
-            query.Page, query.PageSize, query.Search, query.CategoryId, query.IsPublished, query.SortBy, query.SortDir
-        );
+        query.Page, query.PageSize, query.Search, query.CategoryId, query.IsPublished, query.Status, query.SortBy, query.SortDir
+    );
 
         var mapped = items.Select(a => new ArticleResponseDTO
         {
@@ -226,5 +258,32 @@ public class ArticleService : IArticleService
             Page = query.Page,
             PageSize = query.PageSize
         };
+    }
+    public async Task<bool> ReviewArticleAsync(int id, ArticleReviewRequest request, int managerUserId)
+    {
+        var article = await _unitOfWork.Articles.FindByIdAsync(id);
+        if (article == null || article.Status != "Pending")
+        {
+            // Chỉ duyệt được bài đang chờ
+            return false;
+        }
+
+        if (request.IsApproved)
+        {
+            article.Status = "Published";
+            article.IsPublished = true;
+        }
+        else
+        {
+            article.Status = "Draft"; // Trả về trạng thái nháp
+            article.IsPublished = false;
+            // Nâng cao: có thể lưu lại comment từ chối vào một trường mới trong DB
+        }
+
+        article.UpdatedBy = managerUserId;
+        article.UpdatedAt = DateTime.UtcNow;
+
+        await _unitOfWork.Articles.UpdateAsync(article);
+        return true;
     }
 }
