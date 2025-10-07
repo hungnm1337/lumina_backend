@@ -54,8 +54,9 @@ namespace Services.Upload
                 {
                     File = new FileDescription(file.FileName, file.OpenReadStream()),
                     PublicId = $"music_app/images/{Path.GetFileNameWithoutExtension(file.FileName)}_{Guid.NewGuid()}",
-                    Transformation = new Transformation().Height(500).Width(500).Crop("fill").Gravity("face")
+                    // Không đặt Transformation để giữ nguyên kích thước gốc ảnh
                 };
+
                 var imageUploadResult = await _cloudinary.UploadAsync(imageParams);
                 if (imageUploadResult.Error != null)
                 {
