@@ -11,10 +11,13 @@ using RepositoryLayer.Exam;
 using RepositoryLayer.UnitOfWork;
 using ServiceLayer.Article;
 using ServiceLayer.Auth;
+using ServiceLayer.Configs;
 using ServiceLayer.Email;
 using ServiceLayer.Exam;
+using ServiceLayer.Speaking;
+using ServiceLayer.Speech;
+using ServiceLayer.UploadFile;
 using ServiceLayer.Vocabulary;
-using Services.Upload;
 using System.Text;
 using RepositoryLayer.Slide;
 using ServiceLayer.Slide;
@@ -32,7 +35,11 @@ namespace lumina
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 
+            builder.Services.Configure<AzureSpeechSettings>(builder.Configuration.GetSection("AzureSpeechSettings"));
 
+            builder.Services.AddScoped<IAzureSpeechService, AzureSpeechService>();
+
+            builder.Services.AddScoped<ISpeakingScoringService, SpeakingScoringService>();
             builder.Services.AddScoped<IRoleRepository, RoleRepository>();
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<IRoleService, RoleService>();
@@ -92,7 +99,7 @@ namespace lumina
                         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
                     };
                 });
-
+            builder.Services.AddHttpClient();
             builder.Services.AddAuthorization();
 
 

@@ -8,7 +8,7 @@ public interface IArticleRepository
     Task AddSectionsRangeAsync(IEnumerable<ArticleSection> sections);
     Task<List<Article>> GetAllWithCategoryAndUserAsync();
     Task<Article?> FindByIdAsync(int id);
-    Task DeleteAsync(int id);
-    Task UpdateAsync(Article article);
-    Task<(List<Article> Items, int Total)> QueryAsync(int page, int pageSize, string? sortBy, string? sortDir, string? search, int? categoryId, bool? isPublished);
+    Task<bool> DeleteAsync(int id);
+    Task<Article?> UpdateAsync(Article article);
+    Task<(List<Article> items, int total)> QueryAsync(int page, int pageSize, string? search, int? categoryId, bool? isPublished, string sortBy, string sortDir);
 }

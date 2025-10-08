@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DataLayer.DTOs
+namespace DataLayer.DTOs.Exam
 {
     public class ExamDTO
     {

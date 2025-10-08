@@ -38,7 +38,7 @@ public class ArticleRepository : IArticleRepository
             .FirstOrDefaultAsync(a => a.ArticleId == id);
     }
 
-    public async Task DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(int id)
     {
         var article = await _context.Articles
             .Include(a => a.ArticleSections)
@@ -51,16 +51,19 @@ public class ArticleRepository : IArticleRepository
             // Xóa article
             _context.Articles.Remove(article);
             await _context.SaveChangesAsync();
+            return true;
         }
+        return false;
     }
 
-    public async Task UpdateAsync(Article article)
+    public async Task<Article?> UpdateAsync(Article article)
     {
         _context.Articles.Update(article);
         await _context.SaveChangesAsync();
+        return article;
     }
 
-    public async Task<(List<Article> Items, int Total)> QueryAsync(int page, int pageSize, string? sortBy, string? sortDir, string? search, int? categoryId, bool? isPublished)
+    public async Task<(List<Article> items, int total)> QueryAsync(int page, int pageSize, string? search, int? categoryId, bool? isPublished, string sortBy, string sortDir)
     {
         var query = _context.Articles
             .Include(a => a.Category)

@@ -1,9 +1,9 @@
 ﻿
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Services.Upload;
+using ServiceLayer.UploadFile;
 
-namespace soundclone.Controllers
+namespace lumina.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
@@ -26,7 +26,7 @@ namespace soundclone.Controllers
 
             try
             {
-                var uploadResult = await _uploadService.UploadFile(file);
+                var uploadResult = await _uploadService.UploadFileAsync(file);
                 return Ok(uploadResult);
             }
             catch (Exception ex)
