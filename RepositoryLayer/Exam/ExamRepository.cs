@@ -1,4 +1,4 @@
-﻿using DataLayer.DTOs;
+﻿using DataLayer.DTOs.Exam;
 using DataLayer.Models;
 using Microsoft.EntityFrameworkCore;
 using System;

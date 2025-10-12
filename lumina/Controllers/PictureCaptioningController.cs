@@ -33,7 +33,7 @@ namespace lumina.Controllers
             }
 
             // Trả về kết quả thành công
-            return Ok(new { imageUrl = imageUrl, caption = caption });
+            return Ok(new { caption = caption });
         }
     }
 }

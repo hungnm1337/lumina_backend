@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DataLayer.DTOs
+namespace DataLayer.DTOs.Exam
 {
     public class ExamDTO
     {
@@ -88,7 +88,7 @@ namespace DataLayer.DTOs
 
         public string? ReferenceAudioUrl { get; set; }
 
-        public PassageDTO  Passage { get; set; }
+        public PassageDTO Passage { get; set; }
     }
 
     public class PassageDTO

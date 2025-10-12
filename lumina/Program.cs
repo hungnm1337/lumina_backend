@@ -9,6 +9,7 @@ using ServiceLayer.Article;
 using ServiceLayer.Auth;
 using ServiceLayer.Email;
 using ServiceLayer.Exam;
+using ServiceLayer.Exam.Writting;
 using ServiceLayer.Vocabulary;
 using Services.Upload;
 using System.Text;
@@ -53,6 +54,7 @@ namespace lumina
             builder.Services.AddScoped<IVocabularyListService, VocabularyListService>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
             builder.Services.AddScoped<IArticleService, ArticleService>();
+            builder.Services.AddScoped<IWrittingService, WrittingService>();
             builder.Services.AddCors(options =>
             {
                 options.AddDefaultPolicy(policy =>
