@@ -1,4 +1,3 @@
-﻿using System;
 using DataLayer.DTOs.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -7,9 +6,10 @@ using ServiceLayer.Auth;
 
 namespace lumina.Controllers;
 
+
 [ApiController]
 [Route("api/auth")]
-public class AuthController : ControllerBase
+public sealed class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
     private readonly IPasswordResetService _passwordResetService;
@@ -20,83 +20,91 @@ public class AuthController : ControllerBase
         _passwordResetService = passwordResetService;
     }
 
+   
     [HttpPost("login")]
     [AllowAnonymous]
-    public async Task<IActionResult> Login([FromBody] LoginRequestDTO request, CancellationToken cancellationToken)
+    public async Task<IActionResult> Login([FromBody] LoginRequestDTO request)
     {
+        // Model validation được xử lý tự động bởi ASP.NET Core
         if (!ModelState.IsValid)
         {
-            return BadRequest(new ErrorResponse("Invalid login request."));
+            return BadRequest(new ErrorResponse("Invalid login request"));
         }
 
-        return await ExecuteAsync(() => _authService.LoginAsync(request, cancellationToken));
+        return await ExecuteAsync(() => _authService.LoginAsync(request));
     }
 
+    
     [HttpPost("google-login")]
     [AllowAnonymous]
-    public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request)
     {
         if (!ModelState.IsValid)
         {
-            return BadRequest(new ErrorResponse("Invalid Google login request."));
+            return BadRequest(new ErrorResponse("Invalid Google login request"));
         }
 
-        return await ExecuteAsync(() => _authService.GoogleLoginAsync(request, cancellationToken));
+        return await ExecuteAsync(() => _authService.GoogleLoginAsync(request));
     }
 
+    
     [HttpPost("register")]
     [AllowAnonymous]
-    public async Task<IActionResult> Register([FromBody] RegisterRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
         if (!ModelState.IsValid)
         {
-            return BadRequest(new ErrorResponse("Invalid registration request."));
+            return BadRequest(new ErrorResponse("Invalid registration request"));
         }
 
-        return await ExecuteAsync(() => _authService.RegisterAsync(request, cancellationToken), StatusCodes.Status201Created);
+        return await ExecuteAsync(() => _authService.RegisterAsync(request), StatusCodes.Status201Created);
     }
 
     [HttpPost("forgot-password")]
     [AllowAnonymous]
-    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
     {
         if (!ModelState.IsValid)
         {
-            return BadRequest(new ErrorResponse("Invalid forgot password request."));
+            return BadRequest(new ErrorResponse("Invalid forgot password request"));
         }
 
-        return await ExecuteAsync(() => _passwordResetService.SendPasswordResetCodeAsync(request, cancellationToken));
+        return await ExecuteAsync(() => _passwordResetService.SendPasswordResetCodeAsync(request));
     }
 
+    
     [HttpPost("forgot-password/verify-otp")]
     [AllowAnonymous]
-    public async Task<IActionResult> VerifyForgotPasswordOtp([FromBody] VerifyResetCodeRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> VerifyForgotPasswordOtp([FromBody] VerifyResetCodeRequest request)
     {
         if (!ModelState.IsValid)
         {
-            return BadRequest(new ErrorResponse("Invalid verification request."));
+            return BadRequest(new ErrorResponse("Invalid verification request"));
         }
 
-        return await ExecuteAsync(() => _passwordResetService.VerifyResetCodeAsync(request, cancellationToken));
+        return await ExecuteAsync(() => _passwordResetService.VerifyResetCodeAsync(request));
     }
 
+    
     [HttpPost("forgot-password/reset")]
     [AllowAnonymous]
-    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
     {
         if (!ModelState.IsValid)
         {
-            return BadRequest(new ErrorResponse("Invalid password reset request."));
+            return BadRequest(new ErrorResponse("Invalid password reset request"));
         }
 
-        return await ExecuteAsync(() => _passwordResetService.ResetPasswordAsync(request, cancellationToken));
+        return await ExecuteAsync(() => _passwordResetService.ResetPasswordAsync(request));
     }
 
+    
     private async Task<IActionResult> ExecuteAsync<T>(Func<Task<T>> action, int successStatusCode = StatusCodes.Status200OK)
     {
         try
         {
             var result = await action();
+
             if (successStatusCode == StatusCodes.Status200OK)
             {
                 return Ok(result);
