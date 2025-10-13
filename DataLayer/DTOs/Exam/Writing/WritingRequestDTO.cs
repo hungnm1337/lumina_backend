@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace DataLayer.DTOs.Exam.Writting
 {
-    public class WrittingRequestDTO
+    public class WritingRequestDTO
     {
         public string PictureCaption { get; set; }
 

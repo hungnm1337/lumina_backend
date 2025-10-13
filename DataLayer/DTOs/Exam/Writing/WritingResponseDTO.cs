@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace DataLayer.DTOs.Exam.Writting
 {
-    public class WrittingResponseDTO
+    public class WritingResponseDTO
     {
         public int TotalScore { get; set; }
         public string GrammarFeedback { get; set; }

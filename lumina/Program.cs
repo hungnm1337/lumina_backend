@@ -54,7 +54,7 @@ namespace lumina
             builder.Services.AddScoped<IVocabularyListService, VocabularyListService>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
             builder.Services.AddScoped<IArticleService, ArticleService>();
-            builder.Services.AddScoped<IWrittingService, WrittingService>();
+            builder.Services.AddScoped<IWritingService, WritingService>();
             builder.Services.AddCors(options =>
             {
                 options.AddDefaultPolicy(policy =>

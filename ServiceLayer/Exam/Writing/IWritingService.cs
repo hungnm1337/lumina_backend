@@ -8,8 +8,8 @@ using System.Threading.Tasks;
 
 namespace ServiceLayer.Exam.Writting
 {
-    public interface IWrittingService
+    public interface IWritingService
     {
-        public Task<WrittingResponseDTO> GetFeedbackFromAI(WrittingRequestDTO request);
+        public Task<WritingResponseDTO> GetFeedbackFromAI(WritingRequestDTO request);
     }
 }

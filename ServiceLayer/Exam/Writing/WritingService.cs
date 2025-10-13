@@ -11,18 +11,18 @@ using GenerativeAI;
 
 namespace ServiceLayer.Exam.Writting
 {
-    public class WrittingService : IWrittingService
+    public class WritingService : IWritingService
     {
         private readonly IConfiguration _configuration;
         private readonly string _apiKey;
 
-        public WrittingService(IConfiguration configuration)
+        public WritingService(IConfiguration configuration)
         {
             _configuration = configuration;
             _apiKey = _configuration["Gemini:ApiKey"];
         }
 
-        public async Task<WrittingResponseDTO> GetFeedbackFromAI(WrittingRequestDTO request)
+        public async Task<WritingResponseDTO> GetFeedbackFromAI(WritingRequestDTO request)
         {
             try
             {
@@ -51,14 +51,14 @@ namespace ServiceLayer.Exam.Writting
                 responseText = responseText.Trim().Replace("```json", "").Replace("```", "");
 
                 // Parse JSON response to WrittingResponseDTO
-                var result = JsonConvert.DeserializeObject<WrittingResponseDTO>(responseText);
+                var result = JsonConvert.DeserializeObject<WritingResponseDTO>(responseText);
 
                 return result ?? throw new Exception("Failed to deserialize Gemini API response.");
             }
             catch (Exception ex)
             {
                 // Return error response
-                return new WrittingResponseDTO
+                return new WritingResponseDTO
                 {
                     TotalScore = 0,
                     GrammarFeedback = $"Error: {ex.Message}",
@@ -70,7 +70,7 @@ namespace ServiceLayer.Exam.Writting
             }
         }
 
-        private string CreatePrompt(WrittingRequestDTO request)
+        private string CreatePrompt(WritingRequestDTO request)
         {
             // This method remains the same
             return $@"

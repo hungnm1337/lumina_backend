@@ -7,17 +7,17 @@ namespace lumina.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class WrittingExamController : ControllerBase
+    public class WritingExamController : ControllerBase
     {
-        public readonly IWrittingService _writtingService;
+        public readonly IWritingService _writtingService;
 
-        public WrittingExamController(IWrittingService writtingService)
+        public WritingExamController(IWritingService writtingService)
         {
             _writtingService = writtingService;
         }
 
         [HttpPost("feedback")]
-        public async Task<ActionResult<WrittingResponseDTO>> GetFeedbackFromAI([FromBody] WrittingRequestDTO request)
+        public async Task<ActionResult<WritingResponseDTO>> GetFeedbackFromAI([FromBody] WritingRequestDTO request)
         {
             if (request == null || string.IsNullOrEmpty(request.PictureCaption) || string.IsNullOrEmpty(request.VocabularyRequest) || string.IsNullOrEmpty(request.UserAnswer))
             {
