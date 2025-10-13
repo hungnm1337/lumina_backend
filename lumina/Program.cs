@@ -13,6 +13,7 @@ using ServiceLayer.Exam;
 using ServiceLayer.Speaking;
 using ServiceLayer.Speech;
 using ServiceLayer.UploadFile;
+using ServiceLayer.User;
 using ServiceLayer.Vocabulary;
 using System.Text;
 
@@ -43,8 +44,12 @@ namespace lumina
 
 
             builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
-            builder.Services.AddScoped<IAuthService, AuthService>();
-            builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
+            
+            // Auth services - Tuân thủ SOLID principles
+            builder.Services.AddScoped<IGoogleAuthService, GoogleAuthService>(); // Service xử lý Google authentication
+            builder.Services.AddScoped<IAuthService, AuthService>(); // Service xử lý authentication chính
+            builder.Services.AddScoped<IPasswordResetService, PasswordResetService>(); // Service xử lý reset password
+            
             builder.Services.AddScoped<IUploadService, UploadService>();
             builder.Services.AddTransient<IEmailSender, SmtpEmailSender>();
             builder.Services.AddScoped<IArticleRepository, ArticleRepository>();
