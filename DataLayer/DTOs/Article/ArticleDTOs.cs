@@ -55,6 +55,7 @@ public class ArticleResponseDTO
     public DateTime CreatedAt { get; set; }
     public string AuthorName { get; set; } = string.Empty;
     public string CategoryName { get; set; } = string.Empty;
+    public string? RejectionReason { get; set; }
     public List<ArticleSectionResponseDTO> Sections { get; set; } = new();
 }
 

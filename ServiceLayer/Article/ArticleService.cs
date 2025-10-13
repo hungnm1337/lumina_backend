@@ -76,6 +76,7 @@ public class ArticleService : IArticleService
                 CreatedAt = article.CreatedAt,
                 AuthorName = creator.FullName,
                 CategoryName = category.CategoryName,
+                RejectionReason = article.RejectionReason,
                 Sections = articleSections.Select(s => new ArticleSectionResponseDTO
                 {
                     SectionId = s.SectionId,
@@ -107,6 +108,7 @@ public class ArticleService : IArticleService
             CreatedAt = article.CreatedAt,
             AuthorName = article.CreatedByNavigation?.FullName ?? "Unknown",
             CategoryName = article.Category?.CategoryName ?? "Unknown",
+            RejectionReason = article.RejectionReason,
             Sections = article.ArticleSections?.Select(s => new ArticleSectionResponseDTO
             {
                 SectionId = s.SectionId,
@@ -193,27 +195,12 @@ public class ArticleService : IArticleService
         };
     }
 
-    //public async Task<bool> PublishArticleAsync(int id, bool publish, int updaterUserId)
-    //{
-    //    var article = await _unitOfWork.Articles.FindByIdAsync(id);
-    //    if (article == null)
-    //    {
-    //        return false;
-    //    }
-
-    //    article.IsPublished = publish;
-    //    article.Status = publish ? "Published" : "Draft";
-    //    article.UpdatedBy = updaterUserId;
-    //    article.UpdatedAt = DateTime.UtcNow;
-    //    await _unitOfWork.Articles.UpdateAsync(article);
-    //    return true;
-    //}
     public async Task<bool> RequestApprovalAsync(int id, int staffUserId)
     {
         var article = await _unitOfWork.Articles.FindByIdAsync(id);
-        if (article == null || article.Status != "Draft")
+        if (article == null || (article.Status != "Draft" && article.Status != "Rejected"))
         {
-            // Chỉ cho phép gửi duyệt bài viết đang là bản nháp
+            // Chỉ cho phép gửi duyệt bài viết đang là bản nháp hoặc đã bị từ chối
             return false;
         }
 
@@ -242,6 +229,7 @@ public class ArticleService : IArticleService
             CreatedAt = a.CreatedAt,
             AuthorName = a.CreatedByNavigation?.FullName ?? "Unknown",
             CategoryName = a.Category?.CategoryName ?? "Unknown",
+            RejectionReason = a.RejectionReason,
             Sections = a.ArticleSections?.OrderBy(s => s.OrderIndex).Select(s => new ArticleSectionResponseDTO
             {
                 SectionId = s.SectionId,
@@ -272,12 +260,13 @@ public class ArticleService : IArticleService
         {
             article.Status = "Published";
             article.IsPublished = true;
+            article.RejectionReason = null; // Clear rejection reason when approved
         }
         else
         {
-            article.Status = "Draft"; // Trả về trạng thái nháp
+            article.Status = "Rejected"; // Changed from Draft to Rejected
             article.IsPublished = false;
-            // Nâng cao: có thể lưu lại comment từ chối vào một trường mới trong DB
+            article.RejectionReason = request.Comment; // Save rejection reason
         }
 
         article.UpdatedBy = managerUserId;
@@ -285,5 +274,38 @@ public class ArticleService : IArticleService
 
         await _unitOfWork.Articles.UpdateAsync(article);
         return true;
+    }
+    public async Task<ArticleResponseDTO?> GetArticleByIdAsync(int id)
+    {
+        var article = await _unitOfWork.Articles.FindByIdAsync(id);
+        if (article == null || article.IsPublished != true) // Chỉ lấy bài đã published
+        {
+            return null;
+        }
+
+        var category = await _unitOfWork.Categories.FindByIdAsync(article.CategoryId);
+        var author = await _unitOfWork.Users.GetUserByIdAsync(article.CreatedBy);
+
+        return new ArticleResponseDTO
+        {
+            ArticleId = article.ArticleId,
+            Title = article.Title,
+            Summary = article.Summary,
+            IsPublished = article.IsPublished,
+            Status = article.Status,
+            CreatedAt = article.CreatedAt,
+            AuthorName = author?.FullName ?? "Unknown",
+            CategoryName = category?.CategoryName ?? "Unknown",
+            RejectionReason = article.RejectionReason,
+            Sections = article.ArticleSections
+                .OrderBy(s => s.OrderIndex)
+                .Select(s => new ArticleSectionResponseDTO
+                {
+                    SectionId = s.SectionId,
+                    SectionTitle = s.SectionTitle,
+                    SectionContent = s.SectionContent,
+                    OrderIndex = s.OrderIndex
+                }).ToList()
+        };
     }
 }

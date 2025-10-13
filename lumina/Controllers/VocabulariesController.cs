@@ -31,9 +31,10 @@ public class VocabulariesController : ControllerBase
             listId = v.VocabularyListId,
             word = v.Word,
             type = v.TypeOfWord,
+            category = v.Category,
             definition = v.Definition,
             example = v.Example,
-            audioUrl = v.AudioUrl // Thêm audio URL
+          
         }));
     }
 
@@ -42,6 +43,7 @@ public class VocabulariesController : ControllerBase
         public int VocabularyListId { get; set; }
         public string Word { get; set; } = string.Empty;
         public string TypeOfWord { get; set; } = string.Empty; // noun, verb, adj...
+        public string? Category { get; set; }
         public string Definition { get; set; } = string.Empty;
         public string? Example { get; set; }
         public bool GenerateAudio { get; set; } = true; // Thêm option để tạo audio
@@ -79,9 +81,10 @@ public class VocabulariesController : ControllerBase
             VocabularyListId = req.VocabularyListId,
             Word = req.Word,
             TypeOfWord = req.TypeOfWord,
+            Category = req.Category,
             Definition = req.Definition,
             Example = req.Example,
-            AudioUrl = audioUrl, // Thêm audio URL
+           
             IsDeleted = false
         };
         await _unitOfWork.Vocabularies.AddAsync(vocab);
@@ -114,7 +117,7 @@ public class VocabulariesController : ControllerBase
 
             // Tạo audio trực tiếp
             var audioResult = await _ttsService.GenerateAudioAsync(vocab.Word);
-            vocab.AudioUrl = audioResult.Url;
+         
             
             await _unitOfWork.Vocabularies.UpdateAsync(vocab);
             await _unitOfWork.CompleteAsync();
@@ -149,6 +152,7 @@ public class VocabulariesController : ControllerBase
             listId = vocab.VocabularyListId,
             word = vocab.Word,
             type = vocab.TypeOfWord,
+            category = vocab.Category,
             definition = vocab.Definition,
             example = vocab.Example
         });
@@ -172,6 +176,7 @@ public class VocabulariesController : ControllerBase
 
         vocab.Word = req.Word;
         vocab.TypeOfWord = req.TypeOfWord;
+        vocab.Category = req.Category;
         vocab.Definition = req.Definition;
         vocab.Example = req.Example;
 
@@ -215,6 +220,7 @@ public class VocabulariesController : ControllerBase
             listId = v.VocabularyListId,
             word = v.Word,
             type = v.TypeOfWord,
+            category = v.Category,
             definition = v.Definition,
             example = v.Example
         }));
@@ -232,9 +238,37 @@ public class VocabulariesController : ControllerBase
             listId = v.VocabularyListId,
             word = v.Word,
             type = v.TypeOfWord,
+            category = v.Category,
             definition = v.Definition,
             example = v.Example
         }));
+    }
+
+    // GET api/vocabularies/by-category/{category}
+    [HttpGet("by-category/{category}")]
+    [Authorize(Roles = "Staff")]
+    public async Task<IActionResult> GetByCategory(string category)
+    {
+        var results = await _unitOfWork.Vocabularies.GetByCategoryAsync(category);
+        return Ok(results.Select(v => new
+        {
+            id = v.VocabularyId,
+            listId = v.VocabularyListId,
+            word = v.Word,
+            type = v.TypeOfWord,
+            category = v.Category,
+            definition = v.Definition,
+            example = v.Example
+        }));
+    }
+
+    // GET api/vocabularies/categories
+    [HttpGet("categories")]
+    [Authorize(Roles = "Staff")]
+    public async Task<IActionResult> GetCategories()
+    {
+        var categories = await _unitOfWork.Vocabularies.GetDistinctCategoriesAsync();
+        return Ok(categories);
     }
 
     // GET api/vocabularies/stats
@@ -256,6 +290,7 @@ public class VocabulariesController : ControllerBase
     {
         public string Word { get; set; } = string.Empty;
         public string TypeOfWord { get; set; } = string.Empty;
+        public string? Category { get; set; }
         public string Definition { get; set; } = string.Empty;
         public string? Example { get; set; }
     }

@@ -4,6 +4,7 @@ using DataLayer.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataLayer.Migrations
 {
     [DbContext(typeof(LuminaSystemContext))]
-    partial class LuminaSystemContextModelSnapshot : ModelSnapshot
+    [Migration("20251008040817_v14")]
+    partial class v14
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1249,10 +1252,6 @@ namespace DataLayer.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("VocabularyId"));
 
-                    b.Property<string>("Category")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
                     b.Property<string>("Definition")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -1268,9 +1267,6 @@ namespace DataLayer.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<int?>("VocabularyFolderId")
-                        .HasColumnType("int");
-
                     b.Property<int>("VocabularyListId")
                         .HasColumnType("int");
 
@@ -1282,61 +1278,9 @@ namespace DataLayer.Migrations
                     b.HasKey("VocabularyId")
                         .HasName("PK__Vocabula__9274069F7C141637");
 
-                    b.HasIndex("VocabularyFolderId");
-
                     b.HasIndex("VocabularyListId");
 
                     b.ToTable("Vocabularies");
-                });
-
-            modelBuilder.Entity("DataLayer.Models.VocabularyFolder", b =>
-                {
-                    b.Property<int>("VocabularyFolderId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("VocabularyFolderId"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("CreatedBy")
-                        .HasColumnType("int");
-
-                    b.Property<int>("CreatedByNavigationUserId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool?>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("ParentFolderId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("SortOrder")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("VocabularyListId")
-                        .HasColumnType("int");
-
-                    b.HasKey("VocabularyFolderId");
-
-                    b.HasIndex("CreatedByNavigationUserId");
-
-                    b.HasIndex("ParentFolderId");
-
-                    b.HasIndex("VocabularyListId");
-
-                    b.ToTable("VocabularyFolders");
                 });
 
             modelBuilder.Entity("DataLayer.Models.VocabularyList", b =>
@@ -1804,42 +1748,11 @@ namespace DataLayer.Migrations
 
             modelBuilder.Entity("DataLayer.Models.Vocabulary", b =>
                 {
-                    b.HasOne("DataLayer.Models.VocabularyFolder", "VocabularyFolder")
-                        .WithMany("Vocabularies")
-                        .HasForeignKey("VocabularyFolderId");
-
                     b.HasOne("DataLayer.Models.VocabularyList", "VocabularyList")
                         .WithMany("Vocabularies")
                         .HasForeignKey("VocabularyListId")
                         .IsRequired()
                         .HasConstraintName("FK_Vocabularies_VocabularyList");
-
-                    b.Navigation("VocabularyFolder");
-
-                    b.Navigation("VocabularyList");
-                });
-
-            modelBuilder.Entity("DataLayer.Models.VocabularyFolder", b =>
-                {
-                    b.HasOne("DataLayer.Models.User", "CreatedByNavigation")
-                        .WithMany()
-                        .HasForeignKey("CreatedByNavigationUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("DataLayer.Models.VocabularyFolder", "ParentFolder")
-                        .WithMany("SubFolders")
-                        .HasForeignKey("ParentFolderId");
-
-                    b.HasOne("DataLayer.Models.VocabularyList", "VocabularyList")
-                        .WithMany()
-                        .HasForeignKey("VocabularyListId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("CreatedByNavigation");
-
-                    b.Navigation("ParentFolder");
 
                     b.Navigation("VocabularyList");
                 });
@@ -1992,13 +1905,6 @@ namespace DataLayer.Migrations
             modelBuilder.Entity("DataLayer.Models.UserAnswer", b =>
                 {
                     b.Navigation("SpeakingResult");
-                });
-
-            modelBuilder.Entity("DataLayer.Models.VocabularyFolder", b =>
-                {
-                    b.Navigation("SubFolders");
-
-                    b.Navigation("Vocabularies");
                 });
 
             modelBuilder.Entity("DataLayer.Models.VocabularyList", b =>

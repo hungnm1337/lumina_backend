@@ -59,10 +59,14 @@ public class ArticlesController : ControllerBase
 
     [HttpGet("{id}", Name = "GetArticleById")]
     [AllowAnonymous]
-    public IActionResult GetArticleById(int id)
+    public async Task<IActionResult> GetArticleById(int id)
     {
-        // TODO: Implement this endpoint properly later.
-        return Ok(new { Message = $"This is a placeholder for getting article with ID {id}." });
+        var article = await _articleService.GetArticleByIdAsync(id);
+        if (article == null)
+        {
+            return NotFound();
+        }
+        return Ok(article);
     }
 
     [HttpGet("categories")]
@@ -125,24 +129,6 @@ public class ArticlesController : ControllerBase
         return Ok(updated);
     }
 
-    //// POST api/articles/{id}/publish
-    //[HttpPost("{id}/publish")]
-    //[Authorize(Roles = "Staff")]
-    //public async Task<ActionResult> Publish(int id, [FromBody] ArticlePublishRequest req)
-    //{
-    //    var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-    //    if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var updaterUserId))
-    //    {
-    //        return Unauthorized(new ErrorResponse("Invalid token - User ID could not be determined."));
-    //    }
-
-    //    var ok = await _articleService.PublishArticleAsync(id, req.Publish, updaterUserId);
-    //    if (!ok)
-    //    {
-    //        return NotFound(new ErrorResponse($"Article with ID {id} not found."));
-    //    }
-    //    return NoContent();
-    //}
     [HttpPost("{id}/request-approval")]
     [Authorize(Roles = "Staff")]
     public async Task<IActionResult> RequestApproval(int id)

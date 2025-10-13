@@ -17,7 +17,7 @@ public partial class Vocabulary
 
     public string TypeOfWord { get; set; } = null!;
 
-    public string? AudioUrl { get; set; } // Thêm trường này
+    public string? Category { get; set; }
 
     public bool? IsDeleted { get; set; }
 

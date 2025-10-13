@@ -8,7 +8,7 @@ public interface IArticleService
     Task<bool> DeleteArticleAsync(int id);
     Task<ArticleResponseDTO?> UpdateArticleAsync(int id, ArticleUpdateDTO request, int updaterUserId);
     Task<bool> RequestApprovalAsync(int id, int staffUserId); 
-    Task<bool> ReviewArticleAsync(int id, ArticleReviewRequest request, int managerUserId); 
-
+    Task<bool> ReviewArticleAsync(int id, ArticleReviewRequest request, int managerUserId);
+    Task<ArticleResponseDTO?> GetArticleByIdAsync(int id);
     Task<PagedResponse<ArticleResponseDTO>> QueryAsync(ArticleQueryParams query);
 }

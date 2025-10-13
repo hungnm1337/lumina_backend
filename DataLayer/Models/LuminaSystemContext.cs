@@ -139,6 +139,7 @@ public partial class LuminaSystemContext : DbContext
             entity.Property(e => e.Status).HasMaxLength(15);
             entity.Property(e => e.Title).HasMaxLength(255);
             entity.Property(e => e.UpdatedAt).HasPrecision(3);
+            entity.Property(e => e.RejectionReason).HasMaxLength(1000);
 
             entity.HasOne(d => d.Category).WithMany(p => p.Articles)
                 .HasForeignKey(d => d.CategoryId)
@@ -627,6 +628,7 @@ public partial class LuminaSystemContext : DbContext
             entity.Property(e => e.VocabularyId).HasColumnName("VocabularyID");
             entity.Property(e => e.TypeOfWord).HasMaxLength(50);
             entity.Property(e => e.Word).HasMaxLength(255);
+            entity.Property(e => e.Category).HasMaxLength(100);
 
             entity.HasOne(d => d.VocabularyList).WithMany(p => p.Vocabularies)
                 .HasForeignKey(d => d.VocabularyListId)

@@ -11,6 +11,8 @@ public interface IVocabularyRepository
     Task<List<Vocabulary>> SearchAsync(string searchTerm, int? listId = null);
     Task<int> GetTotalCountAsync();
     Task<List<Vocabulary>> GetByTypeAsync(string typeOfWord);
+    Task<List<Vocabulary>> GetByCategoryAsync(string category);
+    Task<List<string>> GetDistinctCategoriesAsync();
 }
 
 
