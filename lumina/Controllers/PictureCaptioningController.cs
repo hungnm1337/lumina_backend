@@ -15,24 +15,23 @@ namespace lumina.Controllers
             _captioningService = captioningService;
         }
 
-        [HttpPost("generate-caption")]
-        public async Task<IActionResult> GenerateCaption([FromBody] string imageUrl)
+       
+
+        [HttpGet("generate-caption")]
+        public async Task<IActionResult> GenerateCaption([FromQuery] string imageUrl)
         {
             if (string.IsNullOrEmpty(imageUrl))
             {
                 return BadRequest("Image URL is required.");
             }
 
-            // Gọi API Python
             string caption = await _captioningService.GetCaptionFromImageUrl(imageUrl);
 
             if (caption.StartsWith("Error"))
             {
-                // Trả về lỗi nếu có vấn đề (Ví dụ: 500 Internal Server Error)
                 return StatusCode(500, new { error = caption });
             }
 
-            // Trả về kết quả thành công
             return Ok(new { caption = caption });
         }
     }

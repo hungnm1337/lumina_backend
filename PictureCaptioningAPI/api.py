@@ -19,6 +19,10 @@ try:
     # Tải bộ mã hóa/giải mã văn bản (Tokenizer)
     # Dùng để chuyển đổi văn bản thành token ID và ngược lại
     tokenizer = AutoTokenizer.from_pretrained(model_name)
+    # Một số tokenizer (ví dụ GPT-2) không có pad token, dẫn đến cảnh báo attention_mask
+    # Thiết lập pad_token = eos_token để tránh cảnh báo và xử lý padding đúng
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
     
     # Tải mô hình VisionEncoderDecoderModel
     # Đây là mô hình chính kết hợp Vision Transformer (ViT) và GPT-2
@@ -26,7 +30,10 @@ try:
     
     # Cấu hình một số tham số tạo văn bản cho mô hình
     # Đây là các tham số giúp mô hình tạo ra chú thích tốt hơn
-    model.config.decoder_start_token_id = tokenizer.cls_token_id
+    # Sử dụng BOS làm token bắt đầu cho decoder nếu có, fallback về CLS
+    model.config.decoder_start_token_id = getattr(tokenizer, "bos_token_id", None) or tokenizer.cls_token_id
+    # Thiết lập EOS và PAD thống nhất để tránh cảnh báo khi generate
+    model.config.eos_token_id = tokenizer.eos_token_id
     model.config.pad_token_id = tokenizer.pad_token_id
     model.config.vocab_size = model.config.decoder.vocab_size
     
