@@ -1,6 +1,7 @@
 ﻿using DataLayer.DTOs.Passage;
 using DataLayer.DTOs.Questions;
 using DataLayer.Models;
+using RepositoryLayer.Generic;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +10,8 @@ using System.Threading.Tasks;
 
 namespace RepositoryLayer.Questions
 {
-    public interface IQuestionRepository
+    public interface IQuestionRepository : IRepository<Question>
+
     {
         Task<Passage> AddPassageAsync(Passage passage);
         Task<Prompt> AddPromptAsync(Prompt prompt);
