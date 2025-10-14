@@ -1,16 +1,21 @@
-using DataLayer.Models;
+﻿using DataLayer.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using RepositoryLayer;
 using RepositoryLayer.Exam;
+using RepositoryLayer.Import;
+using RepositoryLayer.Questions;
 using RepositoryLayer.UnitOfWork;
 using ServiceLayer.Article;
 using ServiceLayer.Auth;
 using ServiceLayer.Email;
 using ServiceLayer.Exam;
+using ServiceLayer.Import;
+using ServiceLayer.Questions;
 using Services.Upload;
 using System.Text;
+using OfficeOpenXml;
 
 namespace lumina
 {
@@ -18,6 +23,7 @@ namespace lumina
     {
         public static void Main(string[] args)
         {
+
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
@@ -43,6 +49,15 @@ namespace lumina
             builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
             builder.Services.AddScoped<IUserRepository, UserRepository>();
 
+            builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
+            builder.Services.AddScoped<IQuestionService, QuestionService>();
+
+            builder.Services.AddScoped<IImportRepository, ImportRepository>();
+            builder.Services.AddScoped<IImportService, ImportService>();
+            builder.Services.AddScoped<IExamPartRepository, ExamPartRepository>();
+            builder.Services.AddScoped<IExamPartService, ExamPartService>();
+
+
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             builder.Services.AddScoped<IArticleService, ArticleService>();
@@ -58,8 +73,8 @@ namespace lumina
             });
 
 
-            builder.Services.AddScoped<IExamService, ExamService>();
-            builder.Services.AddScoped<IExamRepository, ExamRepository>();
+            builder.Services.AddScoped<IExamPartService, ExamPartService>();
+            builder.Services.AddScoped<IExamPartRepository, ExamPartRepository>();
 
             var jwtSection = builder.Configuration.GetSection("Jwt");
             var jwtSecret = jwtSection["SecretKey"] ?? throw new InvalidOperationException("JWT secret key is not configured.");
@@ -89,6 +104,9 @@ namespace lumina
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+
+
+
 
             var app = builder.Build();
 
