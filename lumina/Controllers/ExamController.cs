@@ -2,7 +2,7 @@
 using ServiceLayer.Exam;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using DataLayer.DTOs;
+using DataLayer.DTOs.Exam;
 
 namespace lumina.Controllers
 {

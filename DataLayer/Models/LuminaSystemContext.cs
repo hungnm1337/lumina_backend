@@ -71,6 +71,7 @@ public partial class LuminaSystemContext : DbContext
     public virtual DbSet<UserNotification> UserNotifications { get; set; }
 
     public virtual DbSet<UserSpacedRepetition> UserSpacedRepetitions { get; set; }
+    public virtual DbSet<SpeakingResult> SpeakingResults { get; set; }
 
     public virtual DbSet<Vocabulary> Vocabularies { get; set; }
 
@@ -170,6 +171,10 @@ public partial class LuminaSystemContext : DbContext
                 .HasForeignKey(d => d.CreatedByUserId)
                 .HasConstraintName("FK_ArticleCategories_Users");
         });
+        modelBuilder.Entity<UserAnswer>()
+            .HasOne(a => a.SpeakingResult)
+            .WithOne(s => s.UserAnswer)
+            .HasForeignKey<SpeakingResult>(s => s.UserAnswerId);
 
         modelBuilder.Entity<ArticleSection>(entity =>
         {
@@ -484,6 +489,10 @@ public partial class LuminaSystemContext : DbContext
             entity.Property(e => e.FeedbackAi).HasColumnName("FeedbackAI");
             entity.Property(e => e.QuestionId).HasColumnName("QuestionID");
             entity.Property(e => e.SelectedOptionId).HasColumnName("SelectedOptionID");
+            entity.Property(e => e.AnswerContent).HasColumnType("text");
+            entity.Property(e => e.AudioUrl).HasColumnName("AudioURL");
+            entity.Property(e => e.Score).HasColumnName("Score");
+            entity.Property(e => e.IsCorrect).HasColumnName("IsCorrect");
 
             entity.HasOne(d => d.Attempt).WithMany(p => p.UserAnswers)
                 .HasForeignKey(d => d.AttemptId)

@@ -358,3 +358,6 @@ FodyWeavers.xsd
 # Custom: Ignore appsettings.json files
 appsettings.json
 appsettings.*.json
+
+lumina/appsettings.json
+lumina/appsettings.json

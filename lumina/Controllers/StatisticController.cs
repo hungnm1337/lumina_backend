@@ -1,4 +1,5 @@
 ﻿using DataLayer.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore; // Khai báo namespace EF Core
 using System;
@@ -28,7 +29,7 @@ namespace lumina.Controllers
             var registeredToday = await _systemContext.Users
      .Where(u => u.RoleId == 4
          && u.Accounts.Any()
-         && u.Accounts.OrderBy(a => a.CreateAt).FirstOrDefault().CreateAt.Date == today)
+         && u.Accounts.OrderBy(a => a.CreateAt).FirstOrDefault()!.CreateAt.Date == today)
      .CountAsync();
 
             // Doanh thu tháng (Payment.Status = 'Success', tháng hiện tại)
@@ -198,7 +199,7 @@ namespace lumina.Controllers
                     }
                     else
                     {
-                        totalDays += (int)((currentEnd.Value - currentStart.Value).TotalDays) + 1;
+                        totalDays += (int)((currentEnd!.Value - currentStart!.Value).TotalDays) + 1;
                         currentStart = sub.StartDate;
                         currentEnd = sub.EndDate;
                     }
@@ -207,7 +208,7 @@ namespace lumina.Controllers
 
             if (currentStart != null && currentEnd != null)
             {
-                totalDays += (int)((currentEnd.Value - currentStart.Value).TotalDays) + 1;
+                totalDays += (int)((currentEnd!.Value - currentStart!.Value).TotalDays) + 1;
             }
 
 
@@ -235,8 +236,167 @@ namespace lumina.Controllers
             });
         }
 
+        [HttpGet("staff-dashboard")]
+        [Authorize(Roles = "Staff")]
+        public async Task<IActionResult> GetStaffDashboardStats()
+        {
+            var now = DateTime.UtcNow;
+            var firstOfMonth = new DateTime(now.Year, now.Month, 1);
+            var lastMonth = firstOfMonth.AddMonths(-1);
+            var firstOfLastMonth = new DateTime(lastMonth.Year, lastMonth.Month, 1);
 
+            // 1. Thống kê Articles
+            var totalArticles = await _systemContext.Articles.CountAsync();
+            var articlesThisMonth = await _systemContext.Articles
+                .Where(a => a.CreatedAt >= firstOfMonth)
+                .CountAsync();
+            var articlesLastMonth = await _systemContext.Articles
+                .Where(a => a.CreatedAt >= firstOfLastMonth && a.CreatedAt < firstOfMonth)
+                .CountAsync();
 
+            // 2. Thống kê Vocabulary (không có CreatedAt field)
+            var totalVocabulary = await _systemContext.Vocabularies.CountAsync();
+            var vocabularyThisMonth = 0; // Vocabulary model không có CreatedAt field
+            var vocabularyLastMonth = 0;
+
+            // 3. Thống kê Questions (từ ExamParts -> Questions)
+            var totalQuestions = await _systemContext.Questions.CountAsync();
+            var questionsThisMonth = await _systemContext.Questions
+                .Where(q => q.Part.Exam.CreatedAt >= firstOfMonth)
+                .CountAsync();
+            var questionsLastMonth = await _systemContext.Questions
+                .Where(q => q.Part.Exam.CreatedAt >= firstOfLastMonth && q.Part.Exam.CreatedAt < firstOfMonth)
+                .CountAsync();
+
+            // 4. Thống kê Tests (Exams)
+            var totalTests = await _systemContext.Exams.CountAsync();
+            var testsThisMonth = await _systemContext.Exams
+                .Where(e => e.CreatedAt >= firstOfMonth)
+                .CountAsync();
+            var testsLastMonth = await _systemContext.Exams
+                .Where(e => e.CreatedAt >= firstOfLastMonth && e.CreatedAt < firstOfMonth)
+                .CountAsync();
+
+            // 5. Recent Activities - Lấy từ nhiều nguồn
+            var recentActivities = new List<object>();
+
+            // Articles activities
+            var articleActivities = await _systemContext.Articles
+                .OrderByDescending(a => a.CreatedAt)
+                .Take(3)
+                .Select(a => new
+                {
+                    id = a.ArticleId,
+                    type = "article",
+                    title = a.Title,
+                    action = a.IsPublished == true ? "Đã xuất bản bài viết" : "Tạo bài viết mới",
+                    timestamp = a.CreatedAt,
+                    status = a.IsPublished == true ? "published" : "created"
+                })
+                .ToListAsync();
+
+            // Exam activities
+            var examActivities = await _systemContext.Exams
+                .OrderByDescending(e => e.CreatedAt)
+                .Take(2)
+                .Select(e => new
+                {
+                    id = e.ExamId,
+                    type = "test",
+                    title = e.Name,
+                    action = e.IsActive == true ? "Đã kích hoạt bài thi" : "Tạo bài thi mới",
+                    timestamp = e.CreatedAt,
+                    status = e.IsActive == true ? "published" : "created"
+                })
+                .ToListAsync();
+
+            // Vocabulary activities (không có CreatedAt field)
+            var vocabularyActivities = await _systemContext.Vocabularies
+                .Take(2)
+                .Select(v => new
+                {
+                    id = v.VocabularyId,
+                    type = "vocabulary",
+                    title = v.Word,
+                    action = "Thêm từ vựng mới",
+                    timestamp = DateTime.UtcNow.AddDays(-1), // Sử dụng thời gian giả định
+                    status = "created"
+                })
+                .ToListAsync();
+
+            // Combine và sort by timestamp
+            recentActivities.AddRange(articleActivities);
+            recentActivities.AddRange(examActivities);
+            recentActivities.AddRange(vocabularyActivities);
+
+            var sortedActivities = recentActivities
+                .OrderByDescending(a => ((dynamic)a).timestamp)
+                .Take(5)
+                .Select(a => new
+                {
+                    id = ((dynamic)a).id,
+                    type = ((dynamic)a).type,
+                    title = ((dynamic)a).title,
+                    action = ((dynamic)a).action,
+                    timestamp = GetTimeAgo(((dynamic)a).timestamp),
+                    status = ((dynamic)a).status
+                })
+                .ToList();
+
+            // 6. Productivity metrics - tính dựa trên tổng content
+            var totalContentThisMonth = articlesThisMonth + questionsThisMonth + testsThisMonth + vocabularyThisMonth;
+            var totalContentLastMonth = articlesLastMonth + questionsLastMonth + testsLastMonth + vocabularyLastMonth;
+            var productivityGrowth = totalContentLastMonth > 0 
+                ? Math.Round((double)(totalContentThisMonth - totalContentLastMonth) / totalContentLastMonth * 100, 1)
+                : 0;
+
+            // 7. Engagement metrics
+            var totalExamAttempts = await _systemContext.ExamAttempts.CountAsync();
+            var contentLikes = totalExamAttempts; // Sử dụng số lượt thi làm proxy cho engagement
+            var qualityRating = 4.8; // TODO: Implement rating system
+
+            return Ok(new
+            {
+                stats = new
+                {
+                    totalArticles,
+                    totalQuestions,
+                    totalTests,
+                    totalVocabulary,
+                    articlesThisMonth,
+                    questionsThisMonth,
+                    testsThisMonth,
+                    vocabularyThisMonth,
+                    articlesLastMonth,
+                    questionsLastMonth,
+                    testsLastMonth,
+                    vocabularyLastMonth
+                },
+                recentActivities = sortedActivities,
+                metrics = new
+                {
+                    productivityGrowth,
+                    contentLikes,
+                    qualityRating
+                }
+            });
+        }
+
+        private string GetTimeAgo(DateTime dateTime)
+        {
+            var timeSpan = DateTime.UtcNow - dateTime;
+            
+            if (timeSpan.TotalMinutes < 1)
+                return "Vừa xong";
+            else if (timeSpan.TotalMinutes < 60)
+                return $"{(int)timeSpan.TotalMinutes} phút trước";
+            else if (timeSpan.TotalHours < 24)
+                return $"{(int)timeSpan.TotalHours} giờ trước";
+            else if (timeSpan.TotalDays < 7)
+                return $"{(int)timeSpan.TotalDays} ngày trước";
+            else
+                return dateTime.ToString("dd/MM/yyyy");
+        }
 
     }
 }
