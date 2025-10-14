@@ -2,6 +2,7 @@
 using DataLayer.DTOs.Questions;
 using DataLayer.Models;
 using Microsoft.EntityFrameworkCore;
+using RepositoryLayer.Generic;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,15 +11,16 @@ using System.Threading.Tasks;
 
 namespace RepositoryLayer.Questions
 {
-    public class QuestionRepository : IQuestionRepository
+    public class QuestionRepository : Repository<Question>,IQuestionRepository
     {
 
         private readonly LuminaSystemContext _context;
 
-        public QuestionRepository(LuminaSystemContext systemContext)
+        public QuestionRepository(LuminaSystemContext context) : base(context)
         {
-            _context = systemContext;
+            _context = context;
         }
+        
         public async Task<Passage> AddPassageAsync(Passage passage)
         {
             _context.Passages.Add(passage);

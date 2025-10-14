@@ -14,7 +14,6 @@ using ServiceLayer.Email;
 using ServiceLayer.Exam;
 using ServiceLayer.Import;
 using ServiceLayer.Questions;
-using Services.Upload;
 using ServiceLayer.Speaking;
 using ServiceLayer.Speech;
 using ServiceLayer.UploadFile;
