@@ -1,23 +1,18 @@
 ﻿using DataLayer.DTOs.Passage;
 using DataLayer.DTOs.Questions;
-using DataLayer.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace RepositoryLayer.Questions
+namespace ServiceLayer.Questions
 {
-    public interface IQuestionRepository
+    public interface IQuestionService
     {
-        Task<Passage> AddPassageAsync(Passage passage);
-        Task<Prompt> AddPromptAsync(Prompt prompt);
-        Task<Question> AddQuestionAsync(Question question);
-        Task AddOptionsAsync(IEnumerable<Option> options);
+        Task<int> CreatePromptWithQuestionsAsync(CreatePromptWithQuestionsDTO dto);
 
         Task<(List<PassageDto> Items, int TotalPages)> GetPassagePromptQuestionsPagedAsync(int page, int size, int? partId);
-
         Task<bool> EditPassageWithPromptAsync(PassageEditDto dto);
 
         Task<int> AddQuestionAsync(QuestionCrudDto dto);

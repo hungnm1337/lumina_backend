@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace DataLayer.Models;
+namespace lumina.Models;
 
 public partial class ExamPart
 {
