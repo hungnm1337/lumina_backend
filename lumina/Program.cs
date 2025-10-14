@@ -69,8 +69,9 @@ namespace lumina
             builder.Services.AddScoped<IImportService, ImportService>();
             builder.Services.AddScoped<IExamPartRepository, ExamPartRepository>();
             builder.Services.AddScoped<IExamPartService, ExamPartService>();
+            builder.Services.AddScoped<IExamRepository, ExamRepository>();
 
-
+            builder.Services.AddScoped<IExamService,ExamService>();
             builder.Services.AddScoped<IVocabularyListRepository, VocabularyListRepository>();
             builder.Services.AddScoped<IVocabularyListService, VocabularyListService>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
