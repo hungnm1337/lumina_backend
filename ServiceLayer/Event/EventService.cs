@@ -19,6 +19,9 @@ namespace ServiceLayer.Event
         public Task<List<EventDTO>> GetAllAsync(DateTime? from = null, DateTime? to = null, string? keyword = null)
             => _eventRepository.GetAllAsync(from, to, keyword);
 
+        public Task<PaginatedResultDTO<EventDTO>> GetAllPaginatedAsync(DateTime? from = null, DateTime? to = null, string? keyword = null, int page = 1, int pageSize = 10)
+            => _eventRepository.GetAllPaginatedAsync(from, to, keyword, page, pageSize);
+
         public Task<EventDTO?> GetByIdAsync(int eventId)
             => _eventRepository.GetByIdAsync(eventId);
 

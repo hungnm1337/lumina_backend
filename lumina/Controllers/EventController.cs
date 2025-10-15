@@ -21,10 +21,10 @@ namespace lumina.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<List<EventDTO>>> GetAll([FromQuery] DateTime? from = null, [FromQuery] DateTime? to = null, [FromQuery] string? keyword = null)
+        public async Task<ActionResult<PaginatedResultDTO<EventDTO>>> GetAll([FromQuery] DateTime? from = null, [FromQuery] DateTime? to = null, [FromQuery] string? keyword = null, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
-            var items = await _eventService.GetAllAsync(from, to, keyword);
-            return Ok(items);
+            var result = await _eventService.GetAllPaginatedAsync(from, to, keyword, page, pageSize);
+            return Ok(result);
         }
 
         [HttpGet("{eventId:int}")]
