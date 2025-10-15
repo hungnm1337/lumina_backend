@@ -394,6 +394,9 @@ namespace DataLayer.Migrations
                     b.Property<int>("ExamId")
                         .HasColumnType("int");
 
+                    b.Property<int>("MaxQuestions")
+                        .HasColumnType("int");
+
                     b.Property<int>("OrderIndex")
                         .HasColumnType("int");
 
@@ -1007,25 +1010,31 @@ namespace DataLayer.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserAnswerId"));
 
                     b.Property<string>("AnswerContent")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<int>("AttemptId")
                         .HasColumnType("int")
                         .HasColumnName("AttemptID");
+
+                    b.Property<string>("AudioUrl")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("AudioURL");
 
                     b.Property<string>("FeedbackAi")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("FeedbackAI");
 
                     b.Property<bool?>("IsCorrect")
-                        .HasColumnType("bit");
+                        .HasColumnType("bit")
+                        .HasColumnName("IsCorrect");
 
                     b.Property<int>("QuestionId")
                         .HasColumnType("int")
                         .HasColumnName("QuestionID");
 
-                    b.Property<int?>("Score")
-                        .HasColumnType("int");
+                    b.Property<float?>("Score")
+                        .HasColumnType("real")
+                        .HasColumnName("Score");
 
                     b.Property<int?>("SelectedOptionId")
                         .HasColumnType("int")

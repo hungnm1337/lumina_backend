@@ -10,8 +10,10 @@
   <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
     <PackageReference Include="CloudinaryDotNet" Version="1.27.7" />
+    <PackageReference Include="EPPlus" Version="8.2.0" />
     <PackageReference Include="Google.Apis.Auth" Version="1.71.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.10" />
+    <PackageReference Include="Microsoft.CognitiveServices.Speech" Version="1.46.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.9" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.9">
       <PrivateAssets>all</PrivateAssets>
@@ -25,6 +27,7 @@
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.9" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.9" />
     <PackageReference Include="Microsoft.CognitiveServices.Speech" Version="1.46.0" />
+    <PackageReference Include="NAudio.WaveFormRenderer" Version="2.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 

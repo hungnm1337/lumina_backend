@@ -11,7 +11,7 @@ namespace ServiceLayer.Auth;
 
 public interface IJwtTokenService
 {
-    JwtTokenResult GenerateToken(User user);
+    JwtTokenResult GenerateToken(DataLayer.Models.User user);
 }
 
 public sealed class JwtTokenService : IJwtTokenService
@@ -30,7 +30,6 @@ public sealed class JwtTokenService : IJwtTokenService
         _audience = jwtSection["Audience"] ?? throw new InvalidOperationException("JWT audience is not configured.");
         _accessTokenExpirationMinutes = Math.Clamp(jwtSection.GetValue("AccessTokenExpirationMinutes", 60), 1, 1440);
 
-        // Validate key size for HS256 (requires >= 256 bits = 32 bytes)
         var keyBytes = Encoding.UTF8.GetBytes(secretKey);
         if (keyBytes.Length < 32)
         {
@@ -40,7 +39,7 @@ public sealed class JwtTokenService : IJwtTokenService
         _signingKey = new SymmetricSecurityKey(keyBytes);
     }
 
-    public JwtTokenResult GenerateToken(User user)
+    public JwtTokenResult GenerateToken(DataLayer.Models.User user)
     {
         ArgumentNullException.ThrowIfNull(user);
 

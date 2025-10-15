@@ -1,4 +1,4 @@
-﻿using DataLayer.DTOs;
+﻿using DataLayer.DTOs.Exam;
 using RepositoryLayer.Exam;
 using System;
 using System.Collections.Generic;
@@ -17,9 +17,9 @@ namespace ServiceLayer.Exam
             _examRepository = examRepository;
         }
 
-        public async Task<List<ExamDTO>> GetAllExams()
+        public async Task<List<ExamDTO>> GetAllExams(string? examType = null, string? partCode = null)
         {
-            return await _examRepository.GetAllExams();
+            return await _examRepository.GetAllExams(examType, partCode);
         }
 
         public async Task<ExamDTO> GetExamDetailAndExamPartByExamID(int examId)
