@@ -18,11 +18,7 @@ namespace RepositoryLayer.Exam
             _luminaSystemContext = luminaSystemContext;
         }
 
-        /// <summary>
-        /// Người dùng sẽ xem danh sách các bài thi có sẵn để chọn nhưng không bao gồm thông tin của các part
-        /// 
-        /// </summary>
-        /// <returns>Danh sách các bài thi </returns>
+       
         public async Task<List<ExamDTO>> GetAllExams()
         {
             var exams = await _luminaSystemContext.Exams.Where(e => e.IsActive == true).ToListAsync();
@@ -52,13 +48,7 @@ namespace RepositoryLayer.Exam
         }
 
 
-        /// <summary>
-        /// Lấy thông tin của Exam và Thông tin của các Exam part của exam đó
-        /// 
-        /// </summary>
-        /// <param name="examId"></param>
-        /// <returns>Thông tin của Exam và Thông tin của các Exam part của exam đó</returns>
-        /// <exception cref="NotImplementedException"></exception>
+        
         public async Task<ExamDTO> GetExamDetailAndExamPartByExamID(int examId)
         {
             var exam = await _luminaSystemContext.Exams
@@ -106,11 +96,7 @@ namespace RepositoryLayer.Exam
 
 
 
-        /// <summary>
-        /// Lấy tất cả các câu hỏi và thông tin của một phần part trong bài thi
-        /// </summary>
-        /// <param name="partId"></param>
-        /// <returns></returns>
+      
         public async Task<ExamPartDTO> GetExamPartDetailAndQuestionByExamPartID(int partId)
         {
             var examPartDetail = await _luminaSystemContext.ExamParts

@@ -21,7 +21,7 @@ namespace lumina.Controllers
                 var roles = await _roleService.GetAllRolesAsync();
                 return Ok(roles);
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
                 // Ghi lại lỗi (log) ở đây
                 return StatusCode(500, "Lỗi máy chủ nội bộ");
