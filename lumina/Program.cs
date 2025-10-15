@@ -16,6 +16,7 @@ using ServiceLayer.Auth;
 using ServiceLayer.Configs;
 using ServiceLayer.Email;
 using ServiceLayer.Exam;
+using ServiceLayer.Exam.Writting;
 using ServiceLayer.Import;
 using ServiceLayer.Questions;
 using ServiceLayer.Speaking;
@@ -41,7 +42,13 @@ namespace lumina
             builder.Services.AddDbContext<LuminaSystemContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+            builder.Services.AddHttpClient<ImageCaptioningService>(client =>
+            {
+                client.BaseAddress = new Uri("http://localhost:5000");
 
+                client.Timeout = TimeSpan.FromSeconds(30);
+
+            });
             builder.Services.Configure<AzureSpeechSettings>(builder.Configuration.GetSection("AzureSpeechSettings"));
 
             builder.Services.AddScoped<IAzureSpeechService, AzureSpeechService>();
@@ -86,12 +93,13 @@ namespace lumina
             builder.Services.AddScoped<IVocabularyListService, VocabularyListService>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
             builder.Services.AddScoped<IArticleService, ArticleService>();
+            builder.Services.AddScoped<IWritingService, WritingService>();
             builder.Services.AddScoped<ServiceLayer.TextToSpeech.ITextToSpeechService, ServiceLayer.TextToSpeech.TextToSpeechService>();
             builder.Services.AddCors(options =>
             {
                 options.AddDefaultPolicy(policy =>
                 {
-                    policy.WithOrigins("https://localhost:4200", "http://localhost:4200")
+                    policy.AllowAnyOrigin()
                         .AllowAnyHeader()
                         .AllowAnyMethod();
                         //.AllowCredentials();

@@ -47,11 +47,16 @@ namespace ServiceLayer.UploadFile
                 var imageParams = new ImageUploadParams
                 {
                     File = new FileDescription(file.FileName, file.OpenReadStream()),
-                    PublicId = $"lumina/images/{Path.GetFileNameWithoutExtension(file.FileName)}_{Guid.NewGuid()}",
-                    Transformation = new Transformation().Height(500).Width(500).Crop("fill").Gravity("face")
+                    PublicId = $"music_app/images/{Path.GetFileNameWithoutExtension(file.FileName)}_{Guid.NewGuid()}",
+                    // Không đặt Transformation để giữ nguyên kích thước gốc ảnh
                 };
-                // Với ảnh, phương thức UploadAsync mặc định đã hiểu là ResourceType.Image
-                uploadResult = await _cloudinary.UploadAsync(imageParams);
+
+                var imageUploadResult = await _cloudinary.UploadAsync(imageParams);
+                if (imageUploadResult.Error != null)
+                {
+                    throw new Exception(imageUploadResult.Error.Message);
+                }
+                return new DataLayer.DTOs.UploadResultDTO { Url = imageUploadResult.SecureUrl.ToString(), PublicId = imageUploadResult.PublicId };
             }
 
             if (uploadResult.Error != null)

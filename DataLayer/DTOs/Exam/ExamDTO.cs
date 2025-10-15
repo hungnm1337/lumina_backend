@@ -88,7 +88,7 @@ namespace DataLayer.DTOs.Exam
 
         public string? ReferenceAudioUrl { get; set; }
 
-        public PassageDTO  Passage { get; set; }
+        public PassageDTO Passage { get; set; }
     }
 
     public class PassageDTO
