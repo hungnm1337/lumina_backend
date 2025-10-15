@@ -15,6 +15,8 @@ public partial class ExamPart
 
     public int OrderIndex { get; set; }
 
+    public int MaxQuestions { get; set; }
+
     public virtual Exam Exam { get; set; } = null!;
 
     public virtual ICollection<Question> Questions { get; set; } = new List<Question>();

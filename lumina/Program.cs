@@ -1,4 +1,4 @@
-using DataLayer.Models;
+﻿using DataLayer.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -8,19 +8,25 @@ using ServiceLayer.Email;
 using ServiceLayer.Event;
 using RepositoryLayer;
 using RepositoryLayer.Exam;
+using RepositoryLayer.Import;
+using RepositoryLayer.Questions;
 using RepositoryLayer.UnitOfWork;
 using ServiceLayer.Article;
 using ServiceLayer.Auth;
 using ServiceLayer.Configs;
 using ServiceLayer.Email;
 using ServiceLayer.Exam;
+using ServiceLayer.Import;
+using ServiceLayer.Questions;
 using ServiceLayer.Speaking;
 using ServiceLayer.Speech;
 using ServiceLayer.UploadFile;
+using ServiceLayer.User;
 using ServiceLayer.Vocabulary;
 using System.Text;
 using RepositoryLayer.Slide;
 using ServiceLayer.Slide;
+using OfficeOpenXml;
 
 namespace lumina
 {
@@ -28,6 +34,7 @@ namespace lumina
     {
         public static void Main(string[] args)
         {
+
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
@@ -49,8 +56,12 @@ namespace lumina
 
 
             builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
-            builder.Services.AddScoped<IAuthService, AuthService>();
-            builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
+            
+            // Auth services - Tuân thủ SOLID principles
+            builder.Services.AddScoped<IGoogleAuthService, GoogleAuthService>(); // Service xử lý Google authentication
+            builder.Services.AddScoped<IAuthService, AuthService>(); // Service xử lý authentication chính
+            builder.Services.AddScoped<IPasswordResetService, PasswordResetService>(); // Service xử lý reset password
+            
             builder.Services.AddScoped<IUploadService, UploadService>();
             builder.Services.AddTransient<IEmailSender, SmtpEmailSender>();
             builder.Services.AddScoped<IEventService,EventService>();
@@ -60,10 +71,22 @@ namespace lumina
             builder.Services.AddScoped<IArticleRepository, ArticleRepository>();
             builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
             builder.Services.AddScoped<IUserRepository, UserRepository>();
+
+            builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
+            builder.Services.AddScoped<IQuestionService, QuestionService>();
+
+            builder.Services.AddScoped<IImportRepository, ImportRepository>();
+            builder.Services.AddScoped<IImportService, ImportService>();
+            builder.Services.AddScoped<IExamPartRepository, ExamPartRepository>();
+            builder.Services.AddScoped<IExamPartService, ExamPartService>();
+            builder.Services.AddScoped<IExamRepository, ExamRepository>();
+
+            builder.Services.AddScoped<IExamService,ExamService>();
             builder.Services.AddScoped<IVocabularyListRepository, VocabularyListRepository>();
             builder.Services.AddScoped<IVocabularyListService, VocabularyListService>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
             builder.Services.AddScoped<IArticleService, ArticleService>();
+            builder.Services.AddScoped<ServiceLayer.TextToSpeech.ITextToSpeechService, ServiceLayer.TextToSpeech.TextToSpeechService>();
             builder.Services.AddCors(options =>
             {
                 options.AddDefaultPolicy(policy =>
@@ -76,8 +99,8 @@ namespace lumina
             });
 
 
-            builder.Services.AddScoped<IExamService, ExamService>();
-            builder.Services.AddScoped<IExamRepository, ExamRepository>();
+            builder.Services.AddScoped<IExamPartService, ExamPartService>();
+            builder.Services.AddScoped<IExamPartRepository, ExamPartRepository>();
 
             var jwtSection = builder.Configuration.GetSection("Jwt");
             var jwtSecret = jwtSection["SecretKey"] ?? throw new InvalidOperationException("JWT secret key is not configured.");
@@ -107,6 +130,9 @@ namespace lumina
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+
+
+
 
             var app = builder.Build();
 
