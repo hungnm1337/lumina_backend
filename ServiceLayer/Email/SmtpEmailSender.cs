@@ -30,7 +30,7 @@ public class SmtpEmailSender : IEmailSender
         _enableSsl = smtpSection.GetValue("EnableSsl", true);
     }
 
-    public async Task SendPasswordResetCodeAsync(string toEmail, string toName, string otpCode, CancellationToken cancellationToken)
+    public async Task SendPasswordResetCodeAsync(string toEmail, string toName, string otpCode)
     {
         using var message = new MailMessage
         {
@@ -50,7 +50,7 @@ public class SmtpEmailSender : IEmailSender
 
         try
         {
-            await client.SendMailAsync(message, cancellationToken);
+            await client.SendMailAsync(message);
             _logger.LogInformation("Sent password reset OTP email to {Email}", toEmail);
         }
         catch (Exception ex)

@@ -5,7 +5,7 @@
 namespace DataLayer.Migrations
 {
     /// <inheritdoc />
-    public partial class vh : Migration
+    public partial class v36 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

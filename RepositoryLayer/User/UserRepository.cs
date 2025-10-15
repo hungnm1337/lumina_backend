@@ -109,10 +109,11 @@ public class UserRepository : IUserRepository
 
 public async Task<UserDto?> UpdateUserProfileAsync(int userId, string fullName, string? phone, string? bio, string? avatarUrl)
 {
-    var u = await _context.Users.Include(x => x.Role).FirstOrDefaultAsync(x => x.UserId == userId);
+    var u = await _context.Users.Include(x => x.Role).Include(x => x.Accounts).FirstOrDefaultAsync(x => x.UserId == userId);
     if (u == null) return null;
 
-    u.FullName = fullName?.Trim() ?? u.FullName;
+    // Update fields - fullName đã được validated trong service layer
+    u.FullName = fullName;
     u.Phone = string.IsNullOrWhiteSpace(phone) ? null : phone.Trim();
     u.Bio = string.IsNullOrWhiteSpace(bio) ? null : bio.Trim();
     u.AvatarUrl = string.IsNullOrWhiteSpace(avatarUrl) ? null : avatarUrl.Trim();
