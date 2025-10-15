@@ -2,6 +2,7 @@ using DataLayer.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RepositoryLayer.UnitOfWork;
+using ServiceLayer.TextToSpeech; // Thêm using
 
 namespace lumina.Controllers;
 
@@ -10,10 +11,12 @@ namespace lumina.Controllers;
 public class VocabulariesController : ControllerBase
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ITextToSpeechService _ttsService; // Thêm service
 
-    public VocabulariesController(IUnitOfWork unitOfWork)
+    public VocabulariesController(IUnitOfWork unitOfWork, ITextToSpeechService ttsService)
     {
         _unitOfWork = unitOfWork;
+        _ttsService = ttsService; // Inject service
     }
 
   
@@ -28,8 +31,10 @@ public class VocabulariesController : ControllerBase
             listId = v.VocabularyListId,
             word = v.Word,
             type = v.TypeOfWord,
+            category = v.Category,
             definition = v.Definition,
-            example = v.Example
+            example = v.Example,
+          
         }));
     }
 
@@ -38,8 +43,10 @@ public class VocabulariesController : ControllerBase
         public int VocabularyListId { get; set; }
         public string Word { get; set; } = string.Empty;
         public string TypeOfWord { get; set; } = string.Empty; // noun, verb, adj...
+        public string? Category { get; set; }
         public string Definition { get; set; } = string.Empty;
         public string? Example { get; set; }
+        public bool GenerateAudio { get; set; } = true; // Thêm option để tạo audio
     }
 
     // POST api/vocabularies
@@ -52,19 +59,80 @@ public class VocabulariesController : ControllerBase
             return BadRequest(ModelState);
         }
 
+        string? audioUrl = null;
+
+        // Tạo audio nếu được yêu cầu
+        if (req.GenerateAudio && !string.IsNullOrEmpty(req.Word))
+        {
+            try
+            {
+                var audioResult = await _ttsService.GenerateAudioAsync(req.Word);
+                audioUrl = audioResult.Url;
+            }
+            catch (Exception ex)
+            {
+                // Log lỗi nhưng vẫn tạo vocabulary
+                Console.WriteLine($"Lỗi tạo audio: {ex.Message}");
+            }
+        }
+
         var vocab = new Vocabulary
         {
             VocabularyListId = req.VocabularyListId,
             Word = req.Word,
             TypeOfWord = req.TypeOfWord,
+            Category = req.Category,
             Definition = req.Definition,
             Example = req.Example,
+           
             IsDeleted = false
         };
         await _unitOfWork.Vocabularies.AddAsync(vocab);
         await _unitOfWork.CompleteAsync();
 
-        return CreatedAtAction(nameof(GetList), new { listId = req.VocabularyListId }, new { id = vocab.VocabularyId });
+        return CreatedAtAction(nameof(GetList), new { listId = req.VocabularyListId }, new { 
+            id = vocab.VocabularyId,
+            audioUrl = audioUrl
+        });
+    }
+
+    // Thêm endpoint để tạo audio cho từ vựng hiện có
+    [HttpPost("{id}/generate-audio")]
+    [Authorize(Roles = "Staff")]
+    public async Task<IActionResult> GenerateAudio(int id)
+    {
+        try
+        {
+            var vocab = await _unitOfWork.Vocabularies.GetByIdAsync(id);
+            if (vocab == null)
+            {
+                return NotFound(new { message = "Vocabulary not found" });
+            }
+
+            // Kiểm tra từ vựng có rỗng không
+            if (string.IsNullOrWhiteSpace(vocab.Word))
+            {
+                return BadRequest(new { message = "Vocabulary word is empty" });
+            }
+
+            // Tạo audio trực tiếp
+            var audioResult = await _ttsService.GenerateAudioAsync(vocab.Word);
+         
+            
+            await _unitOfWork.Vocabularies.UpdateAsync(vocab);
+            await _unitOfWork.CompleteAsync();
+
+            return Ok(new { 
+                message = "Audio generated successfully",
+                audioUrl = audioResult.Url
+            });
+        }
+        catch (Exception ex)
+        {
+            // Log chi tiết lỗi
+            Console.WriteLine($"Error in GenerateAudio endpoint: {ex}");
+            return StatusCode(500, new { message = $"Lỗi tạo audio: {ex.Message}" });
+        }
     }
 
     // GET api/vocabularies/{id}
@@ -84,6 +152,7 @@ public class VocabulariesController : ControllerBase
             listId = vocab.VocabularyListId,
             word = vocab.Word,
             type = vocab.TypeOfWord,
+            category = vocab.Category,
             definition = vocab.Definition,
             example = vocab.Example
         });
@@ -107,6 +176,7 @@ public class VocabulariesController : ControllerBase
 
         vocab.Word = req.Word;
         vocab.TypeOfWord = req.TypeOfWord;
+        vocab.Category = req.Category;
         vocab.Definition = req.Definition;
         vocab.Example = req.Example;
 
@@ -150,6 +220,7 @@ public class VocabulariesController : ControllerBase
             listId = v.VocabularyListId,
             word = v.Word,
             type = v.TypeOfWord,
+            category = v.Category,
             definition = v.Definition,
             example = v.Example
         }));
@@ -167,9 +238,37 @@ public class VocabulariesController : ControllerBase
             listId = v.VocabularyListId,
             word = v.Word,
             type = v.TypeOfWord,
+            category = v.Category,
             definition = v.Definition,
             example = v.Example
         }));
+    }
+
+    // GET api/vocabularies/by-category/{category}
+    [HttpGet("by-category/{category}")]
+    [Authorize(Roles = "Staff")]
+    public async Task<IActionResult> GetByCategory(string category)
+    {
+        var results = await _unitOfWork.Vocabularies.GetByCategoryAsync(category);
+        return Ok(results.Select(v => new
+        {
+            id = v.VocabularyId,
+            listId = v.VocabularyListId,
+            word = v.Word,
+            type = v.TypeOfWord,
+            category = v.Category,
+            definition = v.Definition,
+            example = v.Example
+        }));
+    }
+
+    // GET api/vocabularies/categories
+    [HttpGet("categories")]
+    [Authorize(Roles = "Staff")]
+    public async Task<IActionResult> GetCategories()
+    {
+        var categories = await _unitOfWork.Vocabularies.GetDistinctCategoriesAsync();
+        return Ok(categories);
     }
 
     // GET api/vocabularies/stats
@@ -191,6 +290,7 @@ public class VocabulariesController : ControllerBase
     {
         public string Word { get; set; } = string.Empty;
         public string TypeOfWord { get; set; } = string.Empty;
+        public string? Category { get; set; }
         public string Definition { get; set; } = string.Empty;
         public string? Example { get; set; }
     }

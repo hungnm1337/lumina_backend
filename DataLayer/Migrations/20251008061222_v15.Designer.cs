@@ -4,6 +4,7 @@ using DataLayer.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataLayer.Migrations
 {
     [DbContext(typeof(LuminaSystemContext))]
-    partial class LuminaSystemContextModelSnapshot : ModelSnapshot
+    [Migration("20251008061222_v15")]
+    partial class v15
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -392,9 +395,6 @@ namespace DataLayer.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PartId"));
 
                     b.Property<int>("ExamId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("MaxQuestions")
                         .HasColumnType("int");
 
                     b.Property<int>("OrderIndex")
@@ -1010,31 +1010,25 @@ namespace DataLayer.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserAnswerId"));
 
                     b.Property<string>("AnswerContent")
-                        .HasColumnType("text");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("AttemptId")
                         .HasColumnType("int")
                         .HasColumnName("AttemptID");
-
-                    b.Property<string>("AudioUrl")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("AudioURL");
 
                     b.Property<string>("FeedbackAi")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("FeedbackAI");
 
                     b.Property<bool?>("IsCorrect")
-                        .HasColumnType("bit")
-                        .HasColumnName("IsCorrect");
+                        .HasColumnType("bit");
 
                     b.Property<int>("QuestionId")
                         .HasColumnType("int")
                         .HasColumnName("QuestionID");
 
-                    b.Property<float?>("Score")
-                        .HasColumnType("real")
-                        .HasColumnName("Score");
+                    b.Property<int?>("Score")
+                        .HasColumnType("int");
 
                     b.Property<int?>("SelectedOptionId")
                         .HasColumnType("int")

@@ -10,5 +10,6 @@ public interface IArticleRepository
     Task<Article?> FindByIdAsync(int id);
     Task<bool> DeleteAsync(int id);
     Task<Article?> UpdateAsync(Article article);
-    Task<(List<Article> items, int total)> QueryAsync(int page, int pageSize, string? search, int? categoryId, bool? isPublished, string sortBy, string sortDir);
+    Task UpdateSectionsAsync(int articleId, IEnumerable<ArticleSection> newSections);
+    Task<(List<Article> items, int total)> QueryAsync(int page, int pageSize, string? search, int? categoryId, bool? isPublished, string? status, string sortBy, string sortDir);
 }

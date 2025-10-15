@@ -2,6 +2,10 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using RepositoryLayer.Event;
+using ServiceLayer.Auth;
+using ServiceLayer.Email;
+using ServiceLayer.Event;
 using RepositoryLayer;
 using RepositoryLayer.Exam;
 using RepositoryLayer.Import;
@@ -20,6 +24,8 @@ using ServiceLayer.UploadFile;
 using ServiceLayer.User;
 using ServiceLayer.Vocabulary;
 using System.Text;
+using RepositoryLayer.Slide;
+using ServiceLayer.Slide;
 using OfficeOpenXml;
 
 namespace lumina
@@ -58,6 +64,10 @@ namespace lumina
             
             builder.Services.AddScoped<IUploadService, UploadService>();
             builder.Services.AddTransient<IEmailSender, SmtpEmailSender>();
+            builder.Services.AddScoped<IEventService,EventService>();
+            builder.Services.AddScoped<IEventRepository, EventRepository>();
+            builder.Services.AddScoped<ISlideService, SlideService>();
+            builder.Services.AddScoped<ISlideRepository, SlideRepository>();
             builder.Services.AddScoped<IArticleRepository, ArticleRepository>();
             builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
             builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -76,6 +86,7 @@ namespace lumina
             builder.Services.AddScoped<IVocabularyListService, VocabularyListService>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
             builder.Services.AddScoped<IArticleService, ArticleService>();
+            builder.Services.AddScoped<ServiceLayer.TextToSpeech.ITextToSpeechService, ServiceLayer.TextToSpeech.TextToSpeechService>();
             builder.Services.AddCors(options =>
             {
                 options.AddDefaultPolicy(policy =>

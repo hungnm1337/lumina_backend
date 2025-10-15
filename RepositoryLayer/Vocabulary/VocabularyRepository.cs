@@ -20,7 +20,8 @@ public class VocabularyRepository : IVocabularyRepository
         if (!string.IsNullOrWhiteSpace(search))
         {
             var s = search.Trim();
-            query = query.Where(v => v.Word.Contains(s) || v.Definition.Contains(s));
+            query = query.Where(v => v.Word.Contains(s) || v.Definition.Contains(s) || 
+                (v.Category != null && v.Category.Contains(s)));
         }
         return await query.OrderBy(v => v.Word).ToListAsync();
     }
@@ -79,7 +80,8 @@ public class VocabularyRepository : IVocabularyRepository
                 v.Word.ToLower().Contains(term) || 
                 v.Definition.ToLower().Contains(term) ||
                 (v.Example != null && v.Example.ToLower().Contains(term)) ||
-                v.TypeOfWord.ToLower().Contains(term));
+                v.TypeOfWord.ToLower().Contains(term) ||
+                (v.Category != null && v.Category.ToLower().Contains(term)));
         }
 
         return await query.OrderBy(v => v.Word).ToListAsync();
@@ -97,6 +99,24 @@ public class VocabularyRepository : IVocabularyRepository
         return await _context.Vocabularies
             .Where(v => v.IsDeleted != true && v.TypeOfWord.ToLower() == typeOfWord.ToLower())
             .OrderBy(v => v.Word)
+            .ToListAsync();
+    }
+
+    public async Task<List<Vocabulary>> GetByCategoryAsync(string category)
+    {
+        return await _context.Vocabularies
+            .Where(v => v.IsDeleted != true && v.Category != null && v.Category.ToLower() == category.ToLower())
+            .OrderBy(v => v.Word)
+            .ToListAsync();
+    }
+
+    public async Task<List<string>> GetDistinctCategoriesAsync()
+    {
+        return await _context.Vocabularies
+            .Where(v => v.IsDeleted != true && v.Category != null)
+            .Select(v => v.Category)
+            .Distinct()
+            .OrderBy(c => c)
             .ToListAsync();
     }
 }

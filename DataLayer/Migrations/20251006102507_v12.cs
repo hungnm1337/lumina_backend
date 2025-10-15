@@ -5,15 +5,15 @@
 namespace DataLayer.Migrations
 {
     /// <inheritdoc />
-    public partial class AddIsActiveToPackages : Migration
+    public partial class v12 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<bool>(
-                name: "IsActive",
-                table: "Packages",
-                type: "bit",
+            migrationBuilder.AddColumn<string>(
+                name: "AudioUrl",
+                table: "Vocabularies",
+                type: "nvarchar(max)",
                 nullable: true);
         }
 
@@ -21,8 +21,8 @@ namespace DataLayer.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "IsActive",
-                table: "Packages");
+                name: "AudioUrl",
+                table: "Vocabularies");
         }
     }
 }
