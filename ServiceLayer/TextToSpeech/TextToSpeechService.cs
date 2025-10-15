@@ -1,8 +1,8 @@
 using Microsoft.CognitiveServices.Speech;
 using Microsoft.Extensions.Configuration;
 using DataLayer.DTOs;
-using Services.Upload;
 using Microsoft.AspNetCore.Http;
+using ServiceLayer.UploadFile;
 
 namespace ServiceLayer.TextToSpeech
 {
@@ -61,7 +61,7 @@ namespace ServiceLayer.TextToSpeech
                         ContentType = "audio/mpeg"
                     };
 
-                    var uploadResult = await _uploadService.UploadFile(formFile);
+                    var uploadResult = await _uploadService.UploadFileAsync(formFile);
                     return uploadResult;
                 }
                 else
