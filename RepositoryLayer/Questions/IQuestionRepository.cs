@@ -25,5 +25,7 @@ namespace RepositoryLayer.Questions
         Task<int> AddQuestionAsync(QuestionCrudDto dto);
         Task<bool> UpdateQuestionAsync(QuestionCrudDto dto);
         Task<bool> DeleteQuestionAsync(int questionId);
+
+        Task<QuestionStatisticDto> GetQuestionStatisticsAsync();
     }
 }
