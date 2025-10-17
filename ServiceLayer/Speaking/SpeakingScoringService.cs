@@ -68,10 +68,11 @@ namespace ServiceLayer.Speaking
                 azureResult = await _azureSpeechService.AnalyzePronunciationFromUrlAsync(transformedMp3Url, question.SampleAnswer, "en-GB");
             }
 
-            // Validate transcript after retry
+            // Validate transcript after retry - but don't throw exception
             if (string.IsNullOrWhiteSpace(azureResult.Transcript) || azureResult.Transcript.Trim() == ".")
             {
-                throw new Exception("Không thể nhận diện giọng nói. Vui lòng thử lại và đảm bảo: (1) Nói rõ ràng bằng tiếng Anh, (2) Không có tiếng ồn xung quanh, (3) Micro hoạt động tốt.");
+                Console.WriteLine("[Speaking] Azure transcription failed after retries, using fallback transcript");
+                azureResult.Transcript = "."; // Fallback for NLP processing
             }
 
             var nlpResult = await GetNlpScoresAsync(azureResult.Transcript, question.SampleAnswer);
@@ -108,7 +109,7 @@ namespace ServiceLayer.Speaking
             // Trả về DTO đầy đủ cho frontend
             return new SpeakingScoringResultDTO
             {
-                Transcript = azureResult.Transcript,
+                Transcript = azureResult.Transcript == "." ? "[Không nhận diện được giọng nói]" : azureResult.Transcript,
                 SavedAudioUrl = transformedMp3Url,
                 OverallScore = Math.Round(overallScore, 1),
                 PronunciationScore = azureResult.PronunciationScore,
