@@ -23,6 +23,8 @@ public partial class Exam
 
     public DateTime? UpdateAt { get; set; }
 
+    public string ExamSetKey { get; set; }
+
     public virtual User CreatedByNavigation { get; set; } = null!;
 
     public virtual ICollection<ExamAttempt> ExamAttempts { get; set; } = new List<ExamAttempt>();
