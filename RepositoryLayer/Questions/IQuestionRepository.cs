@@ -13,14 +13,14 @@ namespace RepositoryLayer.Questions
     public interface IQuestionRepository : IRepository<Question>
 
     {
-        Task<Passage> AddPassageAsync(Passage passage);
+        /*Task<Passage> AddPassageAsync(Passage passage);*/
         Task<Prompt> AddPromptAsync(Prompt prompt);
         Task<Question> AddQuestionAsync(Question question);
         Task AddOptionsAsync(IEnumerable<Option> options);
 
-        Task<(List<PassageDto> Items, int TotalPages)> GetPassagePromptQuestionsPagedAsync(int page, int size, int? partId);
+        /*Task<(List<PassageDto> Items, int TotalPages)> GetPassagePromptQuestionsPagedAsync(int page, int size, int? partId);*/
 
-        Task<bool> EditPassageWithPromptAsync(PassageEditDto dto);
+       /* Task<bool> EditPassageWithPromptAsync(PassageEditDto dto);*/
 
         Task<int> AddQuestionAsync(QuestionCrudDto dto);
         Task<bool> UpdateQuestionAsync(QuestionCrudDto dto);

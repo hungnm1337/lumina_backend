@@ -109,7 +109,7 @@ using System.Threading.Tasks;
 
 
 
-      
+/*      
         public async Task<ExamPartDTO> GetExamPartDetailAndQuestionByExamPartID(int partId)
         {
             var examPartDetail = await _luminaSystemContext.ExamParts
@@ -159,7 +159,7 @@ using System.Threading.Tasks;
                 .FirstOrDefaultAsync();
 
             return examPartDetail;
-        }
+        }*/
 
         public async Task<List<Exam>> GetExamsBySetKeyAsync(string examSetKey)
         {

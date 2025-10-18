@@ -21,7 +21,7 @@ namespace ServiceLayer.Import
 
         public async Task ImportQuestionsFromExcelAsync(IFormFile file, int partId)
         {
-            if (file == null || file.Length == 0)
+           /* if (file == null || file.Length == 0)
                 throw new ArgumentException("File không được để trống.");
 
             using var package = new ExcelPackage(file.OpenReadStream());
@@ -155,7 +155,7 @@ namespace ServiceLayer.Import
             {
                 await transaction.RollbackAsync();
                 throw;
-            }
+            }*/
         }
 
     }

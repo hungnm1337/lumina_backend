@@ -23,7 +23,7 @@ namespace lumina.Controllers
         }
 
 
-        [HttpPost("prompt-with-questions")]
+        /*[HttpPost("prompt-with-questions")]
         public async Task<IActionResult> CreatePromptWithQuestions([FromBody] CreatePromptWithQuestionsDTO dto)
         {
             if (dto == null)
@@ -46,7 +46,7 @@ namespace lumina.Controllers
                 // Ngoài ra trả lỗi 500
                 return StatusCode(500, $"Lỗi khi tạo prompt và câu hỏi: {ex.Message}");
             }
-        }
+        }*/
 
 
         [HttpPost("upload-excel")]
@@ -66,7 +66,7 @@ namespace lumina.Controllers
             }
         }
 
-        [HttpGet("passage-question-tree-paged")]
+        /*[HttpGet("passage-question-tree-paged")]
         public async Task<IActionResult> GetPaged(
     [FromQuery] int page = 1,
     [FromQuery] int size = 20,
@@ -78,9 +78,9 @@ namespace lumina.Controllers
                 Items = items,
                 TotalPages = totalPages
             });
-        }
+        }*/
 
-        [HttpPut("edit-passage")]
+      /*  [HttpPut("edit-passage")]
         public async Task<IActionResult> EditPassage([FromBody] PassageEditDto dto)
         {
             if (dto == null || dto.PassageId <= 0)
@@ -92,7 +92,7 @@ namespace lumina.Controllers
                 return NotFound("Passage không tồn tại");
 
             return Ok(new { message = "Cập nhật thành công" });
-        }
+        }*/
 
 
         [HttpPost("add-question")]

@@ -24,7 +24,7 @@ namespace ServiceLayer.Questions
             _dbContext = systemContext;
         }
 
-        public async Task<int> CreatePassagePromptWithQuestionsAsync(CreatePromptWithQuestionsDTO dto)
+    /*    public async Task<int> CreatePassagePromptWithQuestionsAsync(CreatePromptWithQuestionsDTO dto)
         {
             using var transaction = await _dbContext.Database.BeginTransactionAsync();
 
@@ -123,13 +123,13 @@ namespace ServiceLayer.Questions
                 await transaction.RollbackAsync();
                 throw;
             }
-        }
+        }*/
 
-        public Task<bool> EditPassageWithPromptAsync(PassageEditDto dto)
+      /*  public Task<bool> EditPassageWithPromptAsync(PassageEditDto dto)
         => _questionRepository.EditPassageWithPromptAsync(dto);
 
         public Task<(List<PassageDto> Items, int TotalPages)> GetPassagePromptQuestionsPagedAsync(int page, int size, int? partId)
-        => _questionRepository.GetPassagePromptQuestionsPagedAsync(page, size, partId);
+        => _questionRepository.GetPassagePromptQuestionsPagedAsync(page, size, partId);*/
 
 
         public Task<int> AddQuestionAsync(QuestionCrudDto dto) => _questionRepository.AddQuestionAsync(dto);
