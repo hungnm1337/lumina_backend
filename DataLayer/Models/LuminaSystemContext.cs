@@ -40,8 +40,6 @@ public partial class LuminaSystemContext : DbContext
 
     public virtual DbSet<Package> Packages { get; set; }
 
-    public virtual DbSet<Passage> Passages { get; set; }
-
     public virtual DbSet<Payment> Payments { get; set; }
 
     public virtual DbSet<Prompt> Prompts { get; set; }
@@ -311,12 +309,6 @@ public partial class LuminaSystemContext : DbContext
             entity.Property(e => e.Price).HasColumnType("decimal(12, 2)");
         });
 
-        modelBuilder.Entity<Passage>(entity =>
-        {
-            entity.HasKey(e => e.PassageId).HasName("PK__Passages__CC0F002C41B406F1");
-
-            entity.Property(e => e.Title).HasMaxLength(255);
-        });
 
         modelBuilder.Entity<Payment>(entity =>
         {
@@ -347,16 +339,6 @@ public partial class LuminaSystemContext : DbContext
                 .HasConstraintName("FK_Payments_Users");
         });
 
-        modelBuilder.Entity<Prompt>(entity =>
-        {
-            entity.HasKey(e => e.PromptId).HasName("PK__Prompts__456CA7536D5666A0");
-
-            entity.Property(e => e.Skill).HasMaxLength(255);
-
-            entity.HasOne(d => d.Passage).WithMany(p => p.Prompts)
-                .HasForeignKey(d => d.PassageId)
-                .HasConstraintName("FK_Prompts_Passages");
-        });
 
         modelBuilder.Entity<Question>(entity =>
         {

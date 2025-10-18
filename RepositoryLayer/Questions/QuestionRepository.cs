@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace RepositoryLayer.Questions
 {
-    public class QuestionRepository : Repository<Question>,IQuestionRepository
+    public class QuestionRepository : Repository<Question>, IQuestionRepository
     {
 
         private readonly LuminaSystemContext _context;
@@ -21,12 +21,12 @@ namespace RepositoryLayer.Questions
             _context = context;
         }
         
-        public async Task<Passage> AddPassageAsync(Passage passage)
+        /*public async Task<Passage> AddPassageAsync(Passage passage)
         {
             _context.Passages.Add(passage);
             await _context.SaveChangesAsync();
             return passage;
-        }
+        }*/
 
         public async Task<Prompt> AddPromptAsync(Prompt prompt)
         {
@@ -47,9 +47,10 @@ namespace RepositoryLayer.Questions
             _context.Options.AddRange(options);
             await _context.SaveChangesAsync();
         }
-        public async Task<(List<PassageDto> Items, int TotalPages)> GetPassagePromptQuestionsPagedAsync(int page, int size, int? partId)
+    /*    public async Task<(List<PassageDto> Items, int TotalPages)> GetPassagePromptQuestionsPagedAsync(int page, int size, int? partId)
         {
             var query = _context.Passages.AsQueryable();
+
 
             if (partId.HasValue)
             {
@@ -96,10 +97,10 @@ namespace RepositoryLayer.Questions
                 .ToListAsync();
 
             return (items, totalPages);
-        }
+        }*/
 
 
-        public async Task<bool> EditPassageWithPromptAsync(PassageEditDto dto)
+       /* public async Task<bool> EditPassageWithPromptAsync(PassageEditDto dto)
         {
             var passage = await _context.Passages.Include(p => p.Prompts)
                                            .FirstOrDefaultAsync(p => p.PassageId == dto.PassageId);
@@ -137,7 +138,7 @@ namespace RepositoryLayer.Questions
 
             await _context.SaveChangesAsync();
             return true;
-        }
+        }*/
 
         public async Task<int> AddQuestionAsync(QuestionCrudDto dto)
         {

@@ -298,6 +298,10 @@ namespace DataLayer.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("ExamSetKey")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("ExamType")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -539,29 +543,6 @@ namespace DataLayer.Migrations
                     b.ToTable("Packages");
                 });
 
-            modelBuilder.Entity("DataLayer.Models.Passage", b =>
-                {
-                    b.Property<int>("PassageId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PassageId"));
-
-                    b.Property<string>("ContentText")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.HasKey("PassageId")
-                        .HasName("PK__Passages__CC0F002C41B406F1");
-
-                    b.ToTable("Passages");
-                });
-
             modelBuilder.Entity("DataLayer.Models.PasswordResetToken", b =>
                 {
                     b.Property<int>("PasswordResetTokenId")
@@ -660,10 +641,8 @@ namespace DataLayer.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PromptId"));
 
-                    b.Property<int?>("PassageId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("PromptText")
+                    b.Property<string>("ContentText")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ReferenceAudioUrl")
@@ -674,13 +653,13 @@ namespace DataLayer.Migrations
 
                     b.Property<string>("Skill")
                         .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("PromptId")
-                        .HasName("PK__Prompts__456CA7536D5666A0");
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
-                    b.HasIndex("PassageId");
+                    b.HasKey("PromptId");
 
                     b.ToTable("Prompts");
                 });
@@ -1523,16 +1502,6 @@ namespace DataLayer.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("DataLayer.Models.Prompt", b =>
-                {
-                    b.HasOne("DataLayer.Models.Passage", "Passage")
-                        .WithMany("Prompts")
-                        .HasForeignKey("PassageId")
-                        .HasConstraintName("FK_Prompts_Passages");
-
-                    b.Navigation("Passage");
-                });
-
             modelBuilder.Entity("DataLayer.Models.Question", b =>
                 {
                     b.HasOne("DataLayer.Models.ExamPart", "Part")
@@ -1856,11 +1825,6 @@ namespace DataLayer.Migrations
                     b.Navigation("Payments");
 
                     b.Navigation("Subscriptions");
-                });
-
-            modelBuilder.Entity("DataLayer.Models.Passage", b =>
-                {
-                    b.Navigation("Prompts");
                 });
 
             modelBuilder.Entity("DataLayer.Models.Payment", b =>
