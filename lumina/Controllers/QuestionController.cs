@@ -23,7 +23,7 @@ namespace lumina.Controllers
         }
 
 
-        [HttpPost("prompt-with-questions")]
+        /*[HttpPost("prompt-with-questions")]
         public async Task<IActionResult> CreatePromptWithQuestions([FromBody] CreatePromptWithQuestionsDTO dto)
         {
             if (dto == null)
@@ -31,7 +31,7 @@ namespace lumina.Controllers
 
             try
             {
-                var promptId = await _questionService.CreatePromptWithQuestionsAsync(dto);
+                var promptId = await _questionService.CreatePassagePromptWithQuestionsAsync(dto);
                 return Ok(new { PromptId = promptId });
             }
             catch (Exception ex)
@@ -46,7 +46,7 @@ namespace lumina.Controllers
                 // Ngoài ra trả lỗi 500
                 return StatusCode(500, $"Lỗi khi tạo prompt và câu hỏi: {ex.Message}");
             }
-        }
+        }*/
 
 
         [HttpPost("upload-excel")]
@@ -66,7 +66,7 @@ namespace lumina.Controllers
             }
         }
 
-        [HttpGet("passage-question-tree-paged")]
+        /*[HttpGet("passage-question-tree-paged")]
         public async Task<IActionResult> GetPaged(
     [FromQuery] int page = 1,
     [FromQuery] int size = 20,
@@ -78,9 +78,9 @@ namespace lumina.Controllers
                 Items = items,
                 TotalPages = totalPages
             });
-        }
+        }*/
 
-        [HttpPut("edit-passage")]
+      /*  [HttpPut("edit-passage")]
         public async Task<IActionResult> EditPassage([FromBody] PassageEditDto dto)
         {
             if (dto == null || dto.PassageId <= 0)
@@ -92,7 +92,7 @@ namespace lumina.Controllers
                 return NotFound("Passage không tồn tại");
 
             return Ok(new { message = "Cập nhật thành công" });
-        }
+        }*/
 
 
         [HttpPost("add-question")]
@@ -116,6 +116,14 @@ namespace lumina.Controllers
             var ok = await _questionService.DeleteQuestionAsync(id);
             if (!ok) return NotFound("Không tồn tại question!");
             return Ok(new { message = "Đã xóa!" });
+        }
+
+
+        [HttpGet("statistics")]
+        public async Task<IActionResult> GetStatistics()
+        {
+            var data = await _questionService.GetStatisticsAsync();
+            return Ok(data);
         }
 
 

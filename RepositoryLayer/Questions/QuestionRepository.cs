@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace RepositoryLayer.Questions
 {
-    public class QuestionRepository : Repository<Question>,IQuestionRepository
+    public class QuestionRepository : Repository<Question>, IQuestionRepository
     {
 
         private readonly LuminaSystemContext _context;
@@ -21,12 +21,12 @@ namespace RepositoryLayer.Questions
             _context = context;
         }
         
-        public async Task<Passage> AddPassageAsync(Passage passage)
+        /*public async Task<Passage> AddPassageAsync(Passage passage)
         {
             _context.Passages.Add(passage);
             await _context.SaveChangesAsync();
             return passage;
-        }
+        }*/
 
         public async Task<Prompt> AddPromptAsync(Prompt prompt)
         {
@@ -47,9 +47,10 @@ namespace RepositoryLayer.Questions
             _context.Options.AddRange(options);
             await _context.SaveChangesAsync();
         }
-        public async Task<(List<PassageDto> Items, int TotalPages)> GetPassagePromptQuestionsPagedAsync(int page, int size, int? partId)
+    /*    public async Task<(List<PassageDto> Items, int TotalPages)> GetPassagePromptQuestionsPagedAsync(int page, int size, int? partId)
         {
             var query = _context.Passages.AsQueryable();
+
 
             if (partId.HasValue)
             {
@@ -96,10 +97,10 @@ namespace RepositoryLayer.Questions
                 .ToListAsync();
 
             return (items, totalPages);
-        }
+        }*/
 
 
-        public async Task<bool> EditPassageWithPromptAsync(PassageEditDto dto)
+       /* public async Task<bool> EditPassageWithPromptAsync(PassageEditDto dto)
         {
             var passage = await _context.Passages.Include(p => p.Prompts)
                                            .FirstOrDefaultAsync(p => p.PassageId == dto.PassageId);
@@ -137,12 +138,12 @@ namespace RepositoryLayer.Questions
 
             await _context.SaveChangesAsync();
             return true;
-        }
+        }*/
 
         public async Task<int> AddQuestionAsync(QuestionCrudDto dto)
         {
             int countCorrect = dto.Options.Count(o => o.IsCorrect);
-            string questionType = countCorrect == 1 ? "SINGLE_CHOICE" : "MULTIPLE_CHOICE";
+           
 
             var question = new Question
             {
@@ -152,7 +153,7 @@ namespace RepositoryLayer.Questions
                 Time = dto.Time,
                 PartId = dto.PartId,       
                 PromptId = dto.PromptId,  
-                QuestionType = questionType,
+                QuestionType = dto.QuestionType,
                 Options = dto.Options.Select(o => new Option
                 {
                     Content = o.Content,
@@ -169,18 +170,34 @@ namespace RepositoryLayer.Questions
             var question = await _context.Questions.Include(q => q.Options)
                 .FirstOrDefaultAsync(q => q.QuestionId == dto.QuestionId);
             if (question == null) return false;
+
             question.StemText = dto.StemText;
             question.QuestionExplain = dto.QuestionExplain;
-            // Update options: xóa hết tạo lại cho đơn giản
-            _context.Options.RemoveRange(question.Options);
-            question.Options = dto.Options.Select(o => new Option
+
+            // Chỉ xử lý Option nếu có
+            if (dto.Options != null && dto.Options.Any())
             {
-                Content = o.Content,
-                IsCorrect = o.IsCorrect
-            }).ToList();
+                // Xóa hết và tạo lại
+                _context.Options.RemoveRange(question.Options);
+                question.Options = dto.Options.Select(o => new Option
+                {
+                    Content = o.Content,
+                    IsCorrect = o.IsCorrect
+                }).ToList();
+            }
+            else
+            {
+                // Nếu không có options, xóa hết option liên kết (nếu muốn: nếu kỹ năng không cần đáp án)
+                if (question.Options.Any())
+                {
+                    _context.Options.RemoveRange(question.Options);
+                    question.Options.Clear();
+                }
+            }
             await _context.SaveChangesAsync();
             return true;
         }
+
 
         public async Task<bool> DeleteQuestionAsync(int questionId)
         {
@@ -205,6 +222,26 @@ namespace RepositoryLayer.Questions
             return true;
         }
 
+        public async Task<QuestionStatisticDto> GetQuestionStatisticsAsync()
+        {
+            var total = await _context.Questions.CountAsync();
+            var used = await _context.UserAnswers
+                .Select(eq => eq.QuestionId)
+                .Distinct()
+                .CountAsync();
+            var unused = await _context.Questions
+                .CountAsync(q => !_context.UserAnswers
+                    .Select(eq => eq.QuestionId)
+                    .Distinct()
+                    .Contains(q.QuestionId));
+
+            return new QuestionStatisticDto
+            {
+                TotalQuestions = total,
+                UsedQuestions = used,
+                UnusedQuestions = unused
+            };
+        }
 
     }
 }

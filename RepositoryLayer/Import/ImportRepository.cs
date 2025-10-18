@@ -17,12 +17,12 @@ namespace RepositoryLayer.Import
             _context = context;
         }
 
-        public async Task<Passage> AddPassageAsync(Passage passage)
+     /*   public async Task<Passage> AddPassageAsync(Passage passage)
         {
             _context.Passages.Add(passage);
             await _context.SaveChangesAsync();
             return passage;
-        }
+        }*/
 
         public async Task<Prompt> AddPromptAsync(Prompt prompt)
         {
@@ -44,10 +44,10 @@ namespace RepositoryLayer.Import
             await _context.SaveChangesAsync();
         }
 
-        public async Task<List<Prompt>> GetPromptsWithPassagesAsync()
+       /* public async Task<List<Prompt>> GetPromptsWithPassagesAsync()
         {
             return await _context.Prompts.Include(p => p.Passage).ToListAsync();
-        }
+        }*/
 
         public async Task<IDbContextTransaction> BeginTransactionAsync()
         {
