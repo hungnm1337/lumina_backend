@@ -278,6 +278,11 @@ public partial class LuminaSystemContext : DbContext
             entity.Property(e => e.LeaderboardId).HasColumnName("LeaderboardID");
             entity.Property(e => e.EndDate).HasPrecision(3);
             entity.Property(e => e.StartDate).HasPrecision(3);
+            entity.Property(e => e.SeasonName).HasMaxLength(255);
+            entity.Property(e => e.SeasonNumber);
+            entity.Property(e => e.IsActive).HasDefaultValue(false);
+            entity.Property(e => e.CreateAt).HasPrecision(3);
+            entity.Property(e => e.UpdateAt).HasPrecision(3);
         });
 
         modelBuilder.Entity<Notification>(entity =>

@@ -5,6 +5,8 @@ using Microsoft.IdentityModel.Tokens;
 using RepositoryLayer.Event;
 using ServiceLayer.Auth;
 using ServiceLayer.Email;
+using RepositoryLayer.Leaderboard;
+using ServiceLayer.Leaderboard;
 using ServiceLayer.Event;
 using RepositoryLayer;
 using RepositoryLayer.Exam;
@@ -77,6 +79,8 @@ namespace lumina
 
             builder.Services.AddScoped<IImportRepository, ImportRepository>();
             builder.Services.AddScoped<IImportService, ImportService>();
+            builder.Services.AddScoped<ILeaderboardRepository, LeaderboardRepository>();
+            builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
             builder.Services.AddScoped<IExamPartRepository, ExamPartRepository>();
             builder.Services.AddScoped<IExamPartService, ExamPartService>();
             builder.Services.AddScoped<IExamRepository, ExamRepository>();
