@@ -361,3 +361,14 @@ appsettings.*.json
 
 lumina/appsettings.json
 lumina/appsettings.json
+
+# PictureCaptioningAPI (Python artifacts)
+PictureCaptioningAPI/venv/
+PictureCaptioningAPI/.venv/
+PictureCaptioningAPI/__pycache__/
+PictureCaptioningAPI/.pytest_cache/
+PictureCaptioningAPI/*.py[cod]
+PictureCaptioningAPI/*.egg-info/
+PictureCaptioningAPI/.env
+PictureCaptioningAPI/.env.*
+PictureCaptioningAPI/.python-version
