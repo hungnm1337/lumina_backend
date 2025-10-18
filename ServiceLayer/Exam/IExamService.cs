@@ -16,5 +16,9 @@ namespace ServiceLayer.Exam
 
         // Lấy tất cả các câu hỏi và thông tin của một phần part trong bài thi
         public Task<ExamPartDTO> GetExamPartDetailAndQuestionByExamPartID(int partId);
+
+
+        //tạo exam
+        Task<bool> CreateExamFormatAsync(string fromSetKey, string toSetKey, int createdBy);
     }
 }

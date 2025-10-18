@@ -86,17 +86,22 @@ namespace lumina
 
             builder.Services.AddScoped<IImportRepository, ImportRepository>();
             builder.Services.AddScoped<IImportService, ImportService>();
+            builder.Services.AddScoped<IExamRepository, ExamRepository>();
+            builder.Services.AddScoped<IExamService, ExamService>();
             builder.Services.AddScoped<ILeaderboardRepository, LeaderboardRepository>();
             builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
             builder.Services.AddScoped<IExamPartRepository, ExamPartRepository>();
             builder.Services.AddScoped<IExamPartService, ExamPartService>();
-            builder.Services.AddScoped<IExamRepository, ExamRepository>();
+            
 
-            builder.Services.AddScoped<IExamService,ExamService>();
+    
             builder.Services.AddScoped<IVocabularyListRepository, VocabularyListRepository>();
             builder.Services.AddScoped<IVocabularyListService, VocabularyListService>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
             builder.Services.AddScoped<IArticleService, ArticleService>();
+
+            builder.Services.AddScoped<IExamPartService, ExamPartService>();
+            builder.Services.AddScoped<IExamPartRepository, ExamPartRepository>();
             builder.Services.AddScoped<IWritingService, WritingService>();
             builder.Services.AddScoped<ServiceLayer.TextToSpeech.ITextToSpeechService, ServiceLayer.TextToSpeech.TextToSpeechService>();
             builder.Services.AddCors(options =>
@@ -111,8 +116,6 @@ namespace lumina
             });
 
 
-            builder.Services.AddScoped<IExamPartService, ExamPartService>();
-            builder.Services.AddScoped<IExamPartRepository, ExamPartRepository>();
 
             var jwtSection = builder.Configuration.GetSection("Jwt");
             var jwtSecret = jwtSection["SecretKey"] ?? throw new InvalidOperationException("JWT secret key is not configured.");

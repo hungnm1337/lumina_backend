@@ -19,5 +19,7 @@ public class ExamPartRepository : IExamPartRepository
     {
         return await _context.ExamParts.ToListAsync();
     }
+
+
 }
 

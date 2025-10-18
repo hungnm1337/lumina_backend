@@ -24,7 +24,7 @@ namespace ServiceLayer.Questions
             _dbContext = systemContext;
         }
 
-        public async Task<int> CreatePromptWithQuestionsAsync(CreatePromptWithQuestionsDTO dto)
+        public async Task<int> CreatePassagePromptWithQuestionsAsync(CreatePromptWithQuestionsDTO dto)
         {
             using var transaction = await _dbContext.Database.BeginTransactionAsync();
 
@@ -135,5 +135,10 @@ namespace ServiceLayer.Questions
         public Task<int> AddQuestionAsync(QuestionCrudDto dto) => _questionRepository.AddQuestionAsync(dto);
         public Task<bool> UpdateQuestionAsync(QuestionCrudDto dto) => _questionRepository.UpdateQuestionAsync(dto);
         public Task<bool> DeleteQuestionAsync(int questionId) => _questionRepository.DeleteQuestionAsync(questionId);
+
+        public async Task<QuestionStatisticDto> GetStatisticsAsync()
+        {
+            return await _questionRepository.GetQuestionStatisticsAsync();
+        }
     }
 }
