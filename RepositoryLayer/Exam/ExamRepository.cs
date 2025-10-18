@@ -7,8 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace RepositoryLayer.Exam
-{
+
     public class ExamRepository : IExamRepository
     {
         private readonly LuminaSystemContext _luminaSystemContext;
@@ -161,5 +160,27 @@ namespace RepositoryLayer.Exam
 
             return examPartDetail;
         }
+
+        public async Task<List<Exam>> GetExamsBySetKeyAsync(string examSetKey)
+        {
+            return await _luminaSystemContext.Exams.Where(x => x.ExamSetKey == examSetKey).ToListAsync();
+        }
+
+        public async Task<List<ExamPart>> GetExamPartsByExamIdsAsync(List<int> examIds)
+        {
+            return await _luminaSystemContext.ExamParts.Where(p => examIds.Contains(p.ExamId)).ToListAsync();
+        }
+
+        public async Task InsertExamsAsync(List<Exam> exams)
+        {
+        _luminaSystemContext.Exams.AddRange(exams);
+            await _luminaSystemContext.SaveChangesAsync();
+        }
+
+        public async Task InsertExamPartsAsync(List<ExamPart> parts)
+        {
+            _luminaSystemContext.ExamParts.AddRange(parts);
+            await _luminaSystemContext.SaveChangesAsync();
+        }
     }
-}
+

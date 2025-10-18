@@ -10,6 +10,6 @@ namespace DataLayer.DTOs.Questions
     public class QuestionWithOptionsDTO
     {
         public AddQuestionDTO Question { get; set; }
-        public List<OptionDTO> Options { get; set; }
+        public List<OptionDTO>? Options { get; set; }
     }
 }

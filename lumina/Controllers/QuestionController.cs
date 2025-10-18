@@ -31,7 +31,7 @@ namespace lumina.Controllers
 
             try
             {
-                var promptId = await _questionService.CreatePromptWithQuestionsAsync(dto);
+                var promptId = await _questionService.CreatePassagePromptWithQuestionsAsync(dto);
                 return Ok(new { PromptId = promptId });
             }
             catch (Exception ex)
@@ -116,6 +116,14 @@ namespace lumina.Controllers
             var ok = await _questionService.DeleteQuestionAsync(id);
             if (!ok) return NotFound("Không tồn tại question!");
             return Ok(new { message = "Đã xóa!" });
+        }
+
+
+        [HttpGet("statistics")]
+        public async Task<IActionResult> GetStatistics()
+        {
+            var data = await _questionService.GetStatisticsAsync();
+            return Ok(data);
         }
 
 
