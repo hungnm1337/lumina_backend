@@ -142,7 +142,7 @@ namespace RepositoryLayer.Questions
         public async Task<int> AddQuestionAsync(QuestionCrudDto dto)
         {
             int countCorrect = dto.Options.Count(o => o.IsCorrect);
-            string questionType = countCorrect == 1 ? "SINGLE_CHOICE" : "MULTIPLE_CHOICE";
+           
 
             var question = new Question
             {
@@ -152,7 +152,7 @@ namespace RepositoryLayer.Questions
                 Time = dto.Time,
                 PartId = dto.PartId,       
                 PromptId = dto.PromptId,  
-                QuestionType = questionType,
+                QuestionType = dto.QuestionType,
                 Options = dto.Options.Select(o => new Option
                 {
                     Content = o.Content,
