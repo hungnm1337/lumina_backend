@@ -71,9 +71,9 @@ using System.Threading.Tasks;
         return true;
     }
 
-    public Task<ExamPartDTO> GetExamPartDetailAndQuestionByExamPartID(int partId)
+    public async Task<ExamPartDTO> GetExamPartDetailAndQuestionByExamPartID(int partId)
     {
-        throw new NotImplementedException();
+        return await _examRepository.GetExamPartDetailAndQuestionByExamPartID(partId);
     }
 }
 

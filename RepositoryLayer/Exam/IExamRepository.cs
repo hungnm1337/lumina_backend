@@ -12,7 +12,7 @@ using System.Threading.Tasks;
         public Task<List<ExamDTO>> GetAllExams(string? examType = null, string? partCode = null);
         public Task<ExamDTO> GetExamDetailAndExamPartByExamID(int examId);
 
-       /* public Task<ExamPartDTO> GetExamPartDetailAndQuestionByExamPartID(int partId);*/
+        public Task<ExamPartDTO> GetExamPartDetailAndQuestionByExamPartID(int partId);
 
 
         Task<List<Exam>> GetExamsBySetKeyAsync(string examSetKey);

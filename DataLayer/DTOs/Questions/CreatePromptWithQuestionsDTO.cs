@@ -51,7 +51,7 @@ namespace DataLayer.DTOs.Questions
 
         public string Skill { get; set; } = null!;
 
-        public string? PromptText { get; set; }
+        public string? ContentText { get; set; }
 
         public string? ReferenceImageUrl { get; set; }
 
