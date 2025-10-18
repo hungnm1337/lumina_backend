@@ -118,6 +118,10 @@ namespace DataLayer.Migrations
                     b.Property<bool?>("IsPublished")
                         .HasColumnType("bit");
 
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
                     b.Property<string>("Status")
                         .HasMaxLength(15)
                         .HasColumnType("nvarchar(15)");
@@ -390,6 +394,9 @@ namespace DataLayer.Migrations
                     b.Property<int>("ExamId")
                         .HasColumnType("int");
 
+                    b.Property<int>("MaxQuestions")
+                        .HasColumnType("int");
+
                     b.Property<int>("OrderIndex")
                         .HasColumnType("int");
 
@@ -420,11 +427,31 @@ namespace DataLayer.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("LeaderboardId"));
 
+                    b.Property<DateTime?>("CreateAt")
+                        .HasPrecision(3)
+                        .HasColumnType("datetime2(3)");
+
                     b.Property<DateTime?>("EndDate")
                         .HasPrecision(3)
                         .HasColumnType("datetime2(3)");
 
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("SeasonName")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<int>("SeasonNumber")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("StartDate")
+                        .HasPrecision(3)
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<DateTime?>("UpdateAt")
                         .HasPrecision(3)
                         .HasColumnType("datetime2(3)");
 
@@ -1003,25 +1030,31 @@ namespace DataLayer.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserAnswerId"));
 
                     b.Property<string>("AnswerContent")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<int>("AttemptId")
                         .HasColumnType("int")
                         .HasColumnName("AttemptID");
+
+                    b.Property<string>("AudioUrl")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("AudioURL");
 
                     b.Property<string>("FeedbackAi")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("FeedbackAI");
 
                     b.Property<bool?>("IsCorrect")
-                        .HasColumnType("bit");
+                        .HasColumnType("bit")
+                        .HasColumnName("IsCorrect");
 
                     b.Property<int>("QuestionId")
                         .HasColumnType("int")
                         .HasColumnName("QuestionID");
 
-                    b.Property<int?>("Score")
-                        .HasColumnType("int");
+                    b.Property<float?>("Score")
+                        .HasColumnType("real")
+                        .HasColumnName("Score");
 
                     b.Property<int?>("SelectedOptionId")
                         .HasColumnType("int")
@@ -1244,6 +1277,10 @@ namespace DataLayer.Migrations
                         .HasColumnName("VocabularyID");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("VocabularyId"));
+
+                    b.Property<string>("Category")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("Definition")
                         .IsRequired()

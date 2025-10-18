@@ -2,6 +2,12 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using RepositoryLayer.Event;
+using ServiceLayer.Auth;
+using ServiceLayer.Email;
+using RepositoryLayer.Leaderboard;
+using ServiceLayer.Leaderboard;
+using ServiceLayer.Event;
 using RepositoryLayer;
 using RepositoryLayer.Exam;
 using RepositoryLayer.Import;
@@ -12,6 +18,7 @@ using ServiceLayer.Auth;
 using ServiceLayer.Configs;
 using ServiceLayer.Email;
 using ServiceLayer.Exam;
+using ServiceLayer.Exam.Writting;
 using ServiceLayer.Import;
 using ServiceLayer.Questions;
 using ServiceLayer.Speaking;
@@ -20,6 +27,8 @@ using ServiceLayer.UploadFile;
 using ServiceLayer.User;
 using ServiceLayer.Vocabulary;
 using System.Text;
+using RepositoryLayer.Slide;
+using ServiceLayer.Slide;
 using OfficeOpenXml;
 
 namespace lumina
@@ -35,7 +44,13 @@ namespace lumina
             builder.Services.AddDbContext<LuminaSystemContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+            builder.Services.AddHttpClient<ImageCaptioningService>(client =>
+            {
+                client.BaseAddress = new Uri("http://localhost:5000");
 
+                client.Timeout = TimeSpan.FromSeconds(30);
+
+            });
             builder.Services.Configure<AzureSpeechSettings>(builder.Configuration.GetSection("AzureSpeechSettings"));
 
             builder.Services.AddScoped<IAzureSpeechService, AzureSpeechService>();
@@ -58,6 +73,10 @@ namespace lumina
             
             builder.Services.AddScoped<IUploadService, UploadService>();
             builder.Services.AddTransient<IEmailSender, SmtpEmailSender>();
+            builder.Services.AddScoped<IEventService,EventService>();
+            builder.Services.AddScoped<IEventRepository, EventRepository>();
+            builder.Services.AddScoped<ISlideService, SlideService>();
+            builder.Services.AddScoped<ISlideRepository, SlideRepository>();
             builder.Services.AddScoped<IArticleRepository, ArticleRepository>();
             builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
             builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -69,8 +88,13 @@ namespace lumina
             builder.Services.AddScoped<IImportService, ImportService>();
             builder.Services.AddScoped<IExamRepository, ExamRepository>();
             builder.Services.AddScoped<IExamService, ExamService>();
+            builder.Services.AddScoped<ILeaderboardRepository, LeaderboardRepository>();
+            builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
+            builder.Services.AddScoped<IExamPartRepository, ExamPartRepository>();
+            builder.Services.AddScoped<IExamPartService, ExamPartService>();
+            
 
-
+    
             builder.Services.AddScoped<IVocabularyListRepository, VocabularyListRepository>();
             builder.Services.AddScoped<IVocabularyListService, VocabularyListService>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -78,11 +102,13 @@ namespace lumina
 
             builder.Services.AddScoped<IExamPartService, ExamPartService>();
             builder.Services.AddScoped<IExamPartRepository, ExamPartRepository>();
+            builder.Services.AddScoped<IWritingService, WritingService>();
+            builder.Services.AddScoped<ServiceLayer.TextToSpeech.ITextToSpeechService, ServiceLayer.TextToSpeech.TextToSpeechService>();
             builder.Services.AddCors(options =>
             {
                 options.AddDefaultPolicy(policy =>
                 {
-                    policy.WithOrigins("https://localhost:4200", "http://localhost:4200")
+                    policy.AllowAnyOrigin()
                         .AllowAnyHeader()
                         .AllowAnyMethod();
                         //.AllowCredentials();

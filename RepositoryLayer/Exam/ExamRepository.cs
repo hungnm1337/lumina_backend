@@ -18,9 +18,23 @@ using System.Threading.Tasks;
         }
 
        
-        public async Task<List<ExamDTO>> GetAllExams()
+        public async Task<List<ExamDTO>> GetAllExams(string? examType = null, string? partCode = null)
         {
-            var exams = await _luminaSystemContext.Exams.Where(e => e.IsActive == true).ToListAsync();
+            var query = _luminaSystemContext.Exams.Where(e => e.IsActive == true);
+            
+            // Filter by ExamType if provided
+            if (!string.IsNullOrEmpty(examType))
+            {
+                query = query.Where(e => e.ExamType == examType);
+            }
+            
+            // Filter by PartCode if provided
+            if (!string.IsNullOrEmpty(partCode))
+            {
+                query = query.Where(e => e.ExamParts.Any(ep => ep.PartCode == partCode));
+            }
+            
+            var exams = await query.ToListAsync();
 
             var userIds = exams.Select(e => e.CreatedBy).Distinct();
             var users = await _luminaSystemContext.Users

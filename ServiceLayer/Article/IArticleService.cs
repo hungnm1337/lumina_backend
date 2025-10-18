@@ -1,6 +1,5 @@
-﻿using DataLayer.DTOs.Article;
-
-namespace ServiceLayer.Article;
+﻿
+using DataLayer.DTOs.Article; 
 
 public interface IArticleService
 {
@@ -8,6 +7,8 @@ public interface IArticleService
     Task<List<ArticleResponseDTO>> GetAllArticlesAsync();
     Task<bool> DeleteArticleAsync(int id);
     Task<ArticleResponseDTO?> UpdateArticleAsync(int id, ArticleUpdateDTO request, int updaterUserId);
-    Task<bool> PublishArticleAsync(int id, bool publish, int updaterUserId);
+    Task<bool> RequestApprovalAsync(int id, int staffUserId); 
+    Task<bool> ReviewArticleAsync(int id, ArticleReviewRequest request, int managerUserId);
+    Task<ArticleResponseDTO?> GetArticleByIdAsync(int id);
     Task<PagedResponse<ArticleResponseDTO>> QueryAsync(ArticleQueryParams query);
 }

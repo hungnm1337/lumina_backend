@@ -20,10 +20,13 @@ namespace lumina.Controllers
 
         // GET: api/exam
         // Lấy danh sách tất cả các bài thi (không bao gồm các phần Part)
+        // Có thể filter theo examType và partCode
         [HttpGet]
-        public async Task<ActionResult<List<ExamDTO>>> GetAllExams()
+        public async Task<ActionResult<List<ExamDTO>>> GetAllExams(
+            [FromQuery] string? examType = null, 
+            [FromQuery] string? partCode = null)
         {
-            var exams = await _examService.GetAllExams();
+            var exams = await _examService.GetAllExams(examType, partCode);
             return Ok(exams);
         }
 

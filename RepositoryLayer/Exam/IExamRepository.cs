@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
     public interface IExamRepository
     {
-        public Task<List<ExamDTO>> GetAllExams();
+        public Task<List<ExamDTO>> GetAllExams(string? examType = null, string? partCode = null);
         public Task<ExamDTO> GetExamDetailAndExamPartByExamID(int examId);
 
         public Task<ExamPartDTO> GetExamPartDetailAndQuestionByExamPartID(int partId);

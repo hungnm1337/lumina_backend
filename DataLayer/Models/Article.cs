@@ -25,6 +25,8 @@ public partial class Article
 
     public string? Status { get; set; }
 
+    public string? RejectionReason { get; set; }
+
     public virtual ICollection<ArticleSection> ArticleSections { get; set; } = new List<ArticleSection>();
 
     public virtual ArticleCategory Category { get; set; } = null!;
