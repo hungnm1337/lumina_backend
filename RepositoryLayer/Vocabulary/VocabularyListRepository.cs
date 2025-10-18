@@ -21,6 +21,13 @@ public class VocabularyListRepository : IVocabularyListRepository
         return await _context.VocabularyLists.FindAsync(id);
     }
 
+    public async Task<VocabularyList?> UpdateAsync(VocabularyList list)
+    {
+        _context.VocabularyLists.Update(list);
+        await _context.SaveChangesAsync();
+        return list;
+    }
+
     public async Task<IEnumerable<VocabularyListDTO>> GetAllAsync(string? searchTerm)
     {
         var query = _context.VocabularyLists
@@ -41,7 +48,36 @@ public class VocabularyListRepository : IVocabularyListRepository
                 IsPublic = vl.IsPublic,
                 MakeByName = vl.MakeByNavigation.FullName, // Lấy tên người tạo
                 CreateAt = vl.CreateAt,
-                VocabularyCount = vl.Vocabularies.Count(v => v.IsDeleted != true) // Đếm số từ
+                VocabularyCount = vl.Vocabularies.Count(v => v.IsDeleted != true), // Đếm số từ
+                Status = vl.Status,
+                RejectionReason = vl.RejectionReason
+            })
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<VocabularyListDTO>> GetByUserAsync(int userId, string? searchTerm)
+    {
+        var query = _context.VocabularyLists
+            .Where(vl => vl.IsDeleted != true && vl.MakeBy == userId)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            query = query.Where(vl => vl.Name.Contains(searchTerm));
+        }
+
+        return await query
+            .OrderByDescending(vl => vl.CreateAt)
+            .Select(vl => new VocabularyListDTO
+            {
+                VocabularyListId = vl.VocabularyListId,
+                Name = vl.Name,
+                IsPublic = vl.IsPublic,
+                MakeByName = vl.MakeByNavigation.FullName, // Lấy tên người tạo
+                CreateAt = vl.CreateAt,
+                VocabularyCount = vl.Vocabularies.Count(v => v.IsDeleted != true), // Đếm số từ
+                Status = vl.Status,
+                RejectionReason = vl.RejectionReason
             })
             .ToListAsync();
     }

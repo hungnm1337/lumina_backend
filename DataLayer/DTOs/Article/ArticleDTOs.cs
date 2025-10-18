@@ -92,6 +92,7 @@ public class ArticleQueryParams
     public int? CategoryId { get; set; }
     public bool? IsPublished { get; set; }
     public string? Status { get; set; }
+    public int? CreatedBy { get; set; } // Filter by author/user ID
 }
 
 public class PagedResponse<T>
