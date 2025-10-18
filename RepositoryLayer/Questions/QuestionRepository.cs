@@ -243,5 +243,44 @@ namespace RepositoryLayer.Questions
             };
         }
 
+        //public async Task<bool> UpdatePassageAndPrompt(PassageEditDto dto)
+        //{
+        //    var passage = await _context.Passages.Include(p => p.Prompts)
+        //                               .FirstOrDefaultAsync(p => p.PassageId == dto.PassageId);
+        //    if (passage == null) return false;
+
+        //    passage.Title = dto.Title;
+        //    passage.ContentText = dto.ContentText;
+
+        //    if (dto.Prompt != null)
+        //    {
+        //        var prompt = passage.Prompts.FirstOrDefault(pr => pr.PromptId == dto.Prompt.PromptId);
+        //        if (prompt == null)
+        //        {
+        //            prompt = new Prompt
+        //            {
+        //                PromptId = dto.Prompt.PromptId,
+        //                Skill = dto.Prompt.Skill,
+        //                Title = dto.Prompt.Title, // ✅ Thêm Title
+        //                ContentText = dto.Prompt.ContentText, // ✅ Đổi từ PromptText
+        //                ReferenceImageUrl = dto.Prompt.ReferenceImageUrl,
+        //                ReferenceAudioUrl = dto.Prompt.ReferenceAudioUrl
+        //            };
+        //            passage.Prompts.Add(prompt);
+        //        }
+        //        else
+        //        {
+        //            prompt.Skill = dto.Prompt.Skill;
+        //            prompt.Title = dto.Prompt.Title; // ✅ Thêm Title
+        //            prompt.ContentText = dto.Prompt.ContentText; // ✅ Đổi từ PromptText
+        //            prompt.ReferenceImageUrl = dto.Prompt.ReferenceImageUrl;
+        //            prompt.ReferenceAudioUrl = dto.Prompt.ReferenceAudioUrl;
+        //        }
+        //    }
+
+        //    await _context.SaveChangesAsync();
+        //    return true;
+        //}
+
     }
 }

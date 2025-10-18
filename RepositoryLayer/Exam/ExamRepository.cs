@@ -109,11 +109,14 @@ using System.Threading.Tasks;
 
 
 
-/*      
         public async Task<ExamPartDTO> GetExamPartDetailAndQuestionByExamPartID(int partId)
         {
             var examPartDetail = await _luminaSystemContext.ExamParts
                 .Where(ep => ep.PartId == partId)
+                .Include(ep => ep.Questions)
+                    .ThenInclude(q => q.Options)
+                .Include(ep => ep.Questions)
+                    .ThenInclude(q => q.Prompt)
                 .Select(ep => new ExamPartDTO
                 {
                     PartId = ep.PartId,
@@ -142,24 +145,19 @@ using System.Threading.Tasks;
                         Prompt = q.PromptId == null ? null : new PromptDTO 
                         {
                             PromptId = q.Prompt.PromptId, 
-                            PassageId = q.Prompt.PassageId,
+                            PassageId = null, // Model không có PassageId
                             Skill = q.Prompt.Skill,
-                            PromptText = q.Prompt.PromptText,
+                            ContentText = q.Prompt.ContentText, // Map từ ContentText
                             ReferenceImageUrl = q.Prompt.ReferenceImageUrl,
                             ReferenceAudioUrl = q.Prompt.ReferenceAudioUrl,
-                            Passage = q.Prompt.PassageId == null ? null : new PassageDTO 
-                            {
-                                PassageId = q.Prompt.Passage.PassageId, 
-                                Title = q.Prompt.Passage.Title,
-                                ContentText = q.Prompt.Passage.ContentText
-                            }
+                            Passage = null // Model không có Passage relationship
                         }
                     }).ToList()
                 })
                 .FirstOrDefaultAsync();
 
             return examPartDetail;
-        }*/
+        }
 
         public async Task<List<Exam>> GetExamsBySetKeyAsync(string examSetKey)
         {
@@ -181,6 +179,52 @@ using System.Threading.Tasks;
         {
             _luminaSystemContext.ExamParts.AddRange(parts);
             await _luminaSystemContext.SaveChangesAsync();
+        }
+
+        public async Task<ExamPartDTO> GetExamPartWithQuestionsAsync(int partId)
+        {
+            var part = await _luminaSystemContext.ExamParts
+                .Include(p => p.Questions)
+                    .ThenInclude(q => q.Options)
+                .Include(p => p.Questions)
+                    .ThenInclude(q => q.Prompt) // ✅ Đảm bảo Include Prompt
+                .FirstOrDefaultAsync(p => p.PartId == partId);
+
+            if (part == null) return null;
+
+            return new ExamPartDTO
+            {
+                PartId = part.PartId,
+                ExamId = part.ExamId,
+                PartCode = part.PartCode,
+                Title = part.Title,
+                OrderIndex = part.OrderIndex,
+                Questions = part.Questions.Select(q => new QuestionDTO
+                {
+                    QuestionId = q.QuestionId,
+                    StemText = q.StemText,
+                    QuestionType = q.QuestionType,
+                    QuestionExplain = q.QuestionExplain,
+                    ScoreWeight = q.ScoreWeight,
+                    Time = q.Time,
+                    Prompt = q.Prompt != null ? new PromptDTO
+                    {
+                        PromptId = q.Prompt.PromptId,
+                        Skill = q.Prompt.Skill,
+                        Title = q.Prompt.Title, // ✅ Thêm Title
+                        ContentText = q.Prompt.ContentText, // ✅ Đảm bảo có ContentText
+                        ReferenceImageUrl = q.Prompt.ReferenceImageUrl,
+                        ReferenceAudioUrl = q.Prompt.ReferenceAudioUrl,
+                    } : null,
+                    Options = q.Options?.Select(o => new OptionDTO
+                    {
+                        OptionId = o.OptionId,
+                        QuestionId = o.QuestionId,
+                        Content = o.Content,
+                        IsCorrect = o.IsCorrect
+                    }).ToList() ?? new List<OptionDTO>()
+                }).ToList()
+            };
         }
     }
 

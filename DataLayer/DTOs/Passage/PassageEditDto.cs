@@ -19,7 +19,8 @@ namespace DataLayer.DTOs.Passage
     {
         public int PromptId { get; set; }
         public string Skill { get; set; }
-        public string PromptText { get; set; }
+        public string Title { get; set; }
+        public string ContentText { get; set; }
         public string? ReferenceImageUrl { get; set; }
         public string? ReferenceAudioUrl { get; set; }
     }
