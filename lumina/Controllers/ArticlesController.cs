@@ -59,10 +59,14 @@ public class ArticlesController : ControllerBase
 
     [HttpGet("{id}", Name = "GetArticleById")]
     [AllowAnonymous]
-    public IActionResult GetArticleById(int id)
+    public async Task<IActionResult> GetArticleById(int id)
     {
-        // TODO: Implement this endpoint properly later.
-        return Ok(new { Message = $"This is a placeholder for getting article with ID {id}." });
+        var article = await _articleService.GetArticleByIdAsync(id);
+        if (article == null)
+        {
+            return NotFound();
+        }
+        return Ok(article);
     }
 
     [HttpGet("categories")]
@@ -125,25 +129,41 @@ public class ArticlesController : ControllerBase
         return Ok(updated);
     }
 
-    // POST api/articles/{id}/publish
-    [HttpPost("{id}/publish")]
+    [HttpPost("{id}/request-approval")]
     [Authorize(Roles = "Staff")]
-    public async Task<ActionResult> Publish(int id, [FromBody] ArticlePublishRequest req)
+    public async Task<IActionResult> RequestApproval(int id)
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-        if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var updaterUserId))
+        if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var staffUserId))
         {
-            return Unauthorized(new ErrorResponse("Invalid token - User ID could not be determined."));
+            return Unauthorized(new ErrorResponse("Invalid token."));
         }
 
-        var ok = await _articleService.PublishArticleAsync(id, req.Publish, updaterUserId);
+        var ok = await _articleService.RequestApprovalAsync(id, staffUserId);
         if (!ok)
         {
-            return NotFound(new ErrorResponse($"Article with ID {id} not found."));
+            return NotFound(new ErrorResponse($"Article with ID {id} not found or cannot be submitted for approval."));
         }
         return NoContent();
     }
 
+    [HttpPost("{id}/review")]
+    [Authorize(Roles = "Manager")] // <-- Chỉ Manager mới có quyền này
+    public async Task<IActionResult> ReviewArticle(int id, [FromBody] ArticleReviewRequest request)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var managerUserId))
+        {
+            return Unauthorized(new ErrorResponse("Invalid token."));
+        }
+
+        var ok = await _articleService.ReviewArticleAsync(id, request, managerUserId);
+        if (!ok)
+        {
+            return NotFound(new ErrorResponse($"Article with ID {id} not found or is not pending review."));
+        }
+        return NoContent();
+    }
     [HttpDelete("{id}")]
     [Authorize(Roles = "Staff")]
     public async Task<ActionResult> DeleteArticle(int id)

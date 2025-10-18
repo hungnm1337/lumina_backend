@@ -2,11 +2,15 @@
 
 namespace ServiceLayer.Auth;
 
+
 public interface IAuthService
 {
-    Task<LoginResponse> LoginAsync(LoginRequestDTO request, CancellationToken cancellationToken);
+   
+    Task<LoginResponse> LoginAsync(LoginRequestDTO request);
 
-    Task<LoginResponse> GoogleLoginAsync(GoogleLoginRequest request, CancellationToken cancellationToken);
+    
+    Task<LoginResponse> GoogleLoginAsync(GoogleLoginRequest request);
 
-    Task<RegisterResponse> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken);
+    
+    Task<RegisterResponse> RegisterAsync(RegisterRequest request);
 }

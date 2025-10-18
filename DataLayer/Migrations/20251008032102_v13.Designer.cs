@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataLayer.Migrations
 {
     [DbContext(typeof(LuminaSystemContext))]
-    [Migration("20250928132245_vh")]
-    partial class vh
+    [Migration("20251008032102_v13")]
+    partial class v13
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -34,9 +34,8 @@ namespace DataLayer.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AccountId"));
 
                     b.Property<string>("AccessToken")
-                        .HasMaxLength(1024)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(1024)");
+                        .HasColumnType("varchar(max)");
 
                     b.Property<string>("AuthProvider")
                         .HasMaxLength(50)
@@ -61,9 +60,8 @@ namespace DataLayer.Migrations
                         .HasColumnType("varchar(100)");
 
                     b.Property<string>("RefreshToken")
-                        .HasMaxLength(1024)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(1024)");
+                        .HasColumnType("varchar(max)");
 
                     b.Property<DateTime?>("TokenExpiresAt")
                         .HasPrecision(3)
@@ -122,6 +120,10 @@ namespace DataLayer.Migrations
 
                     b.Property<bool?>("IsPublished")
                         .HasColumnType("bit");
+
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<string>("Status")
                         .HasMaxLength(15)
@@ -500,6 +502,9 @@ namespace DataLayer.Migrations
                     b.Property<int?>("DurationInDays")
                         .HasColumnType("int");
 
+                    b.Property<bool?>("IsActive")
+                        .HasColumnType("bit");
+
                     b.Property<string>("PackageName")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -685,6 +690,9 @@ namespace DataLayer.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<string>("SampleAnswer")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("ScoreWeight")
                         .HasColumnType("int");
 
@@ -847,6 +855,46 @@ namespace DataLayer.Migrations
                     b.HasIndex("UpdateBy");
 
                     b.ToTable("Slides");
+                });
+
+            modelBuilder.Entity("DataLayer.Models.SpeakingResult", b =>
+                {
+                    b.Property<int>("SpeakingResultId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SpeakingResultId"));
+
+                    b.Property<float?>("AccuracyScore")
+                        .HasColumnType("real");
+
+                    b.Property<float?>("CompletenessScore")
+                        .HasColumnType("real");
+
+                    b.Property<float?>("ContentScore")
+                        .HasColumnType("real");
+
+                    b.Property<float?>("FluencyScore")
+                        .HasColumnType("real");
+
+                    b.Property<float?>("GrammarScore")
+                        .HasColumnType("real");
+
+                    b.Property<float?>("PronunciationScore")
+                        .HasColumnType("real");
+
+                    b.Property<int>("UserAnswerId")
+                        .HasColumnType("int");
+
+                    b.Property<float?>("VocabularyScore")
+                        .HasColumnType("real");
+
+                    b.HasKey("SpeakingResultId");
+
+                    b.HasIndex("UserAnswerId")
+                        .IsUnique();
+
+                    b.ToTable("SpeakingResults");
                 });
 
             modelBuilder.Entity("DataLayer.Models.Subscription", b =>
@@ -1204,6 +1252,9 @@ namespace DataLayer.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("VocabularyId"));
 
+                    b.Property<string>("AudioUrl")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Definition")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -1519,6 +1570,17 @@ namespace DataLayer.Migrations
                     b.Navigation("CreateByNavigation");
 
                     b.Navigation("UpdateByNavigation");
+                });
+
+            modelBuilder.Entity("DataLayer.Models.SpeakingResult", b =>
+                {
+                    b.HasOne("DataLayer.Models.UserAnswer", "UserAnswer")
+                        .WithOne("SpeakingResult")
+                        .HasForeignKey("DataLayer.Models.SpeakingResult", "UserAnswerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("UserAnswer");
                 });
 
             modelBuilder.Entity("DataLayer.Models.Subscription", b =>
@@ -1841,6 +1903,11 @@ namespace DataLayer.Migrations
                     b.Navigation("UserSpacedRepetitions");
 
                     b.Navigation("VocabularyLists");
+                });
+
+            modelBuilder.Entity("DataLayer.Models.UserAnswer", b =>
+                {
+                    b.Navigation("SpeakingResult");
                 });
 
             modelBuilder.Entity("DataLayer.Models.VocabularyList", b =>

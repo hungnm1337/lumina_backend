@@ -93,14 +93,14 @@ namespace DataLayer.DTOs.Exam
 
     public class PassageDTO
     {
-        public int PassageId { get; set; }
+        public int? PassageId { get; set; }
         public string Title { get; set; } = null!;
         public string ContentText { get; set; } = null!;
     }
 
     public class OptionDTO
     {
-        public int OptionId { get; set; }
+        public int? OptionId { get; set; }
 
         public int QuestionId { get; set; }
 

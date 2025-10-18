@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataLayer.Migrations
 {
     [DbContext(typeof(LuminaSystemContext))]
-    [Migration("20250928125240_Init")]
-    partial class Init
+    [Migration("20251001130027_v5")]
+    partial class v5
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -34,9 +34,8 @@ namespace DataLayer.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AccountId"));
 
                     b.Property<string>("AccessToken")
-                        .HasMaxLength(1024)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(1024)");
+                        .HasColumnType("varchar(max)");
 
                     b.Property<string>("AuthProvider")
                         .HasMaxLength(50)
@@ -61,9 +60,8 @@ namespace DataLayer.Migrations
                         .HasColumnType("varchar(100)");
 
                     b.Property<string>("RefreshToken")
-                        .HasMaxLength(1024)
                         .IsUnicode(false)
-                        .HasColumnType("varchar(1024)");
+                        .HasColumnType("varchar(max)");
 
                     b.Property<DateTime?>("TokenExpiresAt")
                         .HasPrecision(3)
@@ -499,6 +497,9 @@ namespace DataLayer.Migrations
 
                     b.Property<int?>("DurationInDays")
                         .HasColumnType("int");
+
+                    b.Property<bool?>("IsActive")
+                        .HasColumnType("bit");
 
                     b.Property<string>("PackageName")
                         .IsRequired()
