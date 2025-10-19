@@ -57,6 +57,15 @@ namespace ServiceLayer.Import
                     var referenceImageUrl = passageSheet.Cells[row, 5].Text.Trim();
                     var referenceAudioUrl = passageSheet.Cells[row, 6].Text.Trim();
 
+                    if (string.IsNullOrWhiteSpace(passageNumber))
+                        throw new Exception($"Passages_Prompts: Dòng {row} thiếu PassageNumber!");
+                    if (string.IsNullOrWhiteSpace(title))
+                        throw new Exception($"Passages_Prompts: Dòng {row} thiếu Title!");
+                    if (string.IsNullOrWhiteSpace(content))
+                        throw new Exception($"Passages_Prompts: Dòng {row} thiếu ContentText!");
+                    if (string.IsNullOrWhiteSpace(skill) || !"listening,reading,speaking,writing".Contains(skill.ToLower()))
+                        throw new Exception($"Passages_Prompts: Dòng {row} nhập sai cột Skill!");
+
                     if (!passagePromptCache.ContainsKey(passageNumber))
                     {
                         var prompt = new Prompt
