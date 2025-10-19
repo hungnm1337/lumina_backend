@@ -1,4 +1,5 @@
-﻿using DataLayer.Models;
+﻿using DataLayer.DTOs.ExamPart;
+using DataLayer.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -20,6 +21,20 @@ public class ExamPartRepository : IExamPartRepository
         return await _context.ExamParts.ToListAsync();
     }
 
+    public async Task<List<ExamPartDto>> GetAllExamPartsAsync()
+    {
+        return await _context.ExamParts
+            .Select(part => new ExamPartDto
+            {
+                PartId = part.PartId,
+                PartCode = part.PartCode,
+                Title = part.Title,
+                MaxQuestions = part.MaxQuestions,
+                SkillType = part.Exam.ExamType,
+                ExamSetKey = part.Exam != null ? part.Exam.ExamSetKey : null
+            })
+            .ToListAsync();
+    }
 
 }
 
