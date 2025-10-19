@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ServiceLayer.Vocabulary;
 using System.Security.Claims;
+using RepositoryLayer.UnitOfWork;
 
 namespace lumina.Controllers
 {
@@ -14,11 +15,13 @@ namespace lumina.Controllers
     {
         private readonly IVocabularyListService _vocabularyListService;
         private readonly ILogger<VocabularyListsController> _logger;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public VocabularyListsController(IVocabularyListService vocabularyListService, ILogger<VocabularyListsController> logger)
+        public VocabularyListsController(IVocabularyListService vocabularyListService, ILogger<VocabularyListsController> logger, IUnitOfWork unitOfWork)
         {
             _vocabularyListService = vocabularyListService;
             _logger = logger;
+            _unitOfWork = unitOfWork;
         }
 
       
@@ -54,8 +57,41 @@ namespace lumina.Controllers
         {
             try
             {
-                var lists = await _vocabularyListService.GetListsAsync(searchTerm);
-                return Ok(lists);
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+                if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var currentUserId))
+                {
+                    _logger.LogWarning("Invalid token: Claim 'NameIdentifier' not found or invalid.");
+                    return Unauthorized(new ErrorResponse("Invalid token - User ID could not be determined."));
+                }
+
+                _logger.LogInformation("Getting vocabulary lists for user {UserId}", currentUserId);
+
+                // Lấy role của user hiện tại
+                var user = await _unitOfWork.Users.GetUserByIdAsync(currentUserId);
+                if (user == null)
+                {
+                    _logger.LogWarning("User {UserId} not found in database", currentUserId);
+                    return Unauthorized(new ErrorResponse("User not found."));
+                }
+
+                _logger.LogInformation("User {UserId} has RoleId {RoleId}", currentUserId, user.RoleId);
+
+                // Nếu là Staff (RoleID = 3), chỉ lấy vocabulary lists của chính họ
+                if (user.RoleId == 3)
+                {
+                    _logger.LogInformation("User {UserId} is Staff, filtering vocabulary lists by MakeBy", currentUserId);
+                    var lists = await _vocabularyListService.GetListsByUserAsync(currentUserId, searchTerm);
+                    _logger.LogInformation("Found {Count} vocabulary lists for Staff {UserId}", lists.Count(), currentUserId);
+                    return Ok(lists);
+                }
+                else
+                {
+                    _logger.LogInformation("User {UserId} is not Staff (RoleId: {RoleId}), getting all vocabulary lists", currentUserId, user.RoleId);
+                    // Manager và Admin có thể xem tất cả vocabulary lists
+                    var lists = await _vocabularyListService.GetListsAsync(searchTerm);
+                    _logger.LogInformation("Found {Count} total vocabulary lists", lists.Count());
+                    return Ok(lists);
+                }
             }
             catch (Exception ex)
             {
@@ -65,9 +101,124 @@ namespace lumina.Controllers
         }
 
         [HttpGet("{id}", Name = "GetListById")]
-        public IActionResult GetListById(int id)
+        public async Task<IActionResult> GetListById(int id)
         {
-            return Ok(new { Message = $"Placeholder for getting list with ID {id}" });
+            try
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+                if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var currentUserId))
+                {
+                    return Unauthorized(new ErrorResponse("Invalid token - User ID could not be determined."));
+                }
+
+                // Lấy thông tin user để kiểm tra role
+                var user = await _unitOfWork.Users.GetUserByIdAsync(currentUserId);
+                if (user == null)
+                {
+                    return Unauthorized(new ErrorResponse("User not found."));
+                }
+
+                // Lấy vocabulary list
+                var vocabularyList = await _unitOfWork.VocabularyLists.FindByIdAsync(id);
+                if (vocabularyList == null)
+                {
+                    return NotFound(new ErrorResponse($"Vocabulary list with ID {id} not found."));
+                }
+
+                // Nếu là Staff (RoleID = 3), chỉ có thể xem vocabulary list của chính họ
+                if (user.RoleId == 3 && vocabularyList.MakeBy != currentUserId)
+                {
+                    return Forbid("You can only view your own vocabulary lists.");
+                }
+
+                // TODO: Implement proper response
+                return Ok(new { Message = $"Vocabulary list with ID {id} found" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while fetching vocabulary list with ID {Id}.", id);
+                return StatusCode(500, new ErrorResponse("An internal server error occurred."));
+            }
         }
+
+        // POST api/vocabulary-lists/{id}/request-approval
+        [HttpPost("{id}/request-approval")]
+        [Authorize(Roles = "Staff")]
+        public async Task<IActionResult> RequestApproval(int id)
+        {
+            try
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+                if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var staffUserId))
+                {
+                    return Unauthorized(new ErrorResponse("Invalid token."));
+                }
+
+                // Kiểm tra xem staff có phải là tác giả của vocabulary list không
+                var vocabularyList = await _unitOfWork.VocabularyLists.FindByIdAsync(id);
+                if (vocabularyList == null)
+                {
+                    return NotFound(new ErrorResponse($"Vocabulary list with ID {id} not found."));
+                }
+
+                // Lấy thông tin user để kiểm tra role
+                var user = await _unitOfWork.Users.GetUserByIdAsync(staffUserId);
+                if (user == null)
+                {
+                    return Unauthorized(new ErrorResponse("User not found."));
+                }
+
+                // Nếu là Staff (RoleID = 3), chỉ có thể gửi duyệt vocabulary list của chính họ
+                if (user.RoleId == 3 && vocabularyList.MakeBy != staffUserId)
+                {
+                    return Forbid("You can only submit your own vocabulary lists for approval.");
+                }
+
+                var ok = await _vocabularyListService.RequestApprovalAsync(id, staffUserId);
+                if (!ok)
+                {
+                    return NotFound(new ErrorResponse($"Vocabulary list with ID {id} not found or cannot be submitted for approval."));
+                }
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while requesting approval for vocabulary list with ID {Id}.", id);
+                return StatusCode(500, new ErrorResponse("An internal server error occurred."));
+            }
+        }
+
+        // POST api/vocabulary-lists/{id}/review
+        [HttpPost("{id}/review")]
+        [Authorize(Roles = "Manager")] // Chỉ Manager mới có quyền này
+        public async Task<IActionResult> ReviewList(int id, [FromBody] VocabularyListReviewRequest request)
+        {
+            try
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+                if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var managerUserId))
+                {
+                    return Unauthorized(new ErrorResponse("Invalid token."));
+                }
+
+                var ok = await _vocabularyListService.ReviewListAsync(id, request.IsApproved, request.Comment, managerUserId);
+                if (!ok)
+                {
+                    return NotFound(new ErrorResponse($"Vocabulary list with ID {id} not found or is not pending review."));
+                }
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while reviewing vocabulary list with ID {Id}.", id);
+                return StatusCode(500, new ErrorResponse("An internal server error occurred."));
+            }
+        }
+    }
+
+    public class VocabularyListReviewRequest
+    {
+        public bool IsApproved { get; set; }
+        public string? Comment { get; set; }
     }
 }

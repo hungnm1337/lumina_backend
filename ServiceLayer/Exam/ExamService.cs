@@ -79,7 +79,6 @@ using System.Threading.Tasks;
         return true;
     }
 
-
     public Task<ExamPartDTO> GetExamPartDetailAndQuestionByExamPartID(int partId)
     {
         throw new NotImplementedException();
