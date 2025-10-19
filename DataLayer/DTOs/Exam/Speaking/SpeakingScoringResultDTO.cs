@@ -1,4 +1,4 @@
-﻿namespace DataLayer.DTOs.Exam
+﻿namespace DataLayer.DTOs.Exam.Speaking
 {
     public class SpeakingScoringResultDTO
     {
