@@ -77,5 +77,20 @@ namespace lumina.Controllers
                 return NotFound("ExamSetKey nguồn không tồn tại hoặc không có dữ liệu.");
         }
 
+        [HttpGet("all-with-parts")]
+        public async Task<IActionResult> GetAllExamsWithParts()
+        {
+            var data = await _examService.GetExamsGroupedBySetKeyAsync();
+            return Ok(data);
+        }
+
+        [HttpPost("toggle-status")]
+        public async Task<IActionResult> ToggleExamStatus(int examId)
+        {
+            var success = await _examService.ToggleExamStatusAsync(examId);
+            if (!success)
+                return BadRequest(new { message = "Không đủ câu hỏi. Không thể mở khóa bài thi!" });
+            return Ok(new { message = "Đổi trạng thái thành công." });
+        }
     }
 }
