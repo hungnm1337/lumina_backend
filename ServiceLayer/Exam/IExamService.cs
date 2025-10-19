@@ -1,5 +1,4 @@
 ﻿using DataLayer.DTOs.Exam;
-using DataLayer.DTOs.ExamPart;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,10 +20,5 @@ namespace ServiceLayer.Exam
 
         //tạo exam
         Task<bool> CreateExamFormatAsync(string fromSetKey, string toSetKey, int createdBy);
-
-        Task<List<ExamGroupBySetKeyDto>> GetExamsGroupedBySetKeyAsync();
-
-
-        Task<bool> ToggleExamStatusAsync(int examId);
     }
 }
