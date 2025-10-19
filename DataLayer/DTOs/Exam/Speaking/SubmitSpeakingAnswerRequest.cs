@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Http;
 
-namespace DataLayer.DTOs.Exam
+namespace DataLayer.DTOs.Exam.Speaking
 {
     public class SubmitSpeakingAnswerRequest
     {

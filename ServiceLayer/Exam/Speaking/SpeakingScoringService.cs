@@ -1,5 +1,5 @@
 ﻿using DataLayer.DTOs;
-using DataLayer.DTOs.Exam;
+using DataLayer.DTOs.Exam.Speaking;
 using DataLayer.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;

@@ -9,7 +9,7 @@ using RepositoryLayer.UnitOfWork;
 using ServiceLayer.Speaking;
 using System.Security.Claims;
 using ServiceLayer.Speech;
-using DataLayer.DTOs.Exam;
+using DataLayer.DTOs.Exam.Speaking;
 
 [Authorize]
 [ApiController]
