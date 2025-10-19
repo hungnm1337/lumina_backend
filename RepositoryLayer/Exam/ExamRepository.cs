@@ -110,7 +110,55 @@ using System.Threading.Tasks;
 
 
 
-        
+    public async Task<ExamPartDTO> GetExamPartDetailAndQuestionByExamPartID(int partId)
+    {
+        var examPartDetail = await _luminaSystemContext.ExamParts
+            .Where(ep => ep.PartId == partId)
+            .Include(ep => ep.Questions)
+                .ThenInclude(q => q.Options)
+            .Include(ep => ep.Questions)
+                .ThenInclude(q => q.Prompt)
+            .Select(ep => new ExamPartDTO
+            {
+                PartId = ep.PartId,
+                ExamId = ep.ExamId,
+                PartCode = ep.PartCode,
+                Title = ep.Title,
+                OrderIndex = ep.OrderIndex,
+                Questions = ep.Questions.Select(q => new QuestionDTO
+                {
+                    QuestionId = q.QuestionId,
+                    PartId = q.PartId,
+                    QuestionType = q.QuestionType,
+                    StemText = q.StemText,
+                    PromptId = q.PromptId,
+                    ScoreWeight = q.ScoreWeight,
+                    QuestionExplain = q.QuestionExplain,
+                    Time = q.Time,
+                    QuestionNumber = q.QuestionNumber,
+                    Options = q.Options.Select(o => new OptionDTO
+                    {
+                        OptionId = o.OptionId,
+                        QuestionId = o.QuestionId,
+                        Content = o.Content,
+                        IsCorrect = o.IsCorrect
+                    }).ToList(),
+                    Prompt = q.PromptId == null ? null : new PromptDTO
+                    {
+                        PromptId = q.Prompt.PromptId,
+                        PassageId = null, // Model không có PassageId
+                        Skill = q.Prompt.Skill,
+                        ContentText = q.Prompt.ContentText, // Map từ ContentText
+                        ReferenceImageUrl = q.Prompt.ReferenceImageUrl,
+                        ReferenceAudioUrl = q.Prompt.ReferenceAudioUrl,
+                        Passage = null // Model không có Passage relationship
+                    }
+                }).ToList()
+            })
+            .FirstOrDefaultAsync();
+
+        return examPartDetail;
+    }
 
 
     public async Task<bool> ExamSetKeyExistsAsync(string setKey)

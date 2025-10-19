@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace DataLayer.Migrations
 {
     /// <inheritdoc />
-    public partial class v36 : Migration
+    public partial class v23 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -394,7 +394,10 @@ namespace DataLayer.Migrations
                     IsPublic = table.Column<bool>(type: "bit", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: true),
                     Name = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(15)", maxLength: 15, nullable: true)
+                    Status = table.Column<string>(type: "nvarchar(15)", maxLength: 15, nullable: true),
+                    UpdatedBy = table.Column<int>(type: "int", nullable: true),
+                    RejectionReason = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UpdatedByNavigationUserId = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -402,6 +405,11 @@ namespace DataLayer.Migrations
                     table.ForeignKey(
                         name: "FK_VocabularyList_Users",
                         column: x => x.MakeBy,
+                        principalTable: "Users",
+                        principalColumn: "UserID");
+                    table.ForeignKey(
+                        name: "FK_VocabularyList_Users_UpdatedByNavigationUserId",
+                        column: x => x.UpdatedByNavigationUserId,
                         principalTable: "Users",
                         principalColumn: "UserID");
                 });
@@ -1052,6 +1060,11 @@ namespace DataLayer.Migrations
                 name: "IX_VocabularyList_MakeBy",
                 table: "VocabularyList",
                 column: "MakeBy");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_VocabularyList_UpdatedByNavigationUserId",
+                table: "VocabularyList",
+                column: "UpdatedByNavigationUserId");
         }
 
         /// <inheritdoc />
