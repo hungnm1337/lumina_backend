@@ -11,7 +11,7 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 
-namespace ServiceLayer.Speaking
+namespace ServiceLayer.Exam.Speaking
 {
     public class SpeakingScoringService : ISpeakingScoringService
     {
@@ -98,9 +98,9 @@ namespace ServiceLayer.Speaking
                 AccuracyScore = (float?)azureResult.AccuracyScore,
                 FluencyScore = (float?)azureResult.FluencyScore,
                 CompletenessScore = (float?)azureResult.CompletenessScore,
-                GrammarScore = (float?)nlpResult.Grammar_score,
-                VocabularyScore = (float?)nlpResult.Vocabulary_score,
-                ContentScore = (float?)nlpResult.Content_score
+                GrammarScore = nlpResult.Grammar_score,
+                VocabularyScore = nlpResult.Vocabulary_score,
+                ContentScore = nlpResult.Content_score
             };
 
             await _unitOfWork.SpeakingResults.AddAsync(speakingResult);
@@ -207,12 +207,12 @@ namespace ServiceLayer.Speaking
             }
 
             double totalScore =
-                (azureResult.PronunciationScore * pronWeight) +
-                (azureResult.AccuracyScore * accWeight) +
-                (azureResult.FluencyScore * fluWeight) +
-                (nlpResult.Grammar_score * gramWeight) +
-                (nlpResult.Vocabulary_score * vocabWeight) +
-                (nlpResult.Content_score * contentWeight);
+                azureResult.PronunciationScore * pronWeight +
+                azureResult.AccuracyScore * accWeight +
+                azureResult.FluencyScore * fluWeight +
+                nlpResult.Grammar_score * gramWeight +
+                nlpResult.Vocabulary_score * vocabWeight +
+                nlpResult.Content_score * contentWeight;
 
             double totalWeight = pronWeight + accWeight + fluWeight + gramWeight + vocabWeight + contentWeight;
             if (totalWeight > 0)
