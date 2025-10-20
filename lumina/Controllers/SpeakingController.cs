@@ -6,10 +6,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RepositoryLayer.UnitOfWork;
-using ServiceLayer.Speaking;
 using System.Security.Claims;
 using ServiceLayer.Speech;
 using DataLayer.DTOs.Exam.Speaking;
+using ServiceLayer.Exam.Speaking;
 
 [Authorize]
 [ApiController]
