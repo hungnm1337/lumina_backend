@@ -78,24 +78,16 @@ namespace DataLayer.DTOs.Exam
     {
         public int PromptId { get; set; }
 
-        public int? PassageId { get; set; }
-
         public string Skill { get; set; } = null!;
 
-        public string? PromptText { get; set; }
+        public string ContentText { get; set; } = null!;
 
+        public string Title { get; set; } = null!;
         public string? ReferenceImageUrl { get; set; }
 
         public string? ReferenceAudioUrl { get; set; }
 
-        public PassageDTO Passage { get; set; }
-    }
-
-    public class PassageDTO
-    {
-        public int? PassageId { get; set; }
-        public string Title { get; set; } = null!;
-        public string ContentText { get; set; } = null!;
+        
     }
 
     public class OptionDTO

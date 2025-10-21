@@ -10,7 +10,6 @@ namespace DataLayer.DTOs.Questions
 {
     public class CreatePromptWithQuestionsDTO
     {
-        public PassageDTO Passage { get; set; }
         public AddPromptDTO Prompt { get; set; }
         public List<QuestionWithOptionsDTO> Questions { get; set; }
     }

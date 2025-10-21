@@ -28,10 +28,10 @@ using System.Threading.Tasks;
             return await _examRepository.GetExamDetailAndExamPartByExamID(examId);
         }
 
-       /* public async Task<ExamPartDTO> GetExamPartDetailAndQuestionByExamPartID(int partId)
+        public async Task<ExamPartDTO> GetExamPartDetailAndQuestionByExamPartID(int partId)
         {
             return await _examRepository.GetExamPartDetailAndQuestionByExamPartID(partId);
-        }*/
+        }
 
     public async Task<bool> CreateExamFormatAsync(string fromSetKey, string toSetKey, int createdBy)
     {
@@ -71,9 +71,6 @@ using System.Threading.Tasks;
         return true;
     }
 
-    public Task<ExamPartDTO> GetExamPartDetailAndQuestionByExamPartID(int partId)
-    {
-        throw new NotImplementedException();
-    }
+    
 }
 

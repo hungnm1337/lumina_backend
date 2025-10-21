@@ -109,59 +109,52 @@ using System.Threading.Tasks;
 
 
 
-/*      
-        public async Task<ExamPartDTO> GetExamPartDetailAndQuestionByExamPartID(int partId)
-        {
-            var examPartDetail = await _luminaSystemContext.ExamParts
-                .Where(ep => ep.PartId == partId)
-                .Select(ep => new ExamPartDTO
+
+    public async Task<ExamPartDTO> GetExamPartDetailAndQuestionByExamPartID(int partId)
+    {
+        var examPartDetail = await _luminaSystemContext.ExamParts
+            .Where(ep => ep.PartId == partId)
+            .Select(ep => new ExamPartDTO
+            {
+                PartId = ep.PartId,
+                ExamId = ep.ExamId,
+                PartCode = ep.PartCode,
+                Title = ep.Title,
+                OrderIndex = ep.OrderIndex,
+                Questions = ep.Questions.Select(q => new QuestionDTO
                 {
-                    PartId = ep.PartId,
-                    ExamId = ep.ExamId,
-                    PartCode = ep.PartCode,
-                    Title = ep.Title,
-                    OrderIndex = ep.OrderIndex,
-                    Questions = ep.Questions.Select(q => new QuestionDTO
+                    QuestionId = q.QuestionId,
+                    PartId = q.PartId,
+                    QuestionType = q.QuestionType,
+                    StemText = q.StemText,
+                    PromptId = q.PromptId,
+                    ScoreWeight = q.ScoreWeight,
+                    QuestionExplain = q.QuestionExplain,
+                    Time = q.Time,
+                    QuestionNumber = q.QuestionNumber,
+                    Options = q.Options.Select(o => new OptionDTO
                     {
-                        QuestionId = q.QuestionId,
-                        PartId = q.PartId,
-                        QuestionType = q.QuestionType,
-                        StemText = q.StemText,
-                        PromptId = q.PromptId,
-                        ScoreWeight = q.ScoreWeight,
-                        QuestionExplain = q.QuestionExplain,
-                        Time = q.Time,
-                        QuestionNumber = q.QuestionNumber,
-                        Options = q.Options.Select(o => new OptionDTO
-                        {
-                            OptionId = o.OptionId,
-                            QuestionId = o.QuestionId,
-                            Content = o.Content,
-                            IsCorrect = o.IsCorrect
-                        }).ToList(),
-                        Prompt = q.PromptId == null ? null : new PromptDTO 
-                        {
-                            PromptId = q.Prompt.PromptId, 
-                            PassageId = q.Prompt.PassageId,
-                            Skill = q.Prompt.Skill,
-                            PromptText = q.Prompt.PromptText,
-                            ReferenceImageUrl = q.Prompt.ReferenceImageUrl,
-                            ReferenceAudioUrl = q.Prompt.ReferenceAudioUrl,
-                            Passage = q.Prompt.PassageId == null ? null : new PassageDTO 
-                            {
-                                PassageId = q.Prompt.Passage.PassageId, 
-                                Title = q.Prompt.Passage.Title,
-                                ContentText = q.Prompt.Passage.ContentText
-                            }
-                        }
-                    }).ToList()
-                })
-                .FirstOrDefaultAsync();
+                        OptionId = o.OptionId,
+                        QuestionId = o.QuestionId,
+                        Content = o.Content,
+                        IsCorrect = o.IsCorrect
+                    }).ToList(), 
+                    Prompt = q.Prompt == null ? null : new PromptDTO
+                    {
+                        PromptId = q.Prompt.PromptId,
+                        Skill = q.Prompt.Skill,
+                        ReferenceImageUrl = q.Prompt.ReferenceImageUrl,
+                        ReferenceAudioUrl = q.Prompt.ReferenceAudioUrl,
+                        ContentText = q.Prompt.ContentText,
+                        Title = q.Prompt.Title
+                    }
+                }).ToList() 
+            })
+            .FirstOrDefaultAsync();
 
-            return examPartDetail;
-        }*/
-
-        public async Task<List<Exam>> GetExamsBySetKeyAsync(string examSetKey)
+        return examPartDetail;
+    }
+    public async Task<List<Exam>> GetExamsBySetKeyAsync(string examSetKey)
         {
             return await _luminaSystemContext.Exams.Where(x => x.ExamSetKey == examSetKey).ToListAsync();
         }
