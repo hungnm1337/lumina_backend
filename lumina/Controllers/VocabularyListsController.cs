@@ -10,7 +10,7 @@ namespace lumina.Controllers
 {
     [ApiController]
     [Route("api/vocabulary-lists")]
-    [Authorize(Roles = "Staff")]
+    [Authorize(Roles = "Staff,Manager")]
     public class VocabularyListsController : ControllerBase
     {
         private readonly IVocabularyListService _vocabularyListService;
@@ -90,6 +90,14 @@ namespace lumina.Controllers
                     // Manager và Admin có thể xem tất cả vocabulary lists
                     var lists = await _vocabularyListService.GetListsAsync(searchTerm);
                     _logger.LogInformation("Found {Count} total vocabulary lists", lists.Count());
+                    
+                    // Debug: Log chi tiết từng list
+                    foreach (var list in lists)
+                    {
+                        _logger.LogInformation("List: {Name}, Status: {Status}, MakeBy: {MakeBy}", 
+                            list.Name, list.Status, list.MakeByName);
+                    }
+                    
                     return Ok(lists);
                 }
             }
@@ -98,6 +106,12 @@ namespace lumina.Controllers
                 _logger.LogError(ex, "An error occurred while fetching vocabulary lists.");
                 return StatusCode(500, new ErrorResponse("An internal server error occurred."));
             }
+        }
+
+        [HttpGet("test")]
+        public IActionResult TestEndpoint()
+        {
+            return Ok(new { message = "VocabularyLists API is working", timestamp = DateTime.UtcNow });
         }
 
         [HttpGet("{id}", Name = "GetListById")]
@@ -211,6 +225,47 @@ namespace lumina.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "An error occurred while reviewing vocabulary list with ID {Id}.", id);
+                return StatusCode(500, new ErrorResponse("An internal server error occurred."));
+            }
+        }
+
+        // POST api/vocabulary-lists/{id}/send-back
+        [HttpPost("{id}/send-back")]
+        [Authorize(Roles = "Manager")] // Chỉ Manager mới có quyền này
+        public async Task<IActionResult> SendBackToStaff(int id)
+        {
+            try
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+                if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var managerUserId))
+                {
+                    return Unauthorized(new ErrorResponse("Invalid token."));
+                }
+
+                var vocabularyList = await _unitOfWork.VocabularyLists.FindByIdAsync(id);
+                if (vocabularyList == null)
+                {
+                    return NotFound(new ErrorResponse($"Vocabulary list with ID {id} not found."));
+                }
+
+                if (vocabularyList.Status != "Rejected")
+                {
+                    return BadRequest(new ErrorResponse("Can only send back rejected vocabulary lists."));
+                }
+
+                // Chuyển status từ Rejected về Draft để staff có thể chỉnh sửa
+                vocabularyList.Status = "Draft";
+                vocabularyList.UpdatedBy = managerUserId;
+                vocabularyList.UpdateAt = DateTime.UtcNow;
+
+                await _unitOfWork.VocabularyLists.UpdateAsync(vocabularyList);
+                await _unitOfWork.CompleteAsync();
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while sending back vocabulary list with ID {Id}.", id);
                 return StatusCode(500, new ErrorResponse("An internal server error occurred."));
             }
         }
