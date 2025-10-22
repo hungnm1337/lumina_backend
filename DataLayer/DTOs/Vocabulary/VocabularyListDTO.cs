@@ -11,4 +11,10 @@
         public string? Status { get; set; }
         public string? RejectionReason { get; set; }
     }
+
+    public class VocabularyListReviewRequest
+    {
+        public bool IsApproved { get; set; }
+        public string? Comment { get; set; }
+    }
 }
