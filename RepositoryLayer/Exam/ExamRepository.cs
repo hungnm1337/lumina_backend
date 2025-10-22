@@ -1,4 +1,5 @@
 ﻿using DataLayer.DTOs.Exam;
+using DataLayer.DTOs.ExamPart;
 using DataLayer.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -109,57 +110,63 @@ using System.Threading.Tasks;
 
 
 
-        public async Task<ExamPartDTO> GetExamPartDetailAndQuestionByExamPartID(int partId)
-        {
-            var examPartDetail = await _luminaSystemContext.ExamParts
-                .Where(ep => ep.PartId == partId)
-                .Include(ep => ep.Questions)
-                    .ThenInclude(q => q.Options)
-                .Include(ep => ep.Questions)
-                    .ThenInclude(q => q.Prompt)
-                .Select(ep => new ExamPartDTO
+    public async Task<ExamPartDTO> GetExamPartDetailAndQuestionByExamPartID(int partId)
+    {
+        var examPartDetail = await _luminaSystemContext.ExamParts
+            .Where(ep => ep.PartId == partId)
+            .Include(ep => ep.Questions)
+                .ThenInclude(q => q.Options)
+            .Include(ep => ep.Questions)
+                .ThenInclude(q => q.Prompt)
+            .Select(ep => new ExamPartDTO
+            {
+                PartId = ep.PartId,
+                ExamId = ep.ExamId,
+                PartCode = ep.PartCode,
+                Title = ep.Title,
+                OrderIndex = ep.OrderIndex,
+                Questions = ep.Questions.Select(q => new QuestionDTO
                 {
-                    PartId = ep.PartId,
-                    ExamId = ep.ExamId,
-                    PartCode = ep.PartCode,
-                    Title = ep.Title,
-                    OrderIndex = ep.OrderIndex,
-                    Questions = ep.Questions.Select(q => new QuestionDTO
+                    QuestionId = q.QuestionId,
+                    PartId = q.PartId,
+                    QuestionType = q.QuestionType,
+                    StemText = q.StemText,
+                    PromptId = q.PromptId,
+                    ScoreWeight = q.ScoreWeight,
+                    QuestionExplain = q.QuestionExplain,
+                    Time = q.Time,
+                    QuestionNumber = q.QuestionNumber,
+                    Options = q.Options.Select(o => new OptionDTO
                     {
-                        QuestionId = q.QuestionId,
-                        PartId = q.PartId,
-                        QuestionType = q.QuestionType,
-                        StemText = q.StemText,
-                        PromptId = q.PromptId,
-                        ScoreWeight = q.ScoreWeight,
-                        QuestionExplain = q.QuestionExplain,
-                        Time = q.Time,
-                        QuestionNumber = q.QuestionNumber,
-                        Options = q.Options.Select(o => new OptionDTO
-                        {
-                            OptionId = o.OptionId,
-                            QuestionId = o.QuestionId,
-                            Content = o.Content,
-                            IsCorrect = o.IsCorrect
-                        }).ToList(),
-                        Prompt = q.PromptId == null ? null : new PromptDTO 
-                        {
-                            PromptId = q.Prompt.PromptId, 
-                            PassageId = null, // Model không có PassageId
-                            Skill = q.Prompt.Skill,
-                            ContentText = q.Prompt.ContentText, // Map từ ContentText
-                            ReferenceImageUrl = q.Prompt.ReferenceImageUrl,
-                            ReferenceAudioUrl = q.Prompt.ReferenceAudioUrl,
-                            Passage = null // Model không có Passage relationship
-                        }
-                    }).ToList()
-                })
-                .FirstOrDefaultAsync();
+                        OptionId = o.OptionId,
+                        QuestionId = o.QuestionId,
+                        Content = o.Content,
+                        IsCorrect = o.IsCorrect
+                    }).ToList(),
+                    Prompt = q.PromptId == null ? null : new PromptDTO
+                    {
+                        PromptId = q.Prompt.PromptId,
+                        PassageId = null, // Model không có PassageId
+                        Skill = q.Prompt.Skill,
+                        ContentText = q.Prompt.ContentText, // Map từ ContentText
+                        ReferenceImageUrl = q.Prompt.ReferenceImageUrl,
+                        ReferenceAudioUrl = q.Prompt.ReferenceAudioUrl,
+                        Passage = null // Model không có Passage relationship
+                    }
+                }).ToList()
+            })
+            .FirstOrDefaultAsync();
 
-            return examPartDetail;
-        }
+        return examPartDetail;
+    }
 
-        public async Task<List<Exam>> GetExamsBySetKeyAsync(string examSetKey)
+
+    public async Task<bool> ExamSetKeyExistsAsync(string setKey)
+    {
+        return await _luminaSystemContext.Exams.AnyAsync(e => e.ExamSetKey == setKey);
+    }
+
+    public async Task<List<Exam>> GetExamsBySetKeyAsync(string examSetKey)
         {
             return await _luminaSystemContext.Exams.Where(x => x.ExamSetKey == examSetKey).ToListAsync();
         }
@@ -180,6 +187,74 @@ using System.Threading.Tasks;
             _luminaSystemContext.ExamParts.AddRange(parts);
             await _luminaSystemContext.SaveChangesAsync();
         }
+
+    public async Task<List<ExamGroupBySetKeyDto>> GetExamsGroupedBySetKeyAsync()
+    {
+        var exams = await _luminaSystemContext.Exams
+            .Include(e => e.ExamParts)
+                .ThenInclude(p => p.Questions)
+            .Select(e => new
+            {
+                e.ExamId,
+                e.Name,
+                e.IsActive,
+                e.Description,
+                e.ExamSetKey,
+                Parts = e.ExamParts.Select(p => new ExamPartBriefDto
+                {
+                    PartId = p.PartId,
+                    PartCode = p.PartCode,
+                    Title = p.Title,
+                    MaxQuestions = p.MaxQuestions,
+                    QuestionCount = p.Questions.Count()
+                }).ToList()
+            }).ToListAsync();
+
+        // Group by ExamSetKey
+        var result = exams
+            .GroupBy(x => x.ExamSetKey)
+            .Select(g => new ExamGroupBySetKeyDto
+            {
+                ExamSetKey = g.Key,
+               
+                Exams = g.Select(e => new ExamWithPartsDto
+                {
+                    ExamId = e.ExamId,
+                    Name = e.Name,
+                    IsActive = e.IsActive,
+                    Description = e.Description,
+                    Parts = e.Parts,
+                }).ToList()
+            }).OrderByDescending(g => g.ExamSetKey).ToList();
+
+        return result;
+    }
+    public async Task<bool> ToggleExamStatusAsync(int examId)
+    {
+        var exam = await _luminaSystemContext.Exams
+            .Include(e => e.ExamParts)
+            .ThenInclude(p => p.Questions)
+            .FirstOrDefaultAsync(e => e.ExamId == examId);
+
+        if (exam == null) return false;
+
+        if (exam.IsActive == false)
+        {
+            // đang khóa, chuẩn bị mở -> kiểm tra đủ câu hỏi
+            bool allPartsEnough = exam.ExamParts.All(p => p.Questions.Count() >= p.MaxQuestions);
+            if (!allPartsEnough) return false;
+            exam.IsActive = true;
+        }
+        else
+        {
+            // đang mở, chỉ việc khóa lại
+            exam.IsActive = false;
+        }
+
+        await _luminaSystemContext.SaveChangesAsync();
+        return true;
+
+    }
 
         public async Task<ExamPartDTO> GetExamPartWithQuestionsAsync(int partId)
         {
@@ -211,8 +286,8 @@ using System.Threading.Tasks;
                     {
                         PromptId = q.Prompt.PromptId,
                         Skill = q.Prompt.Skill,
-                        Title = q.Prompt.Title, // ✅ Thêm Title
-                        ContentText = q.Prompt.ContentText, // ✅ Đảm bảo có ContentText
+                        Title = q.Prompt.Title, 
+                        ContentText = q.Prompt.ContentText, 
                         ReferenceImageUrl = q.Prompt.ReferenceImageUrl,
                         ReferenceAudioUrl = q.Prompt.ReferenceAudioUrl,
                     } : null,
@@ -227,4 +302,5 @@ using System.Threading.Tasks;
             };
         }
     }
+
 

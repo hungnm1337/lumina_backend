@@ -1,4 +1,5 @@
 ﻿using DataLayer.DTOs.Exam;
+using DataLayer.DTOs.ExamPart;
 using DataLayer.Models;
 using RepositoryLayer.Exam;
 using ServiceLayer.Exam;
@@ -28,13 +29,20 @@ using System.Threading.Tasks;
             return await _examRepository.GetExamDetailAndExamPartByExamID(examId);
         }
 
-       /* public async Task<ExamPartDTO> GetExamPartDetailAndQuestionByExamPartID(int partId)
-        {
-            return await _examRepository.GetExamPartDetailAndQuestionByExamPartID(partId);
-        }*/
+    /* public async Task<ExamPartDTO> GetExamPartDetailAndQuestionByExamPartID(int partId)
+     {
+         return await _examRepository.GetExamPartDetailAndQuestionByExamPartID(partId);
+     }*/
 
     public async Task<bool> CreateExamFormatAsync(string fromSetKey, string toSetKey, int createdBy)
     {
+        // Lấy tháng-năm hiện tại
+        var currentSetKey = DateTime.Now.ToString("MM-yyyy");
+        // Kiểm tra xem đã tồn tại ExamSetKey này chưa
+        if (await _examRepository.ExamSetKeyExistsAsync(currentSetKey))
+            return false; // Đã tạo rồi trong tháng này
+
+        // Tiếp tục clone như bình thường
         var sourceExams = await _examRepository.GetExamsBySetKeyAsync(fromSetKey);
         if (!sourceExams.Any()) return false;
 
@@ -46,7 +54,7 @@ using System.Threading.Tasks;
             IsActive = false,
             CreatedBy = createdBy,
             CreatedAt = DateTime.Now,
-            ExamSetKey = toSetKey
+            ExamSetKey = currentSetKey 
         }).ToList();
 
         await _examRepository.InsertExamsAsync(newExams);
@@ -74,6 +82,16 @@ using System.Threading.Tasks;
     public async Task<ExamPartDTO> GetExamPartDetailAndQuestionByExamPartID(int partId)
     {
         return await _examRepository.GetExamPartDetailAndQuestionByExamPartID(partId);
+    }
+
+    public async Task<List<ExamGroupBySetKeyDto>> GetExamsGroupedBySetKeyAsync()
+    {
+        return await _examRepository.GetExamsGroupedBySetKeyAsync();
+    }
+
+    public async Task<bool> ToggleExamStatusAsync(int examId)
+    {
+        return await _examRepository.ToggleExamStatusAsync(examId);
     }
 }
 

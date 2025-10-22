@@ -10,10 +10,10 @@ namespace RepositoryLayer.Import
 {
     public interface IImportRepository
     {
-        /*Task<Passage> AddPassageAsync(Passage passage);*/
         Task<Prompt> AddPromptAsync(Prompt prompt);
         Task<Question> AddQuestionAsync(Question question);
         Task AddOptionsAsync(IEnumerable<Option> options);
+
       /*  Task<List<Prompt>> GetPromptsWithPassagesAsync();*/
         Task<IDbContextTransaction> BeginTransactionAsync();
         Task SaveChangesAsync();

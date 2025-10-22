@@ -30,7 +30,8 @@ namespace DataLayer.DTOs.Questions
         public int PromptId { get; set; }
         public int PartId { get; set; } 
         public string Skill { get; set; }
-        public string PromptText { get; set; }
+        public string ContentText { get; set; } = null!;
+        public string Title { get; set; }
         public string ReferenceImageUrl { get; set; }
         public string ReferenceAudioUrl { get; set; }
         public List<QuestionDto> Questions { get; set; }
