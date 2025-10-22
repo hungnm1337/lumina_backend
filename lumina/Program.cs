@@ -29,7 +29,8 @@ using System.Text;
 using RepositoryLayer.Slide;
 using ServiceLayer.Slide;
 using OfficeOpenXml;
-using ServiceLayer.Exam.Speaking;
+using RepositoryLayer.UserNote;
+using ServiceLayer.UserNote;
 
 namespace lumina
 {
@@ -93,8 +94,9 @@ namespace lumina
             builder.Services.AddScoped<IExamPartRepository, ExamPartRepository>();
             builder.Services.AddScoped<IExamPartService, ExamPartService>();
             
+            builder.Services.AddScoped<IUserNoteRepository,UserNoteRepository>();
+            builder.Services.AddScoped<IUserNoteService, UserNoteService>();
 
-    
             builder.Services.AddScoped<IVocabularyListRepository, VocabularyListRepository>();
             builder.Services.AddScoped<IVocabularyListService, VocabularyListService>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
