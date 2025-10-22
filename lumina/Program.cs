@@ -21,7 +21,6 @@ using ServiceLayer.Exam;
 using ServiceLayer.Exam.Writting;
 using ServiceLayer.Import;
 using ServiceLayer.Questions;
-using ServiceLayer.Speaking;
 using ServiceLayer.Speech;
 using ServiceLayer.UploadFile;
 using ServiceLayer.User;

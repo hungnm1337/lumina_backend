@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataLayer.Migrations
 {
     [DbContext(typeof(LuminaSystemContext))]
-    [Migration("20251018080025_v36")]
-    partial class v36
+    [Migration("20251019150933_v23")]
+    partial class v23
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -1323,6 +1323,9 @@ namespace DataLayer.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
+                    b.Property<string>("RejectionReason")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Status")
                         .HasMaxLength(15)
                         .HasColumnType("nvarchar(15)");
@@ -1331,10 +1334,18 @@ namespace DataLayer.Migrations
                         .HasPrecision(3)
                         .HasColumnType("datetime2(3)");
 
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("UpdatedByNavigationUserId")
+                        .HasColumnType("int");
+
                     b.HasKey("VocabularyListId")
                         .HasName("PK__Vocabula__C2D6E440F67079D4");
 
                     b.HasIndex("MakeBy");
+
+                    b.HasIndex("UpdatedByNavigationUserId");
 
                     b.ToTable("VocabularyList", (string)null);
                 });
@@ -1767,7 +1778,13 @@ namespace DataLayer.Migrations
                         .IsRequired()
                         .HasConstraintName("FK_VocabularyList_Users");
 
+                    b.HasOne("DataLayer.Models.User", "UpdatedByNavigation")
+                        .WithMany()
+                        .HasForeignKey("UpdatedByNavigationUserId");
+
                     b.Navigation("MakeByNavigation");
+
+                    b.Navigation("UpdatedByNavigation");
                 });
 
             modelBuilder.Entity("DataLayer.Models.Article", b =>

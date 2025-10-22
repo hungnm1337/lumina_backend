@@ -216,7 +216,7 @@ public class ArticleService : IArticleService
     public async Task<PagedResponse<ArticleResponseDTO>> QueryAsync(ArticleQueryParams query)
     {
         var (items, total) = await _unitOfWork.Articles.QueryAsync(
-        query.Page, query.PageSize, query.Search, query.CategoryId, query.IsPublished, query.Status, query.SortBy, query.SortDir
+        query.Page, query.PageSize, query.Search, query.CategoryId, query.IsPublished, query.Status, query.SortBy, query.SortDir, query.CreatedBy
     );
 
         var mapped = items.Select(a => new ArticleResponseDTO

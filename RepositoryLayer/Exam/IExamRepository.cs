@@ -1,4 +1,5 @@
 ﻿using DataLayer.DTOs.Exam;
+using DataLayer.DTOs.ExamPart;
 using DataLayer.Models;
 using System;
 using System.Collections.Generic;
@@ -14,11 +15,16 @@ using System.Threading.Tasks;
 
         public Task<ExamPartDTO> GetExamPartDetailAndQuestionByExamPartID(int partId);
 
-
-        Task<List<Exam>> GetExamsBySetKeyAsync(string examSetKey);
+    Task<bool> ExamSetKeyExistsAsync(string setKey);
+    Task<List<Exam>> GetExamsBySetKeyAsync(string examSetKey);
         Task<List<ExamPart>> GetExamPartsByExamIdsAsync(List<int> examIds);
         Task InsertExamsAsync(List<Exam> exams);
         Task InsertExamPartsAsync(List<ExamPart> parts);
+
+
+    Task<List<ExamGroupBySetKeyDto>> GetExamsGroupedBySetKeyAsync();
+
+    Task<bool> ToggleExamStatusAsync(int examId);
 
     }
 

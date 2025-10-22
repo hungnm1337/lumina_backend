@@ -1,4 +1,5 @@
 ﻿using DataLayer.DTOs.Passage;
+using DataLayer.DTOs.Prompt;
 using DataLayer.DTOs.Questions;
 using Microsoft.AspNetCore.Mvc;
 using ServiceLayer.Import;
@@ -23,7 +24,7 @@ namespace lumina.Controllers
         }
 
 
-        /*[HttpPost("prompt-with-questions")]
+        [HttpPost("prompt-with-questions")]
         public async Task<IActionResult> CreatePromptWithQuestions([FromBody] CreatePromptWithQuestionsDTO dto)
         {
             if (dto == null)
@@ -31,7 +32,7 @@ namespace lumina.Controllers
 
             try
             {
-                var promptId = await _questionService.CreatePassagePromptWithQuestionsAsync(dto);
+                var promptId = await _questionService.CreatePromptWithQuestionsAsync(dto);
                 return Ok(new { PromptId = promptId });
             }
             catch (Exception ex)
@@ -46,7 +47,7 @@ namespace lumina.Controllers
                 // Ngoài ra trả lỗi 500
                 return StatusCode(500, $"Lỗi khi tạo prompt và câu hỏi: {ex.Message}");
             }
-        }*/
+        }
 
 
         [HttpPost("upload-excel")]
@@ -66,33 +67,33 @@ namespace lumina.Controllers
             }
         }
 
-        /*[HttpGet("passage-question-tree-paged")]
+        [HttpGet("passage-question-tree-paged")]
         public async Task<IActionResult> GetPaged(
     [FromQuery] int page = 1,
-    [FromQuery] int size = 20,
+    [FromQuery] int size = 10,
     [FromQuery] int? partId = null)
         {
-            var (items, totalPages) = await _questionService.GetPassagePromptQuestionsPagedAsync(page, size, partId);
+            var (items, totalPages) = await _questionService.GetPromptsPagedAsync(page, size, partId);
             return Ok(new
             {
                 Items = items,
                 TotalPages = totalPages
             });
-        }*/
+        }
 
-      /*  [HttpPut("edit-passage")]
-        public async Task<IActionResult> EditPassage([FromBody] PassageEditDto dto)
+        [HttpPut("edit-passage")]
+        public async Task<IActionResult> EditPassage([FromBody] PromptEditDto dto)
         {
-            if (dto == null || dto.PassageId <= 0)
+            if (dto == null || dto.PromptId <= 0)
                 return BadRequest("Dữ liệu không hợp lệ");
 
-            var result = await _questionService.EditPassageWithPromptAsync(dto);
+            var result = await _questionService.EditPromptWithQuestionsAsync(dto);
 
             if (!result)
-                return NotFound("Passage không tồn tại");
+                return NotFound("Prompt không tồn tại");
 
             return Ok(new { message = "Cập nhật thành công" });
-        }*/
+        }
 
 
         [HttpPost("add-question")]

@@ -6,5 +6,8 @@ namespace ServiceLayer.Vocabulary
     {
         Task<VocabularyListDTO> CreateListAsync(VocabularyListCreateDTO dto, int creatorUserId);
         Task<IEnumerable<VocabularyListDTO>> GetListsAsync(string? searchTerm);
+        Task<IEnumerable<VocabularyListDTO>> GetListsByUserAsync(int userId, string? searchTerm);
+        Task<bool> RequestApprovalAsync(int listId, int staffUserId);
+        Task<bool> ReviewListAsync(int listId, bool isApproved, string? comment, int managerUserId);
     }
 }

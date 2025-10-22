@@ -63,7 +63,7 @@ public class ArticleRepository : IArticleRepository
         return article;
     }
 
-    public async Task<(List<Article> items, int total)> QueryAsync(int page, int pageSize, string? search, int? categoryId, bool? isPublished, string? status, string sortBy, string sortDir)
+    public async Task<(List<Article> items, int total)> QueryAsync(int page, int pageSize, string? search, int? categoryId, bool? isPublished, string? status, string sortBy, string sortDir, int? createdBy = null)
     {
         var query = _context.Articles
             .Include(a => a.Category)
@@ -91,6 +91,12 @@ public class ArticleRepository : IArticleRepository
         if (!string.IsNullOrWhiteSpace(status))
         {
             query = query.Where(a => a.Status == status);
+        }
+
+        // Filter by author/user ID
+        if (createdBy.HasValue)
+        {
+            query = query.Where(a => a.CreatedBy == createdBy.Value);
         }
 
         // Sorting

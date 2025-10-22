@@ -84,7 +84,6 @@ namespace DataLayer.DTOs.Exam
 
         public string Title { get; set; } = null!;
         public string? ReferenceImageUrl { get; set; }
-
         public string? ReferenceAudioUrl { get; set; }
 
         
