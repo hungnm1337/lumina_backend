@@ -286,26 +286,35 @@ namespace RepositoryLayer.Questions
 
         public async Task<bool> DeleteQuestionAsync(int questionId)
         {
-            
-            var question = await _context.Questions.Include(q => q.Options)
-                                                   .FirstOrDefaultAsync(q => q.QuestionId == questionId);
-            //check question
+            // Lấy question và options (chỉ cần)
+            var question = await _context.Questions
+                .Include(q => q.Options)
+                .FirstOrDefaultAsync(q => q.QuestionId == questionId);
+
             if (question == null)
                 return false;
 
-            // xoa option
+            // Lấy ExamPart và Exam tương ứng qua PartId (trường trong Question)
+            var examPart = await _context.ExamParts
+                .Include(ep => ep.Exam)
+                .FirstOrDefaultAsync(ep => ep.PartId == question.PartId);
+
+            if (examPart.Exam != null && examPart.Exam.IsActive)
+                throw new Exception("Không thể xóa câu hỏi vì bài thi đang hoạt động.");
+
+            // Xoá options nếu có
             if (question.Options.Any())
             {
                 _context.Options.RemoveRange(question.Options);
             }
 
-            // xoa question
             _context.Questions.Remove(question);
-
             await _context.SaveChangesAsync();
 
             return true;
         }
+
+
 
         public async Task<QuestionStatisticDto> GetQuestionStatisticsAsync()
         {
