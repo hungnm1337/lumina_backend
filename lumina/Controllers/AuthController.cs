@@ -48,16 +48,40 @@ public sealed class AuthController : ControllerBase
     }
 
     
-    [HttpPost("register")]
+    [HttpPost("register/send-otp")]
     [AllowAnonymous]
-    public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+    public async Task<IActionResult> SendRegistrationOtp([FromBody] SendRegistrationOtpRequest request)
     {
         if (!ModelState.IsValid)
         {
-            return BadRequest(new ErrorResponse("Invalid registration request"));
+            return BadRequest(new ErrorResponse("Invalid request"));
         }
 
-        return await ExecuteAsync(() => _authService.RegisterAsync(request), StatusCodes.Status201Created);
+        return await ExecuteAsync(() => _authService.SendRegistrationOtpAsync(request));
+    }
+
+    [HttpPost("register/verify")]
+    [AllowAnonymous]
+    public async Task<IActionResult> VerifyRegistration([FromBody] VerifyRegistrationRequest request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(new ErrorResponse("Invalid verification request"));
+        }
+
+        return await ExecuteAsync(() => _authService.VerifyRegistrationAsync(request), StatusCodes.Status201Created);
+    }
+
+    [HttpPost("register/resend-otp")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ResendRegistrationOtp([FromBody] ResendRegistrationOtpRequest request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(new ErrorResponse("Invalid request"));
+        }
+
+        return await ExecuteAsync(() => _authService.ResendRegistrationOtpAsync(request));
     }
 
     [HttpPost("forgot-password")]
