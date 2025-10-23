@@ -57,24 +57,23 @@ namespace lumina.Controllers
         }
 
         [HttpPost("CreateExam")]
-        [Authorize]
-        public async Task<IActionResult> CloneFormat(
-    [FromQuery] string fromExamSetKey,
-    [FromQuery] string toExamSetKey)
+        public async Task<IActionResult> CreateExams(
+            [FromQuery] string fromExamSetKey,
+            [FromQuery] string toExamSetKey)
         {
             // lấy user id từ token
             var userIdClaim = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
             if (userIdClaim == null)
-                return Unauthorized("Không tìm thấy thông tin người dùng trong token");
+                return Unauthorized(new { message = "Không tìm thấy thông tin người dùng trong token" });
 
             var userId = int.Parse(userIdClaim.Value);
 
             var result = await _examService.CreateExamFormatAsync(fromExamSetKey, toExamSetKey, userId);
 
             if (result)
-                return Ok(new { message = "Clone thành công!" });
+                return Ok(new { message = "Tạo bài Exam thành công!" });
             else
-                return NotFound("ExamSetKey nguồn không tồn tại hoặc không có dữ liệu.");
+                return BadRequest(new { message = $"Bài Exams tháng {toExamSetKey} đã tồn tại rồi" });
         }
 
         [HttpGet("all-with-parts")]

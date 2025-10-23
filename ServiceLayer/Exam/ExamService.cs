@@ -37,9 +37,8 @@ using System.Threading.Tasks;
     public async Task<bool> CreateExamFormatAsync(string fromSetKey, string toSetKey, int createdBy)
     {
         // Lấy tháng-năm hiện tại
-        var currentSetKey = DateTime.Now.ToString("MM-yyyy");
         // Kiểm tra xem đã tồn tại ExamSetKey này chưa
-        if (await _examRepository.ExamSetKeyExistsAsync(currentSetKey))
+        if (await _examRepository.ExamSetKeyExistsAsync(toSetKey))
             return false; // Đã tạo rồi trong tháng này
 
         // Tiếp tục clone như bình thường
@@ -54,7 +53,7 @@ using System.Threading.Tasks;
             IsActive = false,
             CreatedBy = createdBy,
             CreatedAt = DateTime.Now,
-            ExamSetKey = currentSetKey 
+            ExamSetKey = toSetKey
         }).ToList();
 
         await _examRepository.InsertExamsAsync(newExams);

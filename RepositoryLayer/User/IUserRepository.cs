@@ -18,6 +18,8 @@ public interface IUserRepository
         Task<UserDto?> UpdateUserProfileAsync(int userId, string fullName, string? phone, string? bio, string? avatarUrl);
 
         Task<bool> ChangePasswordAsync(int userId, string currentPassword, string newPassword);
+
+    Task<bool> UpdateUserRoleAsync(int userId, int roleId);
 }
 
 

@@ -159,6 +159,15 @@ public async Task<bool> ChangePasswordAsync(int userId, string currentPassword, 
     await _context.SaveChangesAsync();
     return true;
 }
+
+    public async Task<bool> UpdateUserRoleAsync(int userId, int roleId)
+    {
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null) return false;
+        user.RoleId = roleId;
+        await _context.SaveChangesAsync();
+        return true;
+    }
 }
 
 
