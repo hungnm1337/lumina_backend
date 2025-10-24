@@ -20,7 +20,8 @@ namespace RepositoryLayer.User
 
         Task<bool> ChangePasswordAsync(int userId, string currentPassword, string newPassword);
 
-    Task<bool> UpdateUserRoleAsync(int userId, int roleId);
+        Task<bool> UpdateUserRoleAsync(int userId, int roleId);
+    }
 }
 
 
