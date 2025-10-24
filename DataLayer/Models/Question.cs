@@ -30,5 +30,9 @@ public partial class Question
 
     public virtual Prompt? Prompt { get; set; }
 
-    public virtual ICollection<UserAnswer> UserAnswers { get; set; } = new List<UserAnswer>();
+    public virtual ICollection<UserAnswerMultipleChoice> UserAnswerMultipleChoices { get; set; } = new List<UserAnswerMultipleChoice>();
+
+    public virtual ICollection<UserAnswerSpeaking> UserAnswerSpeakings { get; set; } = new List<UserAnswerSpeaking>();
+
+    public virtual ICollection<UserAnswerWriting> UserAnswerWritings { get; set; } = new List<UserAnswerWriting>();
 }

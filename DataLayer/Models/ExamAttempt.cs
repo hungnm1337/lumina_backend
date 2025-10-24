@@ -1,35 +1,47 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace DataLayer.Models;
-
-public partial class ExamAttempt
+namespace DataLayer.Models
 {
-    public int AttemptId { get; set; }
+    [Table("ExamAttempts")]
+    public class ExamAttempt
+    {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int AttemptID { get; set; }
 
-    public int UserId { get; set; }
+        [Required]
+        public int UserID { get; set; }
 
-    public int ExamId { get; set; }
+        [Required]
+        public int ExamID { get; set; }
 
-    public DateTime StartTime { get; set; }
+        public int? ExamPartId { get; set; }
 
-    public DateTime? EndTime { get; set; }
+        [Required]
+        public DateTime StartTime { get; set; }
 
-    public int? Score { get; set; }
+        public DateTime? EndTime { get; set; }
 
-    public string Status { get; set; } = null!;
+        public int? Score { get; set; }
 
-    public int? ListeningScore { get; set; }
+        public string Status { get; set; }
 
-    public int? ReadingScore { get; set; }
+        [ForeignKey("UserID")]
+        public virtual User User { get; set; }
 
-    public int? SpeakingScore { get; set; }
+        [ForeignKey("ExamID")]
+        public virtual Exam Exam { get; set; }
 
-    public int? WritingScore { get; set; }
+        [ForeignKey("ExamPartId")]
+        public virtual ExamPart ExamPart { get; set; }
 
-    public virtual Exam Exam { get; set; } = null!;
+        public virtual ICollection<UserAnswerMultipleChoice> UserAnswerMultipleChoices { get; set; }
+        public virtual ICollection<UserAnswerSpeaking> UserAnswerSpeakings { get; set; }
+        public virtual ICollection<UserAnswerWriting> UserAnswerWritings { get; set; }
 
-    public virtual User User { get; set; } = null!;
-
-    public virtual ICollection<UserAnswer> UserAnswers { get; set; } = new List<UserAnswer>();
+        
+    }
 }

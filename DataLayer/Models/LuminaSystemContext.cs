@@ -58,18 +58,18 @@ public partial class LuminaSystemContext : DbContext
 
     public virtual DbSet<User> Users { get; set; }
 
-    public virtual DbSet<UserAnswer> UserAnswers { get; set; }
 
     public virtual DbSet<UserArticleProgress> UserArticleProgresses { get; set; }
 
     public virtual DbSet<UserLeaderboard> UserLeaderboards { get; set; }
 
     public virtual DbSet<UserNote> UserNotes { get; set; }
-
+    public virtual DbSet<UserAnswerMultipleChoice> UserAnswerMultipleChoices { get; set; }
+    public virtual DbSet<UserAnswerSpeaking> UserAnswerSpeakings { get; set; }
+    public virtual DbSet<UserAnswerWriting> UserAnswerWritings { get; set; }
     public virtual DbSet<UserNotification> UserNotifications { get; set; }
 
     public virtual DbSet<UserSpacedRepetition> UserSpacedRepetitions { get; set; }
-    public virtual DbSet<SpeakingResult> SpeakingResults { get; set; }
 
     public virtual DbSet<Vocabulary> Vocabularies { get; set; }
 
@@ -124,7 +124,84 @@ public partial class LuminaSystemContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Accounts_Users");
         });
+        modelBuilder.Entity<ExamAttempt>(entity =>
+        {
+            entity.HasKey(e => e.AttemptID);
 
+            entity.Property(e => e.StartTime)
+                .HasDefaultValueSql("GETDATE()");
+
+            entity.Property(e => e.Status)
+                .HasDefaultValue("InProgress");
+
+            entity.HasOne(e => e.User)
+                .WithMany(u => u.ExamAttempts)
+                .HasForeignKey(e => e.UserID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Exam)
+                .WithMany(ex => ex.ExamAttempts)
+                .HasForeignKey(e => e.ExamID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.ExamPart)
+                .WithMany()
+                .HasForeignKey(e => e.ExamPartId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<UserAnswerMultipleChoice>(entity =>
+        {
+            entity.HasKey(e => e.UserAnswerID);
+            entity.ToTable("UserAnswerMultipleChoice");
+
+            entity.HasOne(d => d.ExamAttempt)
+                .WithMany(p => p.UserAnswerMultipleChoices)
+                .HasForeignKey(d => d.AttemptID)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(d => d.Question)
+                .WithMany(p => p.UserAnswerMultipleChoices)  // ✅ Chỉ định navigation property
+                .HasForeignKey(d => d.QuestionId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            entity.HasOne(d => d.SelectedOption)
+                .WithMany(p => p.UserAnswerMultipleChoices)  // ✅ Chỉ định navigation property
+                .HasForeignKey(d => d.SelectedOptionId)
+                .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        modelBuilder.Entity<UserAnswerSpeaking>(entity =>
+        {
+            entity.HasKey(e => e.UserAnswerSpeakingId);
+            entity.ToTable("UserAnswerSpeaking");
+
+            entity.HasOne(d => d.ExamAttempt)
+                .WithMany(p => p.UserAnswerSpeakings)
+                .HasForeignKey(d => d.AttemptID)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(d => d.Question)
+                .WithMany(p => p.UserAnswerSpeakings)  // ✅ Chỉ định navigation property
+                .HasForeignKey(d => d.QuestionId)
+                .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        modelBuilder.Entity<UserAnswerWriting>(entity =>
+        {
+            entity.HasKey(e => e.UserAnswerWritingId);
+            entity.ToTable("UserAnswerWriting");
+
+            entity.HasOne(d => d.ExamAttempt)
+                .WithMany(p => p.UserAnswerWritings)
+                .HasForeignKey(d => d.AttemptID)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(d => d.Question)
+                .WithMany(p => p.UserAnswerWritings)  // ✅ Chỉ định navigation property
+                .HasForeignKey(d => d.QuestionId)
+                .OnDelete(DeleteBehavior.NoAction);
+        });
         modelBuilder.Entity<Article>(entity =>
         {
             entity.HasKey(e => e.ArticleId).HasName("PK__Articles__9C6270C88BD5B813");
@@ -170,11 +247,7 @@ public partial class LuminaSystemContext : DbContext
                 .HasForeignKey(d => d.CreatedByUserId)
                 .HasConstraintName("FK_ArticleCategories_Users");
         });
-        modelBuilder.Entity<UserAnswer>()
-            .HasOne(a => a.SpeakingResult)
-            .WithOne(s => s.UserAnswer)
-            .HasForeignKey<SpeakingResult>(s => s.UserAnswerId);
-
+        
         modelBuilder.Entity<ArticleSection>(entity =>
         {
             entity.HasKey(e => e.SectionId).HasName("PK__ArticleS__80EF0892A9E4A151");
@@ -232,27 +305,6 @@ public partial class LuminaSystemContext : DbContext
                 .HasConstraintName("FK_Exams_UpdatedBy");
         });
 
-        modelBuilder.Entity<ExamAttempt>(entity =>
-        {
-            entity.HasKey(e => e.AttemptId).HasName("PK__ExamAtte__891A68864E80FEA1");
-
-            entity.Property(e => e.AttemptId).HasColumnName("AttemptID");
-            entity.Property(e => e.EndTime).HasPrecision(3);
-            entity.Property(e => e.ExamId).HasColumnName("ExamID");
-            entity.Property(e => e.StartTime).HasPrecision(3);
-            entity.Property(e => e.Status).HasMaxLength(50);
-            entity.Property(e => e.UserId).HasColumnName("UserID");
-
-            entity.HasOne(d => d.Exam).WithMany(p => p.ExamAttempts)
-                .HasForeignKey(d => d.ExamId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_ExamAttempts_Exam");
-
-            entity.HasOne(d => d.User).WithMany(p => p.ExamAttempts)
-                .HasForeignKey(d => d.UserId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_ExamAttempts_Users");
-        });
 
         modelBuilder.Entity<ExamPart>(entity =>
         {
@@ -468,35 +520,7 @@ public partial class LuminaSystemContext : DbContext
                 .HasConstraintName("FK_Users_Roles");
         });
 
-        modelBuilder.Entity<UserAnswer>(entity =>
-        {
-            entity.HasKey(e => e.UserAnswerId).HasName("PK__UserAnsw__47CE235F4AA17153");
-
-            entity.Property(e => e.UserAnswerId).HasColumnName("UserAnswerID");
-            entity.Property(e => e.AttemptId).HasColumnName("AttemptID");
-            entity.Property(e => e.FeedbackAi).HasColumnName("FeedbackAI");
-            entity.Property(e => e.QuestionId).HasColumnName("QuestionID");
-            entity.Property(e => e.SelectedOptionId).HasColumnName("SelectedOptionID");
-            entity.Property(e => e.AnswerContent).HasColumnType("text");
-            entity.Property(e => e.AudioUrl).HasColumnName("AudioURL");
-            entity.Property(e => e.Score).HasColumnName("Score");
-            entity.Property(e => e.IsCorrect).HasColumnName("IsCorrect");
-
-            entity.HasOne(d => d.Attempt).WithMany(p => p.UserAnswers)
-                .HasForeignKey(d => d.AttemptId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_UserAnswers_ExamAttempts");
-
-            entity.HasOne(d => d.Question).WithMany(p => p.UserAnswers)
-                .HasForeignKey(d => d.QuestionId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_UserAnswers_Questions");
-
-            entity.HasOne(d => d.SelectedOption).WithMany(p => p.UserAnswers)
-                .HasForeignKey(d => d.SelectedOptionId)
-                .HasConstraintName("FK_UserAnswers_Options");
-        });
-
+        
         modelBuilder.Entity<UserArticleProgress>(entity =>
         {
             entity.HasKey(e => e.ProgressId).HasName("PK__UserArti__BAE29C85A832D5F7");

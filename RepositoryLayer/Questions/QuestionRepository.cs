@@ -318,16 +318,22 @@ namespace RepositoryLayer.Questions
 
         public async Task<QuestionStatisticDto> GetQuestionStatisticsAsync()
         {
+            // TODO: Fix after migration - UserAnswers đã split thành 3 bảng
             var total = await _context.Questions.CountAsync();
-            var used = await _context.UserAnswers
-                .Select(eq => eq.QuestionId)
-                .Distinct()
-                .CountAsync();
-            var unused = await _context.Questions
-                .CountAsync(q => !_context.UserAnswers
-                    .Select(eq => eq.QuestionId)
-                    .Distinct()
-                    .Contains(q.QuestionId));
+            
+            /* UNCOMMENT SAU KHI MIGRATION
+            // Combine all 3 answer types
+            var usedMultipleChoice = await _context.UserAnswerMultipleChoices.Select(eq => eq.QuestionId).Distinct().ToListAsync();
+            var usedSpeaking = await _context.UserAnswerSpeakings.Select(eq => eq.QuestionId).Distinct().ToListAsync();
+            var usedWriting = await _context.UserAnswerWritings.Select(eq => eq.QuestionId).Distinct().ToListAsync();
+            
+            var usedQuestions = usedMultipleChoice.Union(usedSpeaking).Union(usedWriting).Distinct().ToList();
+            var used = usedQuestions.Count;
+            var unused = total - used;
+            */
+            
+            var used = 0; // Temporary fix
+            var unused = total; // Temporary fix
 
             return new QuestionStatisticDto
             {
