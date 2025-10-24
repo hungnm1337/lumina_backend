@@ -21,10 +21,10 @@ namespace lumina.Controllers
         [HttpGet("dashboard-stats")]
         public async Task<IActionResult> GetDashboardStats()
         {
-            // Tổng người dùng (roleId = 4)
+            
             var totalUsers = await _systemContext.Users.CountAsync(u => u.RoleId == 4);
 
-            // Người đăng ký hôm nay (roleId = 4, CreateAt là ngày hôm nay)
+            
             var today = DateTime.UtcNow.Date;
             var registeredToday = await _systemContext.Users
      .Where(u => u.RoleId == 4
@@ -32,14 +32,14 @@ namespace lumina.Controllers
          && u.Accounts.OrderBy(a => a.CreateAt).FirstOrDefault()!.CreateAt.Date == today)
      .CountAsync();
 
-            // Doanh thu tháng (Payment.Status = 'Success', tháng hiện tại)
+            
             var now = DateTime.UtcNow;
             var firstOfMonth = new DateTime(now.Year, now.Month, 1);
             var monthlyRevenue = await _systemContext.Payments
                 .Where(p => p.Status == "Success" && p.CreatedAt >= firstOfMonth)
                 .SumAsync(p => (decimal?)p.Amount) ?? 0;
 
-            // Người dùng Pro (Subscription active, roleId=4, đếm unique UserID)
+           
             var proUserCount = await _systemContext.Subscriptions
                 .Where(s => s.Status == "Active")
                 .Select(s => s.UserId)

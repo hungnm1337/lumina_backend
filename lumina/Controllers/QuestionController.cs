@@ -114,10 +114,20 @@ namespace lumina.Controllers
         [HttpDelete("delete-question/{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var ok = await _questionService.DeleteQuestionAsync(id);
-            if (!ok) return NotFound("Không tồn tại question!");
-            return Ok(new { message = "Đã xóa!" });
+            try
+            {
+                var ok = await _questionService.DeleteQuestionAsync(id);
+                if (!ok)
+                    return NotFound(new { message = "Không tồn tại question!" });
+                return Ok(new { message = "Đã xóa!" });
+            }
+            catch (Exception ex)
+            {
+                // Trả về JSON message cho FE dễ xử lý
+                return BadRequest(new { message = ex.Message });
+            }
         }
+
 
 
         [HttpGet("statistics")]

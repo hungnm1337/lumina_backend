@@ -125,4 +125,10 @@ public sealed class UserService : IUserService
         return true;
     }
 
+    public async Task<bool> UpdateUserRoleAsync(int userId, int roleId)
+    {
+        // Có thể kiểm tra roleId hợp lệ nếu muốn (ví dụ có tồn tại trong bảng Role)
+        return await _userRepository.UpdateUserRoleAsync(userId, roleId);
+    }
+
 }

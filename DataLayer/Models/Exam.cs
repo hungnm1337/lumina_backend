@@ -13,7 +13,7 @@ public partial class Exam
 
     public string Description { get; set; } = null!;
 
-    public bool? IsActive { get; set; }
+    public bool IsActive { get; set; }
 
     public int CreatedBy { get; set; }
 
