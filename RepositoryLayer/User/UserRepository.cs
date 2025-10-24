@@ -7,9 +7,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-
-public class UserRepository : IUserRepository
+namespace RepositoryLayer.User
 {
+    public class UserRepository : IUserRepository
+    {
     private readonly LuminaSystemContext _context;
 
     public UserRepository(LuminaSystemContext context)
@@ -60,7 +61,7 @@ public class UserRepository : IUserRepository
         return (users, totalPages);
     }
 
-    public async Task<User> GetUserByIdAsync(int userId)
+    public async Task<DataLayer.Models.User> GetUserByIdAsync(int userId)
     {
         return await _context.Users
             .Include(u => u.Role)
@@ -159,6 +160,7 @@ public async Task<bool> ChangePasswordAsync(int userId, string currentPassword, 
     await _context.SaveChangesAsync();
     return true;
 }
+    }
 }
 
 
