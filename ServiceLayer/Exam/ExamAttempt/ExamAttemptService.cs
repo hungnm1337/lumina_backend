@@ -17,12 +17,22 @@ namespace ServiceLayer.Exam.ExamAttempt
             _examAttemptRepository = examAttemptRepository;
         }
 
-        public async Task<ExamAttemptDTO> EndAnExam(ExamAttemptDTO model)
+        public async Task<ExamAttemptRequestDTO> EndAnExam(ExamAttemptRequestDTO model)
         {
             return await _examAttemptRepository.EndAnExam(model);
         }
 
-        public async Task<ExamAttemptDTO> StartAnExam(ExamAttemptDTO model)
+        public async Task<List<ExamAttemptResponseDTO>> GetAllExamAttempts(int userId)
+        {
+            return await _examAttemptRepository.GetAllExamAttempts(userId);
+        }
+
+        public async Task<ExamAttemptDetailResponseDTO> GetExamAttemptById(int attemptId)
+        {
+            return await _examAttemptRepository.GetExamAttemptById(attemptId);
+        }
+
+        public async Task<ExamAttemptRequestDTO> StartAnExam(ExamAttemptRequestDTO model)
         {
             return await _examAttemptRepository.StartAnExam(model);
         }
