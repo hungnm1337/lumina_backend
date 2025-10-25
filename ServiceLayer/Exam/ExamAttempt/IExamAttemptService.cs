@@ -9,8 +9,12 @@ namespace ServiceLayer.Exam.ExamAttempt
 {
     public interface IExamAttemptService
     {
-        public Task<ExamAttemptDTO> StartAnExam(ExamAttemptDTO model);
+        public Task<List<ExamAttemptResponseDTO>> GetAllExamAttempts(int userId);
 
-        public Task<ExamAttemptDTO> EndAnExam(ExamAttemptDTO model);
+        public Task<ExamAttemptDetailResponseDTO> GetExamAttemptById(int attemptId);
+
+        public Task<ExamAttemptRequestDTO> StartAnExam(ExamAttemptRequestDTO model);
+
+        public Task<ExamAttemptRequestDTO> EndAnExam(ExamAttemptRequestDTO model);
     }
 }
