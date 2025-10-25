@@ -31,6 +31,7 @@ using ServiceLayer.Slide;
 using OfficeOpenXml;
 using RepositoryLayer.UserNote;
 using ServiceLayer.UserNote;
+using ServiceLayer.Exam.Speaking;
 
 namespace lumina
 {
