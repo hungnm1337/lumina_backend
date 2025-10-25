@@ -19,11 +19,13 @@ public class UnitOfWork : IUnitOfWork
     public IVocabularyListRepository VocabularyLists { get; private set; }
     public IQuestionRepository Questions { get; private set; }
 
-    public ISpeakingResultRepository SpeakingResults { get; private set; }
+    // TODO: Uncomment after migration - SpeakingResult and UserAnswer models have been modified
+    // public ISpeakingResultRepository SpeakingResults { get; private set; }
 
     public IExamAttemptRepository ExamAttempts { get; private set; }
 
-    public IUserAnswerRepository UserAnswers { get; private set; }
+    // TODO: Uncomment after migration - SpeakingResult and UserAnswer models have been modified
+    // public IUserAnswerRepository UserAnswers { get; private set; }
     public UnitOfWork(LuminaSystemContext context)
     {
         _context = context;
@@ -34,11 +36,13 @@ public class UnitOfWork : IUnitOfWork
         VocabularyLists = new VocabularyListRepository(_context);
         Questions = new QuestionRepository(_context);
 
-        SpeakingResults = new SpeakingResultRepository(_context);
+        // TODO: Uncomment after migration - SpeakingResult and UserAnswer models have been modified
+        // SpeakingResults = new SpeakingResultRepository(_context);
 
         ExamAttempts = new ExamAttemptRepository(_context);
 
-        UserAnswers = new UserAnswerRepository(_context);
+        // TODO: Uncomment after migration - SpeakingResult and UserAnswer models have been modified
+        // UserAnswers = new UserAnswerRepository(_context);
     }
 
     public async Task<int> CompleteAsync()

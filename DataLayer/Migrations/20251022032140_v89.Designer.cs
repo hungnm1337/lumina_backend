@@ -12,8 +12,13 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataLayer.Migrations
 {
     [DbContext(typeof(LuminaSystemContext))]
+<<<<<<<< HEAD:DataLayer/Migrations/20251022032140_v89.Designer.cs
     [Migration("20251022032140_v89")]
     partial class v89
+========
+    [Migration("20251024061800_v235")]
+    partial class v235
+>>>>>>>> main:DataLayer/Migrations/20251024061800_v235.Designer.cs
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -337,55 +342,45 @@ namespace DataLayer.Migrations
 
             modelBuilder.Entity("DataLayer.Models.ExamAttempt", b =>
                 {
-                    b.Property<int>("AttemptId")
+                    b.Property<int>("AttemptID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("AttemptID");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AttemptId"));
-
-                    b.Property<DateTime?>("EndTime")
-                        .HasPrecision(3)
-                        .HasColumnType("datetime2(3)");
-
-                    b.Property<int>("ExamId")
-                        .HasColumnType("int")
-                        .HasColumnName("ExamID");
-
-                    b.Property<int?>("ListeningScore")
                         .HasColumnType("int");
 
-                    b.Property<int?>("ReadingScore")
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AttemptID"));
+
+                    b.Property<DateTime?>("EndTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ExamID")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ExamPartId")
                         .HasColumnType("int");
 
                     b.Property<int?>("Score")
                         .HasColumnType("int");
 
-                    b.Property<int?>("SpeakingScore")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("StartTime")
-                        .HasPrecision(3)
-                        .HasColumnType("datetime2(3)");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("nvarchar(max)")
+                        .HasDefaultValue("InProgress");
 
-                    b.Property<int>("UserId")
-                        .HasColumnType("int")
-                        .HasColumnName("UserID");
-
-                    b.Property<int?>("WritingScore")
+                    b.Property<int>("UserID")
                         .HasColumnType("int");
 
-                    b.HasKey("AttemptId")
-                        .HasName("PK__ExamAtte__891A68864E80FEA1");
+                    b.HasKey("AttemptID");
 
-                    b.HasIndex("ExamId");
+                    b.HasIndex("ExamID");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("ExamPartId");
+
+                    b.HasIndex("UserID");
 
                     b.ToTable("ExamAttempts");
                 });
@@ -859,46 +854,6 @@ namespace DataLayer.Migrations
                     b.ToTable("Slides");
                 });
 
-            modelBuilder.Entity("DataLayer.Models.SpeakingResult", b =>
-                {
-                    b.Property<int>("SpeakingResultId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SpeakingResultId"));
-
-                    b.Property<float?>("AccuracyScore")
-                        .HasColumnType("real");
-
-                    b.Property<float?>("CompletenessScore")
-                        .HasColumnType("real");
-
-                    b.Property<float?>("ContentScore")
-                        .HasColumnType("real");
-
-                    b.Property<float?>("FluencyScore")
-                        .HasColumnType("real");
-
-                    b.Property<float?>("GrammarScore")
-                        .HasColumnType("real");
-
-                    b.Property<float?>("PronunciationScore")
-                        .HasColumnType("real");
-
-                    b.Property<int>("UserAnswerId")
-                        .HasColumnType("int");
-
-                    b.Property<float?>("VocabularyScore")
-                        .HasColumnType("real");
-
-                    b.HasKey("SpeakingResultId");
-
-                    b.HasIndex("UserAnswerId")
-                        .IsUnique();
-
-                    b.ToTable("SpeakingResults");
-                });
-
             modelBuilder.Entity("DataLayer.Models.Subscription", b =>
                 {
                     b.Property<int>("SubscriptionId")
@@ -1002,56 +957,122 @@ namespace DataLayer.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("DataLayer.Models.UserAnswer", b =>
+            modelBuilder.Entity("DataLayer.Models.UserAnswerMultipleChoice", b =>
                 {
-                    b.Property<int>("UserAnswerId")
+                    b.Property<int>("UserAnswerID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("UserAnswerID");
+                        .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserAnswerId"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserAnswerID"));
 
-                    b.Property<string>("AnswerContent")
-                        .HasColumnType("text");
+                    b.Property<int>("AttemptID")
+                        .HasColumnType("int");
 
-                    b.Property<int>("AttemptId")
-                        .HasColumnType("int")
-                        .HasColumnName("AttemptID");
-
-                    b.Property<string>("AudioUrl")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("AudioURL");
-
-                    b.Property<string>("FeedbackAi")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("FeedbackAI");
-
-                    b.Property<bool?>("IsCorrect")
-                        .HasColumnType("bit")
-                        .HasColumnName("IsCorrect");
+                    b.Property<bool>("IsCorrect")
+                        .HasColumnType("bit");
 
                     b.Property<int>("QuestionId")
-                        .HasColumnType("int")
-                        .HasColumnName("QuestionID");
+                        .HasColumnType("int");
 
-                    b.Property<float?>("Score")
-                        .HasColumnType("real")
-                        .HasColumnName("Score");
+                    b.Property<int?>("Score")
+                        .HasColumnType("int");
 
                     b.Property<int?>("SelectedOptionId")
-                        .HasColumnType("int")
-                        .HasColumnName("SelectedOptionID");
+                        .HasColumnType("int");
 
-                    b.HasKey("UserAnswerId")
-                        .HasName("PK__UserAnsw__47CE235F4AA17153");
+                    b.HasKey("UserAnswerID");
 
-                    b.HasIndex("AttemptId");
+                    b.HasIndex("AttemptID");
 
                     b.HasIndex("QuestionId");
 
                     b.HasIndex("SelectedOptionId");
 
-                    b.ToTable("UserAnswers");
+                    b.ToTable("UserAnswerMultipleChoice", (string)null);
+                });
+
+            modelBuilder.Entity("DataLayer.Models.UserAnswerSpeaking", b =>
+                {
+                    b.Property<int>("UserAnswerSpeakingId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserAnswerSpeakingId"));
+
+                    b.Property<decimal?>("AccuracyScore")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<int>("AttemptID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("AudioUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<decimal?>("CompletenessScore")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<decimal?>("ContentScore")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<decimal?>("FluencyScore")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<decimal?>("GrammarScore")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<decimal?>("PronunciationScore")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<int>("QuestionId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Transcript")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal?>("VocabularyScore")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.HasKey("UserAnswerSpeakingId");
+
+                    b.HasIndex("AttemptID");
+
+                    b.HasIndex("QuestionId");
+
+                    b.ToTable("UserAnswerSpeaking", (string)null);
+                });
+
+            modelBuilder.Entity("DataLayer.Models.UserAnswerWriting", b =>
+                {
+                    b.Property<int>("UserAnswerWritingId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserAnswerWritingId"));
+
+                    b.Property<int>("AttemptID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FeedbackFromAI")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("QuestionId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserAnswerContent")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("UserAnswerWritingId");
+
+                    b.HasIndex("AttemptID");
+
+                    b.HasIndex("QuestionId");
+
+                    b.ToTable("UserAnswerWriting", (string)null);
                 });
 
             modelBuilder.Entity("DataLayer.Models.UserArticleProgress", b =>
@@ -1448,17 +1469,24 @@ namespace DataLayer.Migrations
                 {
                     b.HasOne("DataLayer.Models.Exam", "Exam")
                         .WithMany("ExamAttempts")
-                        .HasForeignKey("ExamId")
-                        .IsRequired()
-                        .HasConstraintName("FK_ExamAttempts_Exam");
+                        .HasForeignKey("ExamID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DataLayer.Models.ExamPart", "ExamPart")
+                        .WithMany()
+                        .HasForeignKey("ExamPartId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("DataLayer.Models.User", "User")
                         .WithMany("ExamAttempts")
-                        .HasForeignKey("UserId")
-                        .IsRequired()
-                        .HasConstraintName("FK_ExamAttempts_Users");
+                        .HasForeignKey("UserID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("Exam");
+
+                    b.Navigation("ExamPart");
 
                     b.Navigation("User");
                 });
@@ -1582,17 +1610,6 @@ namespace DataLayer.Migrations
                     b.Navigation("UpdateByNavigation");
                 });
 
-            modelBuilder.Entity("DataLayer.Models.SpeakingResult", b =>
-                {
-                    b.HasOne("DataLayer.Models.UserAnswer", "UserAnswer")
-                        .WithOne("SpeakingResult")
-                        .HasForeignKey("DataLayer.Models.SpeakingResult", "UserAnswerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("UserAnswer");
-                });
-
             modelBuilder.Entity("DataLayer.Models.Subscription", b =>
                 {
                     b.HasOne("DataLayer.Models.Package", "Package")
@@ -1631,30 +1648,68 @@ namespace DataLayer.Migrations
                     b.Navigation("Role");
                 });
 
-            modelBuilder.Entity("DataLayer.Models.UserAnswer", b =>
+            modelBuilder.Entity("DataLayer.Models.UserAnswerMultipleChoice", b =>
                 {
-                    b.HasOne("DataLayer.Models.ExamAttempt", "Attempt")
-                        .WithMany("UserAnswers")
-                        .HasForeignKey("AttemptId")
-                        .IsRequired()
-                        .HasConstraintName("FK_UserAnswers_ExamAttempts");
+                    b.HasOne("DataLayer.Models.ExamAttempt", "ExamAttempt")
+                        .WithMany("UserAnswerMultipleChoices")
+                        .HasForeignKey("AttemptID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("DataLayer.Models.Question", "Question")
-                        .WithMany("UserAnswers")
+                        .WithMany("UserAnswerMultipleChoices")
                         .HasForeignKey("QuestionId")
-                        .IsRequired()
-                        .HasConstraintName("FK_UserAnswers_Questions");
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
 
                     b.HasOne("DataLayer.Models.Option", "SelectedOption")
-                        .WithMany("UserAnswers")
+                        .WithMany("UserAnswerMultipleChoices")
                         .HasForeignKey("SelectedOptionId")
-                        .HasConstraintName("FK_UserAnswers_Options");
+                        .OnDelete(DeleteBehavior.NoAction);
 
-                    b.Navigation("Attempt");
+                    b.Navigation("ExamAttempt");
 
                     b.Navigation("Question");
 
                     b.Navigation("SelectedOption");
+                });
+
+            modelBuilder.Entity("DataLayer.Models.UserAnswerSpeaking", b =>
+                {
+                    b.HasOne("DataLayer.Models.ExamAttempt", "ExamAttempt")
+                        .WithMany("UserAnswerSpeakings")
+                        .HasForeignKey("AttemptID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DataLayer.Models.Question", "Question")
+                        .WithMany("UserAnswerSpeakings")
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("ExamAttempt");
+
+                    b.Navigation("Question");
+                });
+
+            modelBuilder.Entity("DataLayer.Models.UserAnswerWriting", b =>
+                {
+                    b.HasOne("DataLayer.Models.ExamAttempt", "ExamAttempt")
+                        .WithMany("UserAnswerWritings")
+                        .HasForeignKey("AttemptID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DataLayer.Models.Question", "Question")
+                        .WithMany("UserAnswerWritings")
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("ExamAttempt");
+
+                    b.Navigation("Question");
                 });
 
             modelBuilder.Entity("DataLayer.Models.UserArticleProgress", b =>
@@ -1817,7 +1872,11 @@ namespace DataLayer.Migrations
 
             modelBuilder.Entity("DataLayer.Models.ExamAttempt", b =>
                 {
-                    b.Navigation("UserAnswers");
+                    b.Navigation("UserAnswerMultipleChoices");
+
+                    b.Navigation("UserAnswerSpeakings");
+
+                    b.Navigation("UserAnswerWritings");
                 });
 
             modelBuilder.Entity("DataLayer.Models.ExamPart", b =>
@@ -1837,7 +1896,7 @@ namespace DataLayer.Migrations
 
             modelBuilder.Entity("DataLayer.Models.Option", b =>
                 {
-                    b.Navigation("UserAnswers");
+                    b.Navigation("UserAnswerMultipleChoices");
                 });
 
             modelBuilder.Entity("DataLayer.Models.Package", b =>
@@ -1861,7 +1920,11 @@ namespace DataLayer.Migrations
                 {
                     b.Navigation("Options");
 
-                    b.Navigation("UserAnswers");
+                    b.Navigation("UserAnswerMultipleChoices");
+
+                    b.Navigation("UserAnswerSpeakings");
+
+                    b.Navigation("UserAnswerWritings");
                 });
 
             modelBuilder.Entity("DataLayer.Models.Role", b =>
@@ -1914,11 +1977,6 @@ namespace DataLayer.Migrations
                     b.Navigation("UserSpacedRepetitions");
 
                     b.Navigation("VocabularyLists");
-                });
-
-            modelBuilder.Entity("DataLayer.Models.UserAnswer", b =>
-                {
-                    b.Navigation("SpeakingResult");
                 });
 
             modelBuilder.Entity("DataLayer.Models.VocabularyList", b =>

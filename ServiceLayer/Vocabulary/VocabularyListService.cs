@@ -28,7 +28,7 @@ namespace ServiceLayer.Vocabulary
                 MakeBy = creatorUserId,
                 CreateAt = DateTime.UtcNow,
                 IsDeleted = false,
-                Status = dto.IsPublic ? "Published" : "Draft" // Nếu public ngay thì Published, không thì Draft
+                Status = "Draft" // Luôn bắt đầu với Draft, cần approval để Published
             };
 
             await _unitOfWork.VocabularyLists.AddAsync(newList);

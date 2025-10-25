@@ -20,7 +20,7 @@ public sealed class UserController : ControllerBase
 
     
     [HttpGet("non-admin-users")]
-    [Authorize(Roles = "Admin")] // Thêm authorization
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetFilteredUsersPaged(
         [FromQuery] int pageNumber = 1,
         [FromQuery] string? searchTerm = null,
@@ -164,6 +164,17 @@ public sealed class UserController : ControllerBase
         }
 
         return userId;
+    }
+
+
+    [HttpPut("update-role")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> UpdateUserRole(int userId, int roleId)
+    {
+        var result = await _userService.UpdateUserRoleAsync(userId, roleId);
+        if (result)
+            return Ok(new { message = "Cập nhật quyền thành công!" });
+        return NotFound(new { message = "Không tìm thấy user hoặc cập nhật thất bại!" });
     }
 
 }

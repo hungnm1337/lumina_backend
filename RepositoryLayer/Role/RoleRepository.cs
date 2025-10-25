@@ -17,6 +17,6 @@ public class RoleRepository : IRoleRepository
 
     public async Task<IEnumerable<Role>> GetAllRolesAsync()
     {
-        return await _context.Roles.ToListAsync();
+        return await _context.Roles.Where(r => r.RoleId !=1).ToListAsync();
     }
 }
