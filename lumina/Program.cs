@@ -33,6 +33,7 @@ using OfficeOpenXml;
 using RepositoryLayer.UserNote;
 using ServiceLayer.UserNote;
 using ServiceLayer.Exam.Speaking;
+using RepositoryLayer.Exam.ExamAttempt;
 
 namespace lumina
 {
@@ -66,6 +67,8 @@ namespace lumina
             builder.Services.AddScoped<IPackageRepository, PackageRepository>();
             builder.Services.AddScoped<IPackageService, PackageService>();
 
+            builder.Services.AddScoped<RepositoryLayer.Exam.ExamAttempt.IExamAttemptRepository,RepositoryLayer.Exam.ExamAttempt.ExamAttemptRepository > ();
+            builder.Services.AddScoped<ServiceLayer.Exam.ExamAttempt.IExamAttemptService, ServiceLayer.Exam.ExamAttempt.ExamAttemptService>();
 
             builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
             
