@@ -213,5 +213,53 @@ namespace RepositoryLayer.Exam.ExamAttempt
                 Status = attempt.Status
             };
         }
+
+        public async Task<bool> SaveReadingAnswer(ReadingAnswerRequestDTO model)
+        {
+            try
+            {
+                var option = await _context.Options
+                    .Include(o => o.Question) 
+                    .FirstOrDefaultAsync(o => o.OptionId == model.SelectedOptionId);
+                if (option == null || model.AttemptID<=0 || model.QuestionId<=0||option.QuestionId != model.QuestionId)
+                {
+                    throw new KeyNotFoundException($"Modle invalid");
+                }
+                var answer = new DataLayer.Models.UserAnswerMultipleChoice()
+                {
+                    AttemptID = model.AttemptID,
+                    QuestionId = model.QuestionId,
+                    SelectedOptionId = model.SelectedOptionId,
+                    IsCorrect = option.IsCorrect.Value,
+                    Score = option.IsCorrect.Value ? option.Question.ScoreWeight : 0
+                };
+                await _context.UserAnswerMultipleChoices.AddAsync(answer);
+                return await _context.SaveChangesAsync() > 0;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
+
+        public async Task<bool> SaveWritingAnswer(WritingAnswerRequestDTO model)
+        {
+            try
+            {
+                var answer = new DataLayer.Models.UserAnswerWriting()
+                {
+                    AttemptID = model.AttemptID,
+                    QuestionId = model.QuestionId,
+                    UserAnswerContent = model.UserAnswerContent,
+                    FeedbackFromAI = model.FeedbackFromAI
+                };
+                _context.UserAnswerWritings.AddAsync(answer);
+                return await _context.SaveChangesAsync() > 0;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
     }
 }

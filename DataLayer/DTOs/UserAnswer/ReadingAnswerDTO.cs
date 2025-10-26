@@ -16,10 +16,6 @@ namespace DataLayer.DTOs.UserAnswer
         public int QuestionId { get; set; }
 
         public int? SelectedOptionId { get; set; }
-
-        public int? Score { get; set; }
-
-        public bool IsCorrect { get; set; }
     }
 
     public class ReadingAnswerResponseDTO

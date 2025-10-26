@@ -36,5 +36,15 @@ namespace ServiceLayer.Exam.ExamAttempt
         {
             return await _examAttemptRepository.StartAnExam(model);
         }
+
+        public async Task<bool> SaveReadingAnswer(ReadingAnswerRequestDTO model)
+        {
+            return await _examAttemptRepository.SaveReadingAnswer(model);
+        }
+
+        public async Task<bool> SaveWritingAnswer(WritingAnswerRequestDTO model)
+        {
+            return await _examAttemptRepository.SaveWritingAnswer(model);
+        }
     }
 }

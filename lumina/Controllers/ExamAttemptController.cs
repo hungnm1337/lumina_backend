@@ -144,5 +144,50 @@ namespace lumina.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred while retrieving exam attempt details.");
             }
         }
+
+
+        [HttpPost("save-reading-answer")]
+        [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> SaveReadingAnswer([FromBody] ReadingAnswerRequestDTO model)
+        {
+            try
+            {
+                if (model == null)
+                {
+                    return BadRequest(new { Message = "Request body cannot be null." });
+                }
+                var result = await _examAttemptService.SaveReadingAnswer(model);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while saving reading answer for AttemptID {AttemptID}", model?.AttemptID);
+                return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred while saving the reading answer.");
+            }
+        }
+
+        [HttpPost("save-writing-answer")]
+        [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> SaveWritingAnswer([FromBody] WritingAnswerRequestDTO model)
+        {
+            try
+            {
+                if (model == null)
+                {
+                    return BadRequest(new { Message = "Request body cannot be null." });
+                }
+                var result = await _examAttemptService.SaveWritingAnswer(model);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while saving writing answer for AttemptID {AttemptID}", model?.AttemptID);
+                return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred while saving the writing answer.");
+            }
+        }
     }
 }
