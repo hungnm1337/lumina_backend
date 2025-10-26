@@ -30,6 +30,9 @@ using System.Text;
 using RepositoryLayer.Slide;
 using ServiceLayer.Slide;
 using OfficeOpenXml;
+using DataLayer.DTOs;
+using ServiceLayer.ExamGenerationAI;
+using ServiceLayer.ExamGenerationAI.Mappers;
 
 namespace lumina
 {
@@ -52,6 +55,8 @@ namespace lumina
 
             });
             builder.Services.Configure<AzureSpeechSettings>(builder.Configuration.GetSection("AzureSpeechSettings"));
+            builder.Services.Configure<GeminiOptions>(
+    builder.Configuration.GetSection("GeminiAI"));
 
             builder.Services.AddScoped<IAzureSpeechService, AzureSpeechService>();
 
@@ -103,7 +108,17 @@ namespace lumina
             builder.Services.AddScoped<IExamPartService, ExamPartService>();
             builder.Services.AddScoped<IExamPartRepository, ExamPartRepository>();
             builder.Services.AddScoped<IWritingService, WritingService>();
+            builder.Services.AddScoped<IAIExamMapper, AIExamMapper>();
+
+            builder.Services.AddHttpClient<IExamGenerationAIService, ExamGenerationAIService>("GeminiAI", c =>
+            {
+                c.Timeout = TimeSpan.FromMinutes(180);
+            });
+
             builder.Services.AddScoped<ServiceLayer.TextToSpeech.ITextToSpeechService, ServiceLayer.TextToSpeech.TextToSpeechService>();
+
+
+
             builder.Services.AddCors(options =>
             {
                 options.AddDefaultPolicy(policy =>

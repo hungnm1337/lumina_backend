@@ -135,5 +135,90 @@ namespace ServiceLayer.Questions
         {
             return await _questionRepository.EditPromptWithQuestionsAsync(dto);
         }
+
+        public async Task<List<int>> SavePromptsWithQuestionsAndOptionsAsync(
+    List<CreatePromptWithQuestionsDTO> promptDtos, int partId)
+        {
+            using var transaction = await _dbContext.Database.BeginTransactionAsync();
+            var savedPromptIds = new List<int>();
+
+            try
+            {
+                // Kiểm tra PartId tồn tại
+                var part = await _dbContext.ExamParts.FirstOrDefaultAsync(p => p.PartId == partId);
+                if (part == null)
+                    throw new Exception($"PartId {partId} không tồn tại");
+
+                int maxQuestions = part.MaxQuestions;
+
+                // Tổng số lượng câu hỏi hiện có ở part này
+                int currentCount = await _dbContext.Questions.CountAsync(q => q.PartId == partId);
+
+                int assignNumber = currentCount + 1; // Đánh số tiếp theo
+
+                foreach (var promptDto in promptDtos)
+                {
+                    // 1. Lưu Prompt
+                    var prompt = new Prompt
+                    {
+                        Title = promptDto.Title,
+                        ContentText = promptDto.ContentText,
+                        Skill = promptDto.Skill,
+                        ReferenceImageUrl = promptDto.ReferenceImageUrl,
+                        ReferenceAudioUrl = promptDto.ReferenceAudioUrl
+                    };
+                    _dbContext.Prompts.Add(prompt);
+                    await _dbContext.SaveChangesAsync();
+                    int promptId = prompt.PromptId;
+                    savedPromptIds.Add(promptId);
+
+                    // 2. Lưu Question cho Prompt này (tất cả sẽ gán partId truyền vào)
+                    foreach (var q in promptDto.Questions)
+                    {
+                        if (currentCount + 1 > maxQuestions)
+                            throw new Exception($"ExamPart id {partId} chỉ được phép có tối đa {maxQuestions} câu hỏi");
+
+                        var question = new Question
+                        {
+                            PartId = partId,
+                            QuestionType = q.Question.QuestionType,
+                            StemText = q.Question.StemText,
+                            ScoreWeight = q.Question.ScoreWeight,
+                            QuestionExplain = q.Question.QuestionExplain,
+                            Time = q.Question.Time,
+                            QuestionNumber = assignNumber++,
+                            PromptId = promptId
+                        };
+
+                        _dbContext.Questions.Add(question);
+                        await _dbContext.SaveChangesAsync();
+                        int questionId = question.QuestionId;
+                        currentCount++;
+
+                        // 3. Lưu Option nếu có
+                        if (q.Options != null && q.Options.Any())
+                        {
+                            var options = q.Options.Select(op => new Option
+                            {
+                                QuestionId = questionId,
+                                Content = op.Content,
+                                IsCorrect = op.IsCorrect
+                            });
+                            _dbContext.Options.AddRange(options);
+                            await _dbContext.SaveChangesAsync();
+                        }
+                    }
+                }
+
+                await transaction.CommitAsync();
+                return savedPromptIds;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
     }
 }

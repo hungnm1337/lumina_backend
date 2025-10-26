@@ -138,5 +138,30 @@ namespace lumina.Controllers
         }
 
 
+        [HttpPost("save-prompts")]
+        public async Task<IActionResult> SavePromptsWithQuestionsAndOptions([FromBody] SaveBulkPromptRequest req)
+        {
+            if (req?.Prompts == null || !req.Prompts.Any())
+                return BadRequest("Không có dữ liệu Prompt nào để lưu!");
+
+            if (req.PartId <= 0)
+                return BadRequest("PartId không hợp lệ!");
+
+            try
+            {
+                var newPromptIds = await _questionService.SavePromptsWithQuestionsAndOptionsAsync(req.Prompts, req.PartId);
+                return Ok(new
+                {
+                    success = true,
+                    message = $"Đã lưu {newPromptIds.Count} prompt/câu hỏi vào Part {req.PartId}.",
+                    promptIds = newPromptIds
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi khi lưu dữ liệu: {ex.Message}");
+            }
+        }
+
     }
 }
