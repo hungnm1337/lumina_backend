@@ -163,5 +163,18 @@ namespace lumina.Controllers
             }
         }
 
+        [HttpGet("check-available-slots")]
+        public async Task<IActionResult> CheckAvailableSlots([FromQuery] int partId, [FromQuery] int count)
+        {
+            try
+            {
+                var available = await _questionService.GetAvailableSlots(partId, count);
+                return Ok(new { available, canAdd = true });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message, canAdd = false });
+            }
+        }
     }
 }

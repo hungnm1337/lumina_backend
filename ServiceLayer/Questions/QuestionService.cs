@@ -220,5 +220,19 @@ namespace ServiceLayer.Questions
             }
         }
 
+        public async Task<int> GetAvailableSlots(int partId, int requestedCount)
+        {
+            var part = await _dbContext.ExamParts.FirstOrDefaultAsync(p => p.PartId == partId);
+            if (part == null)
+                throw new Exception($"PartId {partId} không tồn tại");
+
+            int currentCount = await _dbContext.Questions.CountAsync(q => q.PartId == partId);
+            int available = part.MaxQuestions - currentCount;
+
+            if (requestedCount > available)
+                throw new Exception($"ExamPart id {partId} chỉ còn {available} slot, không đủ cho {requestedCount} câu hỏi bạn cần thêm");
+
+            return available;
+        }
     }
 }

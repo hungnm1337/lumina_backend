@@ -31,7 +31,7 @@ namespace ServiceLayer.AI.Prompt
         {
             { 1, 6 },   // Listening Part 1: 6 prompts (ảnh)
             { 2, 25 },  // Listening Part 2: 25 prompts (câu hỏi)
-            { 3, 13 },  // Listening Part 3: 13 prompts (hội thoại)
+            { 3, 5 },  // Listening Part 3: 13 prompts (hội thoại)
             { 4, 5 },  // Listening Part 4: 10 prompts (bài nói)
             { 5, 30 },  // Reading Part 5: 30 prompts (câu hỏi)
             { 6, 4 },   // Reading Part 6: 4 prompts (đoạn văn)
@@ -1048,48 +1048,87 @@ namespace ServiceLayer.AI.Prompt
                 ExamExamTitle = "AI Generated Writing Q1-5",
                 Skill = "Writing",
                 PartLabel = "Q1-5",
-                Prompts = new List<AIGeneratedPromptDTO> { // Mỗi prompt chứa 1 bộ đề (ảnh + 2 từ)
-                    new AIGeneratedPromptDTO {
-                        ExamTitle = "Write a sentence based on a picture",
-                        Description = "Write ONE sentence based on the picture using the TWO words or phrases provided.", // Mô tả chung
-                        ReferenceImageUrl = null, // Sẽ điền sau
-                        Questions = new List<AIGeneratedQuestionDTO> {
-                            new AIGeneratedQuestionDTO {
-                                PartId = 19, QuestionType = "SentenceFromImageAndWords",
-                                // StemText chứa mô tả ảnh VÀ 2 từ yêu cầu
-                                StemText = "IMAGE_DESCRIPTION: Two people shaking hands across a desk in an office. REQUIRED_WORDS: agreement / sign",
-                                // CorrectAnswer chứa câu mẫu
-                                CorrectAnswer = "The two business partners sign the agreement after reaching a consensus.",
-                                ScoreWeight = 3, Time = 90 // Điểm và thời gian ví dụ
-                            }
-                        }
+                Prompts = new List<AIGeneratedPromptDTO>
+        {
+            new AIGeneratedPromptDTO
+            {
+                ExamTitle = "Write a sentence based on a picture",
+                // Hai từ/cụm từ được cung cấp
+                Description = "agreement / sign",
+                // Mô tả ảnh (để sinh hình)
+                ReferenceImageUrl = "Two people are shaking hands across a desk in an office after signing a contract.",
+                Questions = new List<AIGeneratedQuestionDTO>
+                {
+                    new AIGeneratedQuestionDTO
+                    {
+                        PartId = 19,
+                        QuestionType = "SentenceFromImageAndWords",
+                        // Hướng dẫn cố định
+                        StemText = "Write ONE sentence based on the picture using the TWO words or phrases provided.",
+                        // Câu mẫu đúng (để AI học cách viết)
+                        CorrectAnswer = "null",
+                        ScoreWeight = 3,
+                        Time = 90
                     }
                 }
+            }
+        }
             };
+
             string jsonExample = JsonConvert.SerializeObject(exampleDto, Formatting.Indented);
+
             return $"""
-            Bạn là một chuyên gia ra đề thi TOEIC Writing Questions 1-5 (Write a sentence based on a picture).
+            Bạn là một chuyên gia ra đề thi **TOEIC Writing Questions 1–5** (Write a sentence based on a picture).
 
-            **Yêu cầu:**
-            - Tạo ra chính xác **{quantity}** bộ đề bài Q1-5.
-            - Mỗi bộ đề (prompt) tương ứng với MỘT bức ảnh và HAI từ/cụm từ cho trước.
-            - Với mỗi bộ đề:
-                - **Tạo một mô tả chi tiết cho bức ảnh**.
-                - **Cung cấp hai (2) từ hoặc cụm từ** liên quan đến bức ảnh.
-                - Đặt cả mô tả ảnh và 2 từ yêu cầu vào trường `StemText` của `AIGeneratedQuestionDTO`, phân tách rõ ràng (ví dụ: "IMAGE_DESCRIPTION: [mô tả]. REQUIRED_WORDS: word1 / word2").
-                - Cung cấp một câu trả lời mẫu hoàn chỉnh (`CorrectAnswer`).
-                - Điền các thông tin khác như `ExamExamTitle`, `Skill`, `PartLabel`, `PartId`, `QuestionType`, `Time`... như trong ví dụ.
-            - **Quan trọng:** Trả về kết quả dưới dạng một đối tượng JSON **AIGeneratedExamDTO** duy nhất, không có markdown hay giải thích bên ngoài, theo đúng cấu trúc ví dụ dưới đây.
+            ---
 
-            **Ví dụ cấu trúc JSON đầu ra (cho 1 bộ đề):**
+            ### 🧩 Mô tả phần thi:
+            - Ở phần này, thí sinh sẽ **nhìn một bức ảnh** và **được cung cấp hai từ hoặc cụm từ**.  
+            - Nhiệm vụ của thí sinh là **viết MỘT câu hoàn chỉnh** mô tả bức ảnh, **sử dụng cả hai từ/cụm từ** đã cho.  
+            - Thí sinh có **8 phút cho 5 câu hỏi (khoảng 1.5 phút mỗi câu).**
+
+            ---
+
+            ### 🎯 Nhiệm vụ:
+            Hãy tạo ra **{quantity} bộ đề Writing Q1–5**, mỗi bộ gồm:
+
+            1. **Mô tả ảnh (`ReferenceImageUrl`)**  
+               - Viết mô tả chi tiết bằng tiếng Anh cho bức ảnh.  
+               - Ví dụ: `"A man is reading a newspaper at a café table."`  
+               - Mô tả này dùng để **tạo hình ảnh minh họa bằng AI**.
+
+            2. **Hai từ hoặc cụm từ (`Description`)**  
+               - Cung cấp hai từ hoặc cụm từ mà thí sinh bắt buộc phải sử dụng trong câu.  
+               - Ví dụ: `"coffee / morning"` hoặc `"meeting / report"`.
+
+            3. **Câu hỏi (`StemText`)**  
+               - Ghi chính xác hướng dẫn:  
+                 `"Write ONE sentence based on the picture using the TWO words or phrases provided."`
+
+            4. **Câu mẫu đúng (`CorrectAnswer`)**  
+               - Viết một câu hoàn chỉnh đúng ngữ pháp, tự nhiên, và có chứa cả hai từ/cụm từ đã cho.
+
+            5. **Thông tin khác:**  
+               - `PartId = 19`, `QuestionType = SentenceFromImageAndWords`, `ScoreWeight = 3`, `Time = 90`.
+
+            ---
+
+            ### 🧠 Ví dụ cấu trúc JSON (1 câu mẫu):
             ```json
             {jsonExample}
             ```
-            **Hãy bắt đầu tạo {quantity} bộ đề.**
-            Hãy chỉ trả về một JSON object duy nhất, không có lời dẫn, không có markdown, không có ký hiệu ```json, không có mô tả hoặc lời giải thích nào khác.
-            
+
+            ---
+
+            ### ⚠️ Lưu ý:
+            - Chỉ trả về **một đối tượng JSON duy nhất** theo cấu trúc `AIGeneratedExamDTO`.  
+            - Không thêm markdown, mô tả, hay lời giải thích bên ngoài.  
+            - Đảm bảo `ReferenceImageUrl` và `Description` được điền rõ ràng, tự nhiên, bằng tiếng Anh.
+
+            Hãy bắt đầu tạo **{quantity} bộ đề Writing Q1–5** ngay bây giờ.
             """;
         }
+
         private static string CreateWritingPart2Prompt(int quantity, string topic)
         {
             var exampleDto = new AIGeneratedExamDTO
