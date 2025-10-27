@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using RepositoryLayer.Event;
 using ServiceLayer.Auth;
-using ServiceLayer.Email;
 using RepositoryLayer.Leaderboard;
 using ServiceLayer.Leaderboard;
 using ServiceLayer.Event;
@@ -14,9 +13,7 @@ using RepositoryLayer.Import;
 using RepositoryLayer.Questions;
 using RepositoryLayer.UnitOfWork;
 using ServiceLayer.Article;
-using ServiceLayer.Auth;
 using ServiceLayer.Configs;
-using ServiceLayer.Email;
 using ServiceLayer.Exam;
 using ServiceLayer.Exam.Writting;
 using ServiceLayer.Import;
@@ -30,6 +27,8 @@ using RepositoryLayer.Slide;
 using ServiceLayer.Slide;
 using OfficeOpenXml;
 using ServiceLayer.Exam.Speaking;
+using ServiceLayer.Chat;
+using ServiceLayer.Email;
 
 namespace lumina
 {
@@ -104,6 +103,9 @@ namespace lumina
             builder.Services.AddScoped<IExamPartRepository, ExamPartRepository>();
             builder.Services.AddScoped<IWritingService, WritingService>();
             builder.Services.AddScoped<ServiceLayer.TextToSpeech.ITextToSpeechService, ServiceLayer.TextToSpeech.TextToSpeechService>();
+            
+            // Chat services
+            builder.Services.AddScoped<IChatService, ChatService>();
             builder.Services.AddCors(options =>
             {
                 options.AddDefaultPolicy(policy =>
