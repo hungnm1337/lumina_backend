@@ -145,15 +145,27 @@ namespace RepositoryLayer.Exam.ExamAttempt
 
         private async Task<List<ReadingAnswerResponseDTO>> GetReadingAnswerByAttemptId(int attemptId)
         {
+            // The query is built as IQueryable, then executed once by ToListAsync()
             var readingAnswers = await _context.UserAnswerMultipleChoices
                 .AsNoTracking()
                 .Where(answer => answer.AttemptID == attemptId)
+                // Remove 'async' from the lambda. This is now just a projection.
                 .Select(answer => new ReadingAnswerResponseDTO()
                 {
                     AttemptID = answer.AttemptID,
                     Question = new DataLayer.DTOs.Exam.QuestionDTO()
                     {
-                        Options = null,
+                        // EF Core will translate this nested Select into part of the main query
+                        // Remove 'await' and use '.ToList()'
+                        Options = answer.Question.Options
+                            .Select(option => new DataLayer.DTOs.Exam.OptionDTO()
+                            {
+                                OptionId = option.OptionId,
+                                Content = option.Content,
+                                IsCorrect = option.IsCorrect,
+                                QuestionId = option.QuestionId
+                            })
+                            .ToList(), // Use .ToList(), not .ToListAsync()
                         PromptId = answer.Question.PromptId,
                         QuestionId = answer.Question.QuestionId,
                         Prompt = answer.Question.Prompt != null ? new DataLayer.DTOs.Exam.PromptDTO()
@@ -165,6 +177,7 @@ namespace RepositoryLayer.Exam.ExamAttempt
                             ReferenceAudioUrl = answer.Question.Prompt.ReferenceAudioUrl,
                             ReferenceImageUrl = answer.Question.Prompt.ReferenceImageUrl
                         } : null,
+
                         PartId = answer.Question.PartId,
                         QuestionExplain = answer.Question.QuestionExplain,
                         QuestionType = answer.Question.QuestionType,
@@ -183,10 +196,10 @@ namespace RepositoryLayer.Exam.ExamAttempt
                         QuestionId = answer.SelectedOption.QuestionId
                     } : null
                 })
-                .ToListAsync();
+                .ToListAsync(); // The one and only 'await' executes the entire translated query
+
             return readingAnswers;
         }
-
         public async Task<ExamAttemptRequestDTO> StartAnExam(ExamAttemptRequestDTO model)
         {
             DataLayer.Models.ExamAttempt attempt = new DataLayer.Models.ExamAttempt()
