@@ -3,10 +3,11 @@ using RepositoryLayer.Generic;
 
 namespace RepositoryLayer.Speaking
 {
-    public class SpeakingResultRepository : Repository<SpeakingResult>, ISpeakingResultRepository
-    {
-        public SpeakingResultRepository(LuminaSystemContext context) : base(context)
-        {
-        }
-    }
+    // TODO: Uncomment after migration - SpeakingResult model has been modified
+    // public class SpeakingResultRepository : Repository<SpeakingResult>, ISpeakingResultRepository
+    // {
+    //     public SpeakingResultRepository(LuminaSystemContext context) : base(context)
+    //     {
+    //     }
+    // }
 }

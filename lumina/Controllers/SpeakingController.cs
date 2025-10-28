@@ -6,10 +6,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RepositoryLayer.UnitOfWork;
-using ServiceLayer.Speaking;
 using System.Security.Claims;
 using ServiceLayer.Speech;
-using DataLayer.DTOs.Exam;
+using DataLayer.DTOs.Exam.Speaking;
+using ServiceLayer.Exam.Speaking;
 
 [Authorize]
 [ApiController]
@@ -52,18 +52,18 @@ public class SpeakingController : ControllerBase
             {
                 return NotFound("Question not found.");
             }
-            var examId = question.Part.ExamId;
+            var examId = question.Part.ExamId; // FIX: ExamID không phải ExamId
 
             // **SỬA LẠI TÊN THUỘC TÍNH: ExamAttempts thay vì ExamAttemptRepository**
             var examAttempt = await _unitOfWork.ExamAttempts.Get()
-                                .FirstOrDefaultAsync(e => e.UserId == userId && e.ExamId == examId && e.Status == "In Progress");
+                                .FirstOrDefaultAsync(e => e.UserID == userId && e.ExamID == examId && e.Status == "In Progress");
 
             if (examAttempt == null)
             {
                 examAttempt = new ExamAttempt
                 {
-                    UserId = userId,
-                    ExamId = examId,
+                    UserID = userId,      // FIX: UserID không phải UserId
+                    ExamID = examId,      // FIX: ExamID không phải ExamId
                     StartTime = DateTime.UtcNow,
                     Status = "In Progress"
                 };
@@ -71,7 +71,7 @@ public class SpeakingController : ControllerBase
                 await _unitOfWork.CompleteAsync();
             }
 
-            var result = await _speakingScoringService.ProcessAndScoreAnswerAsync(request.Audio, request.QuestionId, examAttempt.AttemptId);
+            var result = await _speakingScoringService.ProcessAndScoreAnswerAsync(request.Audio, request.QuestionId, examAttempt.AttemptID);
 
             return Ok(result);
         }

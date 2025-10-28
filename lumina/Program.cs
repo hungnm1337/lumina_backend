@@ -13,6 +13,7 @@ using RepositoryLayer.Exam;
 using RepositoryLayer.Import;
 using RepositoryLayer.Questions;
 using RepositoryLayer.UnitOfWork;
+using RepositoryLayer.User;
 using ServiceLayer.Article;
 using ServiceLayer.Auth;
 using ServiceLayer.Configs;
@@ -21,7 +22,6 @@ using ServiceLayer.Exam;
 using ServiceLayer.Exam.Writting;
 using ServiceLayer.Import;
 using ServiceLayer.Questions;
-using ServiceLayer.Speaking;
 using ServiceLayer.Speech;
 using ServiceLayer.UploadFile;
 using ServiceLayer.User;
@@ -33,6 +33,10 @@ using OfficeOpenXml;
 using DataLayer.DTOs;
 using ServiceLayer.ExamGenerationAI;
 using ServiceLayer.ExamGenerationAI.Mappers;
+using RepositoryLayer.UserNote;
+using ServiceLayer.UserNote;
+using ServiceLayer.Exam.Speaking;
+using RepositoryLayer.Exam.ExamAttempt;
 
 namespace lumina
 {
@@ -70,6 +74,8 @@ namespace lumina
             builder.Services.AddScoped<IPackageRepository, PackageRepository>();
             builder.Services.AddScoped<IPackageService, PackageService>();
 
+            builder.Services.AddScoped<RepositoryLayer.Exam.ExamAttempt.IExamAttemptRepository,RepositoryLayer.Exam.ExamAttempt.ExamAttemptRepository > ();
+            builder.Services.AddScoped<ServiceLayer.Exam.ExamAttempt.IExamAttemptService, ServiceLayer.Exam.ExamAttempt.ExamAttemptService>();
 
             builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
             
@@ -100,8 +106,9 @@ namespace lumina
             builder.Services.AddScoped<IExamPartRepository, ExamPartRepository>();
             builder.Services.AddScoped<IExamPartService, ExamPartService>();
             
+            builder.Services.AddScoped<IUserNoteRepository,UserNoteRepository>();
+            builder.Services.AddScoped<IUserNoteService, UserNoteService>();
 
-    
             builder.Services.AddScoped<IVocabularyListRepository, VocabularyListRepository>();
             builder.Services.AddScoped<IVocabularyListService, VocabularyListService>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();

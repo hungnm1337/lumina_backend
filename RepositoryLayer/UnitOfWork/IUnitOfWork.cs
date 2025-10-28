@@ -16,11 +16,13 @@ public interface IUnitOfWork : IDisposable
     IVocabularyListRepository VocabularyLists { get; }
     IQuestionRepository Questions { get; }
 
-    ISpeakingResultRepository SpeakingResults { get; }
+    // TODO: Uncomment after migration - SpeakingResult and UserAnswer models have been modified
+    // ISpeakingResultRepository SpeakingResults { get; }
 
     IExamAttemptRepository ExamAttempts { get; }
 
-    IUserAnswerRepository UserAnswers { get; }
+    // TODO: Uncomment after migration - SpeakingResult and UserAnswer models have been modified
+    // IUserAnswerRepository UserAnswers { get; }
     Task<int> CompleteAsync();
     Task<IDbContextTransaction> BeginTransactionAsync();
 }

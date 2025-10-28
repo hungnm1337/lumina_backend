@@ -12,5 +12,9 @@ public interface IAuthService
     Task<LoginResponse> GoogleLoginAsync(GoogleLoginRequest request);
 
     
-    Task<RegisterResponse> RegisterAsync(RegisterRequest request);
+    Task<SendRegistrationOtpResponse> SendRegistrationOtpAsync(SendRegistrationOtpRequest request);
+    
+    Task<VerifyRegistrationResponse> VerifyRegistrationAsync(VerifyRegistrationRequest request);
+    
+    Task<ResendOtpResponse> ResendRegistrationOtpAsync(ResendRegistrationOtpRequest request);
 }

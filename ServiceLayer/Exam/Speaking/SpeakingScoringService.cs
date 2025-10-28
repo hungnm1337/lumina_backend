@@ -1,5 +1,5 @@
 ﻿using DataLayer.DTOs;
-using DataLayer.DTOs.Exam;
+using DataLayer.DTOs.Exam.Speaking;
 using DataLayer.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
@@ -11,7 +11,7 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 
-namespace ServiceLayer.Speaking
+namespace ServiceLayer.Exam.Speaking
 {
     public class SpeakingScoringService : ISpeakingScoringService
     {
@@ -78,33 +78,34 @@ namespace ServiceLayer.Speaking
             var nlpResult = await GetNlpScoresAsync(azureResult.Transcript, question.SampleAnswer);
             var overallScore = CalculateOverallScore(question.QuestionType, azureResult, nlpResult);
 
-            var userAnswer = new UserAnswer
-            {
-                AttemptId = attemptId,
-                QuestionId = questionId,
-                AnswerContent = azureResult.Transcript,
-                AudioUrl = transformedMp3Url,
-                Score = overallScore
-            };
+            // TODO: Uncomment after migration - UserAnswer and SpeakingResult models have been modified
+            // var userAnswer = new UserAnswer
+            // {
+            //     AttemptId = attemptId,
+            //     QuestionId = questionId,
+            //     AnswerContent = azureResult.Transcript,
+            //     AudioUrl = transformedMp3Url,
+            //     Score = overallScore
+            // };
 
-            // Sử dụng đúng tên thuộc tính 'UserAnswers' và hàm
-            await _unitOfWork.UserAnswers.AddAsync(userAnswer);
-            await _unitOfWork.CompleteAsync(); // Sử dụng SaveChangesAsync
+            // // Sử dụng đúng tên thuộc tính 'UserAnswers' và hàm
+            // await _unitOfWork.UserAnswers.AddAsync(userAnswer);
+            // await _unitOfWork.CompleteAsync(); // Sử dụng SaveChangesAsync
 
-            var speakingResult = new SpeakingResult
-            {
-                UserAnswerId = userAnswer.UserAnswerId,
-                PronunciationScore = (float?)azureResult.PronunciationScore,
-                AccuracyScore = (float?)azureResult.AccuracyScore,
-                FluencyScore = (float?)azureResult.FluencyScore,
-                CompletenessScore = (float?)azureResult.CompletenessScore,
-                GrammarScore = (float?)nlpResult.Grammar_score,
-                VocabularyScore = (float?)nlpResult.Vocabulary_score,
-                ContentScore = (float?)nlpResult.Content_score
-            };
+            // var speakingResult = new SpeakingResult
+            // {
+            //     UserAnswerId = userAnswer.UserAnswerId,
+            //     PronunciationScore = (float?)azureResult.PronunciationScore,
+            //     AccuracyScore = (float?)azureResult.AccuracyScore,
+            //     FluencyScore = (float?)azureResult.FluencyScore,
+            //     CompletenessScore = (float?)azureResult.CompletenessScore,
+            //     GrammarScore = nlpResult.Grammar_score,
+            //     VocabularyScore = nlpResult.Vocabulary_score,
+            //     ContentScore = nlpResult.Content_score
+            // };
 
-            await _unitOfWork.SpeakingResults.AddAsync(speakingResult);
-            await _unitOfWork.CompleteAsync(); // Sử dụng SaveChangesAsync
+            // await _unitOfWork.SpeakingResults.AddAsync(speakingResult);
+            // await _unitOfWork.CompleteAsync(); // Sử dụng SaveChangesAsync
 
             // Trả về DTO đầy đủ cho frontend
             return new SpeakingScoringResultDTO
@@ -207,12 +208,12 @@ namespace ServiceLayer.Speaking
             }
 
             double totalScore =
-                (azureResult.PronunciationScore * pronWeight) +
-                (azureResult.AccuracyScore * accWeight) +
-                (azureResult.FluencyScore * fluWeight) +
-                (nlpResult.Grammar_score * gramWeight) +
-                (nlpResult.Vocabulary_score * vocabWeight) +
-                (nlpResult.Content_score * contentWeight);
+                azureResult.PronunciationScore * pronWeight +
+                azureResult.AccuracyScore * accWeight +
+                azureResult.FluencyScore * fluWeight +
+                nlpResult.Grammar_score * gramWeight +
+                nlpResult.Vocabulary_score * vocabWeight +
+                nlpResult.Content_score * contentWeight;
 
             double totalWeight = pronWeight + accWeight + fluWeight + gramWeight + vocabWeight + contentWeight;
             if (totalWeight > 0)

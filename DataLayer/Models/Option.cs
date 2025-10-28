@@ -15,5 +15,5 @@ public partial class Option
 
     public virtual Question Question { get; set; } = null!;
 
-    public virtual ICollection<UserAnswer> UserAnswers { get; set; } = new List<UserAnswer>();
+    public virtual ICollection<UserAnswerMultipleChoice> UserAnswerMultipleChoices { get; set; } = new List<UserAnswerMultipleChoice>();
 }

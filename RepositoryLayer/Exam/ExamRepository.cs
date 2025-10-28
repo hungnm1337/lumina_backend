@@ -110,6 +110,7 @@ using System.Threading.Tasks;
 
 
 
+
     public async Task<ExamPartDTO> GetExamPartDetailAndQuestionByExamPartID(int partId)
     {
         var examPartDetail = await _luminaSystemContext.ExamParts
@@ -142,18 +143,17 @@ using System.Threading.Tasks;
                         QuestionId = o.QuestionId,
                         Content = o.Content,
                         IsCorrect = o.IsCorrect
-                    }).ToList(),
-                    Prompt = q.PromptId == null ? null : new PromptDTO
+                    }).ToList(), 
+                    Prompt = q.Prompt == null ? null : new PromptDTO
                     {
                         PromptId = q.Prompt.PromptId,
-                        PassageId = null, // Model không có PassageId
                         Skill = q.Prompt.Skill,
-                        ContentText = q.Prompt.ContentText, // Map từ ContentText
                         ReferenceImageUrl = q.Prompt.ReferenceImageUrl,
                         ReferenceAudioUrl = q.Prompt.ReferenceAudioUrl,
-                        Passage = null // Model không có Passage relationship
+                        ContentText = q.Prompt.ContentText,
+                        Title = q.Prompt.Title
                     }
-                }).ToList()
+                }).ToList() 
             })
             .FirstOrDefaultAsync();
 

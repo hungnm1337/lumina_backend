@@ -1,7 +1,7 @@
 ﻿using DataLayer.DTOs;
 using Microsoft.AspNetCore.Http;
 using Microsoft.CognitiveServices.Speech;
-using Microsoft.CognitiveServices.Speech.Audio; 
+using Microsoft.CognitiveServices.Speech.Audio;
 using Microsoft.CognitiveServices.Speech.PronunciationAssessment;
 using Microsoft.Extensions.Options;
 using ServiceLayer.Configs;
@@ -9,7 +9,7 @@ using System;
 using System.Net.Http;
 using System.Threading.Tasks;
 using NAudio.Wave;
-using DataLayer.DTOs.Exam;
+using DataLayer.DTOs.Exam.Speaking;
 
 namespace ServiceLayer.Speech
 {

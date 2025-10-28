@@ -1,9 +1,9 @@
 ﻿using DataLayer.DTOs;
-using DataLayer.DTOs.Exam;
+using DataLayer.DTOs.Exam.Speaking;
 using Microsoft.AspNetCore.Http;
 using System.Threading.Tasks;
 
-namespace ServiceLayer.Speaking
+namespace ServiceLayer.Exam.Speaking
 {
     public interface ISpeakingScoringService
     {

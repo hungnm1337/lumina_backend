@@ -3,7 +3,8 @@ using RepositoryLayer.Generic;
 
 namespace RepositoryLayer.Speaking
 {
-    public interface ISpeakingResultRepository : IRepository<SpeakingResult>
-    {
-    }
+    // TODO: Uncomment after migration - SpeakingResult model has been modified
+    // public interface ISpeakingResultRepository : IRepository<SpeakingResult>
+    // {
+    // }
 }

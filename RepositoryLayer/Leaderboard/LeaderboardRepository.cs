@@ -179,7 +179,12 @@ namespace RepositoryLayer.Leaderboard
             }
             else
             {
-                var aggregated = await _context.UserAnswers
+                // TODO: Fix after migration - UserAnswers đã split thành UserAnswerMultipleChoices, UserAnswerSpeakings, UserAnswerWritings
+                // Cần combine 3 bảng để tính leaderboard
+                list = new List<(int UserId, int Score)>(); // Temporary fix
+                
+                /* UNCOMMENT SAU KHI MIGRATION
+                var aggregated = await _context.UserAnswerMultipleChoices
                     .Where(ua => (!season.StartDate.HasValue || ua.Attempt.StartTime >= season.StartDate)
                                  && (!season.EndDate.HasValue || ua.Attempt.EndTime <= season.EndDate)
                                  && ua.Score != null)
@@ -189,6 +194,8 @@ namespace RepositoryLayer.Leaderboard
                     .Take(top)
                     .ToListAsync();
                 list = aggregated.Select(x => (x.UserId, x.Score)).ToList();
+                */
+                //list = aggregated.Select(x => (x.UserId, x.Score)).ToList();
             }
 
             var userIds = list.Select(x => x.UserId).ToList();
@@ -214,8 +221,10 @@ namespace RepositoryLayer.Leaderboard
             var existing = _context.UserLeaderboards.Where(ul => ul.LeaderboardId == leaderboardId);
             _context.UserLeaderboards.RemoveRange(existing);
 
+            // TODO: Fix after migration - UserAnswers đã split thành 3 bảng
+            /* UNCOMMENT SAU KHI MIGRATION
             // Aggregate again and insert
-            var aggregated = await _context.UserAnswers
+            var aggregated = await _context.UserAnswerMultipleChoices
                 .Where(ua => (!season.StartDate.HasValue || ua.Attempt.StartTime >= season.StartDate)
                              && (!season.EndDate.HasValue || ua.Attempt.EndTime <= season.EndDate)
                              && ua.Score != null)
@@ -232,6 +241,7 @@ namespace RepositoryLayer.Leaderboard
                     Score = a.Score
                 });
             }
+            */
 
             var affected = await _context.SaveChangesAsync();
             return affected;

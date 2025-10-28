@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using System.Threading.Tasks;
 using DataLayer.DTOs;
-using DataLayer.DTOs.Exam;
+using DataLayer.DTOs.Exam.Speaking;
 
 namespace ServiceLayer.Speech
 {
