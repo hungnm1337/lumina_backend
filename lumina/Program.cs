@@ -55,6 +55,8 @@ namespace lumina
 
             });
             builder.Services.Configure<AzureSpeechSettings>(builder.Configuration.GetSection("AzureSpeechSettings"));
+            builder.Services.Configure<AzureSpeechSettings>(
+    builder.Configuration.GetSection("AzureSpeech"));
             builder.Services.Configure<GeminiOptions>(
     builder.Configuration.GetSection("GeminiAI"));
 

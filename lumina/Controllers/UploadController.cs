@@ -1,9 +1,10 @@
-﻿
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using ServiceLayer.Speech;
 using ServiceLayer.TextToSpeech;
 using ServiceLayer.UploadFile;
 using static lumina.Controllers.AITestController;
+using Microsoft.Extensions.Configuration;
 
 namespace lumina.Controllers
 {
@@ -57,7 +58,8 @@ namespace lumina.Controllers
             }
         }
 
-        [HttpPost("upload")]
+
+          [HttpPost("upload")]
         public async Task<IActionResult> GenerateQuestionAudioAsync([FromBody] TextToSpeechRequest request)
         {
             try
@@ -79,9 +81,10 @@ namespace lumina.Controllers
             }
         }
 
-
-
     }
+
+
+}
     public class UploadFromUrlRequest
     {
         public string FileUrl { get; set; } 
@@ -91,4 +94,4 @@ namespace lumina.Controllers
     {
         public string Text { get; set; }
     }
-}
+

@@ -167,7 +167,7 @@ namespace ServiceLayer.ExamGenerationAI
             return textJson;
         }
 
-
+        //tao anh
         public string GeneratePollinationsImageUrl(string description)
         {
             if (string.IsNullOrWhiteSpace(description))
