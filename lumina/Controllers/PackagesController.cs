@@ -1,4 +1,5 @@
 ﻿using DataLayer.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace lumina.Controllers
@@ -15,6 +16,7 @@ namespace lumina.Controllers
         }
 
         [HttpGet("active-pro")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetActiveProPackages()
         {
             var list = await _packageService.GetActivePackagesAsync();
@@ -22,6 +24,7 @@ namespace lumina.Controllers
         }
 
         [HttpGet("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetPackage(int id)
         {
             var pkg = await _packageService.GetByIdAsync(id);
@@ -30,6 +33,7 @@ namespace lumina.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreatePackage([FromBody] Package pkg)
         {
             await _packageService.AddPackageAsync(pkg);
@@ -38,6 +42,7 @@ namespace lumina.Controllers
 
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdatePackage(int id, [FromBody] Package updatedPackage)
         {
             if (id != updatedPackage.PackageId)
@@ -57,6 +62,7 @@ namespace lumina.Controllers
         }
 
         [HttpPatch("{id}/toggle-status")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ToggleStatus(int id)
         {
             await _packageService.TogglePackageStatusAsync(id);

@@ -1,5 +1,4 @@
-﻿
-using DataLayer.DTOs;
+﻿using DataLayer.DTOs;
 using Microsoft.AspNetCore.Http;
 using Microsoft.CognitiveServices.Speech;
 using Microsoft.CognitiveServices.Speech.Audio;
@@ -344,5 +343,6 @@ namespace ServiceLayer.Speech
             // Collapse multiple spaces
             return System.Text.RegularExpressions.Regex.Replace(normalized, "\\s+", " ").Trim();
         }
+
     }
 }
