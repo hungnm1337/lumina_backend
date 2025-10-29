@@ -25,5 +25,10 @@ namespace ServiceLayer.Questions
         Task<bool> DeleteQuestionAsync(int questionId);
 
         Task<QuestionStatisticDto> GetStatisticsAsync();
+
+        Task<List<int>> SavePromptsWithQuestionsAndOptionsAsync(
+    List<CreatePromptWithQuestionsDTO> promptDtos, int partId);
+
+        Task<int> GetAvailableSlots(int partId, int requestedCount);
     }
 }
