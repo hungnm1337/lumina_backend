@@ -1,11 +1,13 @@
 ﻿using System.Globalization;
 using System.Text;
+using System.Text.Json;
 using DataLayer.DTOs.Auth;
 using DataLayer.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using ServiceLayer.Email;
 
 namespace ServiceLayer.Auth;
 
@@ -22,8 +24,11 @@ public sealed class AuthService : IAuthService
     private readonly LuminaSystemContext _context;
     private readonly IJwtTokenService _jwtTokenService;
     private readonly IGoogleAuthService _googleAuthService;
+    private readonly IEmailSender _emailSender;
     private readonly ILogger<AuthService> _logger;
     private readonly int _defaultRoleId = 4;
+    private readonly int _registrationOtpLength = 6;
+    private readonly int _registrationOtpExpiryMinutes = 10;
 
 
 
@@ -31,12 +36,14 @@ public sealed class AuthService : IAuthService
         LuminaSystemContext context,
         IJwtTokenService jwtTokenService,
         IGoogleAuthService googleAuthService,
+        IEmailSender emailSender,
         ILogger<AuthService> logger
         )
     {
         _context = context;
         _jwtTokenService = jwtTokenService;
         _googleAuthService = googleAuthService;
+        _emailSender = emailSender;
         _logger = logger;
     }
 
@@ -103,17 +110,119 @@ public sealed class AuthService : IAuthService
         return CreateLoginResponse(account.User, account.Username);
     }
 
-    public async Task<RegisterResponse> RegisterAsync(RegisterRequest request)
+    public async Task<SendRegistrationOtpResponse> SendRegistrationOtpAsync(SendRegistrationOtpRequest request)
     {
-        // Normalize và validate inputs
+        var normalizedEmail = NormalizeEmail(request.Email);
+        var normalizedUsername = NormalizeUsername(request.Username);
+
+        // Check cả email và username trong 1 query để tối ưu performance
+        var conflicts = await _context.Accounts
+            .Include(a => a.User)
+            .Where(a => a.Username == normalizedUsername || (a.User.Email == normalizedEmail && a.User.IsActive == true))
+            .Select(a => new { a.Username, a.User.Email, a.User.IsActive })
+            .ToListAsync();
+
+        // Kiểm tra email đã được đăng ký
+        var emailExists = conflicts.Any(c => c.Email == normalizedEmail && c.IsActive == true);
+        if (emailExists)
+        {
+            _logger.LogWarning("Registration OTP request failed - Email already registered: {Email}", normalizedEmail);
+            throw AuthServiceException.Conflict("Email đã được đăng ký");
+        }
+
+        // Kiểm tra username đã tồn tại
+        var usernameExists = conflicts.Any(c => c.Username == normalizedUsername);
+        if (usernameExists)
+        {
+            _logger.LogWarning("Registration OTP request failed - Username already exists: {Username}", normalizedUsername);
+            throw AuthServiceException.Conflict("Tên đăng nhập đã tồn tại");
+        }
+
+        // Cleanup: Xóa temp user cũ (IsActive=false, không có Account) nếu tồn tại
+        var tempUserOld = await _context.Users
+            .Include(u => u.PasswordResetTokens)
+            .FirstOrDefaultAsync(u => u.Email == normalizedEmail && u.IsActive == false);
+            
+        if (tempUserOld != null)
+        {
+            // Xóa các token cũ của temp user
+            if (tempUserOld.PasswordResetTokens != null && tempUserOld.PasswordResetTokens.Count > 0)
+            {
+                _context.PasswordResetTokens.RemoveRange(tempUserOld.PasswordResetTokens);
+            }
+            
+            // Xóa temp user cũ
+            _context.Users.Remove(tempUserOld);
+            await _context.SaveChangesAsync();
+            
+            _logger.LogInformation("Cleaned up old temp user for {Email}", normalizedEmail);
+        }
+
+        // Tạo OTP code
+        var otpCode = GenerateOtpCode();
+        var otpHash = BCrypt.Net.BCrypt.HashPassword(otpCode);
+
+        var now = DateTime.UtcNow;
+        
+        // Tạo temp user mới với IsActive = false (chưa verify OTP)
+        var tempUser = new DataLayer.Models.User
+        {
+            Email = normalizedEmail,
+            FullName = "Pending", // Placeholder - sẽ được cập nhật khi verify
+            RoleId = _defaultRoleId,
+            IsActive = false,
+            CurrentStreak = 0
+        };
+        
+        await _context.Users.AddAsync(tempUser);
+        await _context.SaveChangesAsync();
+
+        var registrationToken = new PasswordResetToken
+        {
+            UserId = tempUser.UserId,
+            CodeHash = otpHash,
+            CreatedAt = now,
+            ExpiresAt = now.AddMinutes(_registrationOtpExpiryMinutes)
+        };
+
+        await _context.PasswordResetTokens.AddAsync(registrationToken);
+        await _context.SaveChangesAsync();
+
+        // Gửi email OTP
+        try
+        {
+            await _emailSender.SendRegistrationOtpAsync(normalizedEmail, normalizedEmail, otpCode);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send registration OTP to {Email}", normalizedEmail);
+            
+            // Rollback: Xóa token và temp user
+            _context.PasswordResetTokens.Remove(registrationToken);
+            _context.Users.Remove(tempUser);
+            await _context.SaveChangesAsync();
+            
+            throw AuthServiceException.ServerError("Không thể gửi mã OTP. Vui lòng thử lại sau.");
+        }
+
+        _logger.LogInformation("Registration OTP sent to {Email}", normalizedEmail);
+
+        return new SendRegistrationOtpResponse
+        {
+            Message = "Mã OTP đã được gửi đến email của bạn. Vui lòng kiểm tra email để hoàn tất đăng ký."
+        };
+    }
+
+    public async Task<VerifyRegistrationResponse> VerifyRegistrationAsync(VerifyRegistrationRequest request)
+    {
         var normalizedEmail = NormalizeEmail(request.Email);
         var normalizedUsername = NormalizeUsername(request.Username);
         var trimmedName = request.Name.Trim();
 
-        // Guard clauses
+        // Validate inputs
         if (string.IsNullOrWhiteSpace(trimmedName))
         {
-            throw AuthServiceException.BadRequest("Name is required");
+            throw AuthServiceException.BadRequest("Tên không được để trống");
         }
 
         // Truncate if too long
@@ -127,69 +236,175 @@ public sealed class AuthService : IAuthService
             normalizedUsername = normalizedUsername[..UsernameMaxLength];
         }
 
-        // Check duplicates
-        if (await _context.Users.AnyAsync(u => u.Email == normalizedEmail))
+        // Tìm temp user (Include Role để tạo JWT token)
+        var tempUser = await _context.Users
+            .Include(u => u.Accounts)
+            .Include(u => u.Role)
+            .FirstOrDefaultAsync(u => u.Email == normalizedEmail && u.IsActive == false);
+
+        if (tempUser == null)
         {
-            _logger.LogWarning("Registration failed - Email already exists: {Email}", normalizedEmail);
-            throw AuthServiceException.Conflict("Email already exists");
+            throw AuthServiceException.NotFound("Không tìm thấy thông tin đăng ký. Vui lòng yêu cầu mã OTP mới.");
         }
 
-        if (await _context.Accounts.AnyAsync(a => a.Username == normalizedUsername))
+        // Kiểm tra OTP token
+        var registrationToken = await _context.PasswordResetTokens
+            .FirstOrDefaultAsync(t => 
+                t.UserId == tempUser.UserId && 
+                t.UsedAt == null && 
+                t.ExpiresAt > DateTime.UtcNow);
+
+        if (registrationToken == null)
         {
-            _logger.LogWarning("Registration failed - Username already exists: {Username}", normalizedUsername);
-            throw AuthServiceException.Conflict("Username already exists");
+            throw AuthServiceException.BadRequest("OTP không hợp lệ hoặc đã hết hạn");
         }
 
-        // Create user and account in transaction
+        // Verify OTP
+        if (!BCrypt.Net.BCrypt.Verify(request.OtpCode, registrationToken.CodeHash))
+        {
+            throw AuthServiceException.BadRequest("Mã OTP không đúng");
+        }
+
+        // Kiểm tra email đã được đăng ký chưa (double check)
+        var existingActiveUser = await _context.Users
+            .AnyAsync(u => u.Email == normalizedEmail && u.IsActive == true);
+            
+        if (existingActiveUser)
+        {
+            throw AuthServiceException.Conflict("Email đã được đăng ký");
+        }
+
+        // Kiểm tra username đã tồn tại chưa
+        var usernameExists = await _context.Accounts
+            .AnyAsync(a => a.Username == normalizedUsername);
+            
+        if (usernameExists)
+        {
+            throw AuthServiceException.Conflict("Tên đăng nhập đã tồn tại");
+        }
+
         await using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
-            var user = new DataLayer.Models.User
-            {
-                Email = normalizedEmail,
-                FullName = trimmedName,
-                RoleId = _defaultRoleId,
-                IsActive = true,
-                CurrentStreak = 0
-            };
+            // Update thông tin user thật
+            tempUser.FullName = trimmedName;
+            tempUser.IsActive = true;
 
-            await _context.Users.AddAsync(user);
-            await _context.SaveChangesAsync();
-
-            var account = new DataLayer.Models.Account
+            // Tạo Account
+            var newAccount = new Account
             {
-                UserId = user.UserId,
+                UserId = tempUser.UserId,
                 Username = normalizedUsername,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
                 CreateAt = DateTime.UtcNow
             };
 
-            await _context.Accounts.AddAsync(account);
-            await _context.SaveChangesAsync();
+            await _context.Accounts.AddAsync(newAccount);
 
+            // Đánh dấu token đã sử dụng
+            registrationToken.UsedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
             await transaction.CommitAsync();
 
-            _logger.LogInformation("New user registered successfully: {Username} ({Email})", normalizedUsername, normalizedEmail);
+            _logger.LogInformation("User registration completed successfully: {Username} ({Email})", 
+                normalizedUsername, normalizedEmail);
 
-            return new RegisterResponse
+            // Tạo JWT token luôn để user có thể login ngay
+            var tokenResult = _jwtTokenService.GenerateToken(tempUser);
+
+            return new VerifyRegistrationResponse
             {
-                Message = "Registration successful",
-                UserId = user.UserId.ToString(CultureInfo.InvariantCulture)
+                Message = "Đăng ký thành công!",
+                Token = tokenResult.Token,
+                ExpiresIn = tokenResult.ExpiresInSeconds,
+                User = new AuthUserResponse
+                {
+                    Id = tempUser.UserId.ToString(CultureInfo.InvariantCulture),
+                    Username = normalizedUsername,
+                    Email = normalizedEmail,
+                    Name = trimmedName
+                }
             };
-        }
-        catch (DbUpdateException ex)
-        {
-            await transaction.RollbackAsync();
-            var message = ResolveRegistrationConflictMessage(ex);
-            _logger.LogError(ex, "Registration failed due to database conflict: {Message}", message);
-            throw AuthServiceException.Conflict(message);
         }
         catch (Exception ex)
         {
             await transaction.RollbackAsync();
-            _logger.LogError(ex, "Registration failed unexpectedly");
+            _logger.LogError(ex, "Failed to complete registration for {Email}", normalizedEmail);
             throw;
         }
+    }
+
+    public async Task<ResendOtpResponse> ResendRegistrationOtpAsync(ResendRegistrationOtpRequest request)
+    {
+        var normalizedEmail = NormalizeEmail(request.Email);
+
+        // Tìm user chưa active
+        var user = await _context.Users
+            .FirstOrDefaultAsync(u => u.Email == normalizedEmail && u.IsActive == false);
+
+        if (user == null)
+        {
+            throw AuthServiceException.NotFound("Không tìm thấy thông tin đăng ký");
+        }
+
+        // Xóa token cũ
+        var existingTokens = await _context.PasswordResetTokens
+            .Where(t => t.UserId == user.UserId && t.UsedAt == null)
+            .ToListAsync();
+
+        if (existingTokens.Count > 0)
+        {
+            _context.PasswordResetTokens.RemoveRange(existingTokens);
+        }
+
+        // Tạo OTP mới
+        var otpCode = GenerateOtpCode();
+        var otpHash = BCrypt.Net.BCrypt.HashPassword(otpCode);
+
+        var now = DateTime.UtcNow;
+        var expiresAt = now.AddMinutes(_registrationOtpExpiryMinutes);
+
+        var newToken = new PasswordResetToken
+        {
+            UserId = user.UserId,
+            CodeHash = otpHash,
+            CreatedAt = now,
+            ExpiresAt = expiresAt
+        };
+
+        await _context.PasswordResetTokens.AddAsync(newToken);
+        await _context.SaveChangesAsync();
+
+        // Gửi email
+        try
+        {
+            await _emailSender.SendRegistrationOtpAsync(user.Email, user.FullName, otpCode);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to resend registration OTP to {Email}", user.Email);
+            
+            // Xóa token vừa tạo
+            _context.PasswordResetTokens.Remove(newToken);
+            await _context.SaveChangesAsync();
+            
+            throw AuthServiceException.ServerError("Không thể gửi mã OTP. Vui lòng thử lại sau.");
+        }
+
+        _logger.LogInformation("Registration OTP resent to {Email}", user.Email);
+
+        return new ResendOtpResponse
+        {
+            Message = "Mã OTP mới đã được gửi đến email của bạn"
+        };
+    }
+
+    private string GenerateOtpCode()
+    {
+        var random = new Random();
+        var code = random.Next(0, 999999).ToString(CultureInfo.InvariantCulture);
+        return code.PadLeft(_registrationOtpLength, '0');
     }
 
     private async Task<Account?> FindAccountByIdentifierAsync(string identifier)

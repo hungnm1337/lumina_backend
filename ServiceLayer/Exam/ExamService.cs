@@ -1,4 +1,5 @@
 ﻿using DataLayer.DTOs.Exam;
+using DataLayer.DTOs.ExamPart;
 using DataLayer.Models;
 using RepositoryLayer.Exam;
 using ServiceLayer.Exam;
@@ -28,13 +29,19 @@ using System.Threading.Tasks;
             return await _examRepository.GetExamDetailAndExamPartByExamID(examId);
         }
 
-       /* public async Task<ExamPartDTO> GetExamPartDetailAndQuestionByExamPartID(int partId)
+        public async Task<ExamPartDTO> GetExamPartDetailAndQuestionByExamPartID(int partId)
         {
             return await _examRepository.GetExamPartDetailAndQuestionByExamPartID(partId);
-        }*/
+        }
 
     public async Task<bool> CreateExamFormatAsync(string fromSetKey, string toSetKey, int createdBy)
     {
+        // Lấy tháng-năm hiện tại
+        // Kiểm tra xem đã tồn tại ExamSetKey này chưa
+        if (await _examRepository.ExamSetKeyExistsAsync(toSetKey))
+            return false; // Đã tạo rồi trong tháng này
+
+        // Tiếp tục clone như bình thường
         var sourceExams = await _examRepository.GetExamsBySetKeyAsync(fromSetKey);
         if (!sourceExams.Any()) return false;
 
@@ -71,9 +78,14 @@ using System.Threading.Tasks;
         return true;
     }
 
-    public Task<ExamPartDTO> GetExamPartDetailAndQuestionByExamPartID(int partId)
+    public async Task<List<ExamGroupBySetKeyDto>> GetExamsGroupedBySetKeyAsync()
     {
-        throw new NotImplementedException();
+        return await _examRepository.GetExamsGroupedBySetKeyAsync();
+    }
+
+    public async Task<bool> ToggleExamStatusAsync(int examId)
+    {
+        return await _examRepository.ToggleExamStatusAsync(examId);
     }
 }
 

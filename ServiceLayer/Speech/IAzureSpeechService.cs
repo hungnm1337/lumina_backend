@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using System.Threading.Tasks;
 using DataLayer.DTOs;
-using DataLayer.DTOs.Exam;
+using DataLayer.DTOs.Exam.Speaking;
 
 namespace ServiceLayer.Speech
 {
@@ -11,5 +11,6 @@ namespace ServiceLayer.Speech
         Task<SpeechAnalysisDTO> AnalyzePronunciationFromUrlAsync(string audioUrl, string referenceText, string language = null);
         Task<string> RecognizeFromUrlAsync(string audioUrl, string language = null);
         Task<string> RecognizeFromFileAsync(IFormFile audioFile, string language = null);
+        
     }
 }

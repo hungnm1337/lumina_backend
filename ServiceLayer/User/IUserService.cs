@@ -18,6 +18,9 @@ public interface IUserService
 
     // Password management
     Task<bool> ChangePasswordAsync(int currentUserId, ChangePasswordDTO request);
+
+
+    Task<bool> UpdateUserRoleAsync(int userId, int roleId);
 }
 
 

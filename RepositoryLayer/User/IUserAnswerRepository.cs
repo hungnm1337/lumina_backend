@@ -3,7 +3,8 @@ using RepositoryLayer.Generic;
 
 namespace RepositoryLayer.User
 {
-    public interface IUserAnswerRepository : IRepository<UserAnswer>
-    {
-    }
+    // TODO: Uncomment after migration - UserAnswer model has been modified
+    // public interface IUserAnswerRepository : IRepository<UserAnswer>
+    // {
+    // }
 }

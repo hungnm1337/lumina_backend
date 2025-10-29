@@ -1,4 +1,5 @@
-﻿using DataLayer.Models;
+﻿using DataLayer.DTOs.ExamPart;
+using DataLayer.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,4 +19,10 @@ public class ExamPartService : IExamPartService
     {
         return await _examRepository.GetAllPartsAsync();
     }
+
+    public async Task<List<ExamPartDto>> GetAllExamPartAsync()
+    {
+        return await _examRepository.GetAllExamPartsAsync();
+    }
+
 }

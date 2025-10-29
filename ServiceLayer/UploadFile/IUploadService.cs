@@ -11,5 +11,7 @@ namespace ServiceLayer.UploadFile
     {
         Task<UploadResultDTO> UploadFileAsync(IFormFile file);
 
+        Task<UploadResultDTO> UploadFromUrlAsync(string fileUrl);
+
     }
 }

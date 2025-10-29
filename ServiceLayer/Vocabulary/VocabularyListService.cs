@@ -28,7 +28,7 @@ namespace ServiceLayer.Vocabulary
                 MakeBy = creatorUserId,
                 CreateAt = DateTime.UtcNow,
                 IsDeleted = false,
-                Status = "Active"
+                Status = "Draft" // Luôn bắt đầu với Draft, cần approval để Published
             };
 
             await _unitOfWork.VocabularyLists.AddAsync(newList);
@@ -41,13 +41,69 @@ namespace ServiceLayer.Vocabulary
                 IsPublic = newList.IsPublic,
                 MakeByName = creator.FullName,
                 CreateAt = newList.CreateAt,
-                VocabularyCount = 0
+                VocabularyCount = 0,
+                Status = newList.Status,
+                RejectionReason = newList.RejectionReason
             };
         }
 
         public async Task<IEnumerable<VocabularyListDTO>> GetListsAsync(string? searchTerm)
         {
             return await _unitOfWork.VocabularyLists.GetAllAsync(searchTerm);
+        }
+
+        public async Task<IEnumerable<VocabularyListDTO>> GetListsByUserAsync(int userId, string? searchTerm)
+        {
+            return await _unitOfWork.VocabularyLists.GetByUserAsync(userId, searchTerm);
+        }
+
+        public async Task<bool> RequestApprovalAsync(int listId, int staffUserId)
+        {
+            var vocabularyList = await _unitOfWork.VocabularyLists.FindByIdAsync(listId);
+            if (vocabularyList == null || (vocabularyList.Status != "Draft" && vocabularyList.Status != "Rejected"))
+            {
+                // Chỉ cho phép gửi duyệt vocabulary list đang là Draft hoặc đã bị từ chối
+                return false;
+            }
+
+            vocabularyList.Status = "Pending";
+            vocabularyList.IsPublic = false; // Vẫn chưa public
+            vocabularyList.UpdatedBy = staffUserId;
+            vocabularyList.UpdateAt = DateTime.UtcNow;
+
+            await _unitOfWork.VocabularyLists.UpdateAsync(vocabularyList);
+            await _unitOfWork.CompleteAsync();
+            return true;
+        }
+
+        public async Task<bool> ReviewListAsync(int listId, bool isApproved, string? comment, int managerUserId)
+        {
+            var vocabularyList = await _unitOfWork.VocabularyLists.FindByIdAsync(listId);
+            if (vocabularyList == null || vocabularyList.Status != "Pending")
+            {
+                // Chỉ duyệt được vocabulary list đang chờ
+                return false;
+            }
+
+            if (isApproved)
+            {
+                vocabularyList.Status = "Published";
+                vocabularyList.IsPublic = true;
+                vocabularyList.RejectionReason = null; // Clear rejection reason when approved
+            }
+            else
+            {
+                vocabularyList.Status = "Rejected";
+                vocabularyList.IsPublic = false;
+                vocabularyList.RejectionReason = comment; // Save rejection reason
+            }
+
+            vocabularyList.UpdatedBy = managerUserId;
+            vocabularyList.UpdateAt = DateTime.UtcNow;
+
+            await _unitOfWork.VocabularyLists.UpdateAsync(vocabularyList);
+            await _unitOfWork.CompleteAsync();
+            return true;
         }
     }
 }

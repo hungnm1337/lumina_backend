@@ -26,6 +26,15 @@ namespace lumina.Controllers
                 return StatusCode(500, "Lỗi khi lấy dữ liệu Part: " + ex.Message);
             }
         }
+
+
+        [HttpGet("exam-parts")]
+        public async Task<IActionResult> GetAllExamParts()
+        {
+            var data = await _examService.GetAllExamPartAsync();
+            return Ok(data);
+        }
+
     }
 
 }

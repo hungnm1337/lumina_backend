@@ -21,7 +21,13 @@ public partial class VocabularyList
 
     public string? Status { get; set; }
 
+    public int? UpdatedBy { get; set; }
+
+    public string? RejectionReason { get; set; }
+
     public virtual User MakeByNavigation { get; set; } = null!;
+
+    public virtual User? UpdatedByNavigation { get; set; }
 
     public virtual ICollection<UserSpacedRepetition> UserSpacedRepetitions { get; set; } = new List<UserSpacedRepetition>();
 
