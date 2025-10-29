@@ -4,6 +4,7 @@ using RepositoryLayer.Exam;
 using RepositoryLayer.Questions;
 using RepositoryLayer.Speaking;
 using RepositoryLayer.User;
+using RepositoryLayer.Generic;
 
 
 namespace RepositoryLayer.UnitOfWork;
@@ -19,11 +20,18 @@ public class UnitOfWork : IUnitOfWork
     public IVocabularyListRepository VocabularyLists { get; private set; }
     public IQuestionRepository Questions { get; private set; }
 
-    public ISpeakingResultRepository SpeakingResults { get; private set; }
+    // TODO: Uncomment after migration - SpeakingResult and UserAnswer models have been modified
+    // public ISpeakingResultRepository SpeakingResults { get; private set; }
 
-    public IExamAttemptRepository ExamAttempts { get; private set; }
+    public RepositoryLayer.Exam.ExamAttempt.IExamAttemptRepository ExamAttempts { get; private set; }
 
     public IUserAnswerRepository UserAnswers { get; private set; }
+
+    // Generic repositories for direct entity access
+    public IRepository<ExamAttempt> ExamAttemptsGeneric { get; private set; }
+    public IRepository<Question> QuestionsGeneric { get; private set; }
+    public IRepository<Option> Options { get; private set; }
+
     public UnitOfWork(LuminaSystemContext context)
     {
         _context = context;
@@ -34,11 +42,17 @@ public class UnitOfWork : IUnitOfWork
         VocabularyLists = new VocabularyListRepository(_context);
         Questions = new QuestionRepository(_context);
 
-        SpeakingResults = new SpeakingResultRepository(_context);
+        // TODO: Uncomment after migration - SpeakingResult and UserAnswer models have been modified
+        // SpeakingResults = new SpeakingResultRepository(_context);
 
-        ExamAttempts = new ExamAttemptRepository(_context);
+        ExamAttempts = new RepositoryLayer.Exam.ExamAttempt.ExamAttemptRepository(_context);
 
         UserAnswers = new UserAnswerRepository(_context);
+
+        // Initialize generic repositories
+        ExamAttemptsGeneric = new Repository<ExamAttempt>(_context);
+        QuestionsGeneric = new Repository<Question>(_context);
+        Options = new Repository<Option>(_context);
     }
 
     public async Task<int> CompleteAsync()

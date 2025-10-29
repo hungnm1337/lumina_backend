@@ -1,4 +1,5 @@
-﻿using DataLayer.Models;
+﻿using DataLayer.DTOs.UserAnswer;
+using DataLayer.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -73,24 +74,44 @@ namespace DataLayer.DTOs.Exam
 
         public List<OptionDTO> Options { get; set; }
     }
+    public class FinalizeAttemptRequestDTO
+    {
+        public int ExamAttemptId { get; set; }
+    }
 
+    public class SaveProgressRequestDTO
+    {
+        public int ExamAttemptId { get; set; }
+        public int? CurrentQuestionIndex { get; set; }
+    }
+
+    public class ExamAttemptSummaryDTO
+    {
+        public bool Success { get; set; }
+        public int ExamAttemptId { get; set; }
+        public decimal TotalScore { get; set; }
+        public int TotalQuestions { get; set; }
+        public int CorrectAnswers { get; set; }
+        public int IncorrectAnswers { get; set; }
+        public double PercentCorrect { get; set; }
+        public DateTime StartTime { get; set; }
+        public DateTime EndTime { get; set; }
+        public TimeSpan Duration { get; set; }
+        public List<UserAnswerDetailDTO> Answers { get; set; }
+    }
     public class PromptDTO
     {
         public int PromptId { get; set; }
-        public int? PassageId { get; set; }
+
         public string Skill { get; set; } = null!;
-        public string? Title { get; set; } // ✅ Thêm Title
-        public string? ContentText { get; set; } // ✅ Đổi từ PromptText
+
+        public string ContentText { get; set; } = null!;
+
+        public string Title { get; set; } = null!;
         public string? ReferenceImageUrl { get; set; }
         public string? ReferenceAudioUrl { get; set; }
-        public PassageDTO Passage { get; set; }
-    }
 
-    public class PassageDTO
-    {
-        public int? PassageId { get; set; }
-        public string Title { get; set; } = null!;
-        public string ContentText { get; set; } = null!;
+        
     }
 
     public class OptionDTO

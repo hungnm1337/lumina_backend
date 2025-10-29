@@ -3,6 +3,8 @@ using RepositoryLayer.Exam;
 using RepositoryLayer.Questions;
 using RepositoryLayer.Speaking;
 using RepositoryLayer.User;
+using RepositoryLayer.Generic;
+using DataLayer.Models;
 
 
 namespace RepositoryLayer.UnitOfWork;
@@ -16,11 +18,18 @@ public interface IUnitOfWork : IDisposable
     IVocabularyListRepository VocabularyLists { get; }
     IQuestionRepository Questions { get; }
 
-    ISpeakingResultRepository SpeakingResults { get; }
+    // TODO: Uncomment after migration - SpeakingResult and UserAnswer models have been modified
+    // ISpeakingResultRepository SpeakingResults { get; }
 
-    IExamAttemptRepository ExamAttempts { get; }
+    RepositoryLayer.Exam.ExamAttempt.IExamAttemptRepository ExamAttempts { get; }
 
     IUserAnswerRepository UserAnswers { get; }
+
+    // Generic repositories for direct entity access
+    IRepository<ExamAttempt> ExamAttemptsGeneric { get; }
+    IRepository<Question> QuestionsGeneric { get; }
+    IRepository<Option> Options { get; }
+
     Task<int> CompleteAsync();
     Task<IDbContextTransaction> BeginTransactionAsync();
 }

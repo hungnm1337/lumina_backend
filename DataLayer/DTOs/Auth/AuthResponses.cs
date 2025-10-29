@@ -15,10 +15,22 @@ public class LoginResponse
     public AuthUserResponse User { get; set; } = new();
 }
 
-public class RegisterResponse
+public class SendRegistrationOtpResponse
 {
     public string Message { get; set; } = string.Empty;
-    public string UserId { get; set; } = string.Empty;
+}
+
+public class VerifyRegistrationResponse
+{
+    public string Message { get; set; } = string.Empty;
+    public string Token { get; set; } = string.Empty;
+    public int ExpiresIn { get; set; }
+    public AuthUserResponse User { get; set; } = new();
+}
+
+public class ResendOtpResponse
+{
+    public string Message { get; set; } = string.Empty;
 }
 
 public class ForgotPasswordResponse

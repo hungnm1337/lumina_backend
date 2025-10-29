@@ -67,5 +67,45 @@ namespace ServiceLayer.UploadFile
             // Cách trả về kết quả này là hoàn toàn chính xác
             return new UploadResultDTO { Url = uploadResult.SecureUrl.ToString(), PublicId = uploadResult.PublicId };
         }
+
+        // ✅ Hàm mới: Upload từ URL (không cần file)
+        public async Task<UploadResultDTO> UploadFromUrlAsync(string fileUrl)
+        {
+            if (string.IsNullOrEmpty(fileUrl))
+                throw new ArgumentException("URL không hợp lệ.");
+
+            // Kiểm tra đuôi file để xác định loại upload
+            bool isAudio = fileUrl.EndsWith(".mp3") || fileUrl.EndsWith(".wav") || fileUrl.EndsWith(".m4a");
+
+            UploadResult uploadResult;
+
+            if (isAudio)
+            {
+                var audioParams = new VideoUploadParams
+                {
+                    File = new FileDescription(fileUrl),
+                    PublicId = $"lumina/audio_{Guid.NewGuid()}",
+                };
+                uploadResult = await _cloudinary.UploadAsync(audioParams);
+            }
+            else
+            {
+                var imageParams = new ImageUploadParams
+                {
+                    File = new FileDescription(fileUrl),
+                    PublicId = $"music_app/images_{Guid.NewGuid()}",
+                };
+                uploadResult = await _cloudinary.UploadAsync(imageParams);
+            }
+
+            if (uploadResult.Error != null)
+                throw new Exception(uploadResult.Error.Message);
+
+            return new UploadResultDTO
+            {
+                Url = uploadResult.SecureUrl.ToString(),
+                PublicId = uploadResult.PublicId
+            };
+        }
     }
 }

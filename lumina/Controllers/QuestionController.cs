@@ -1,6 +1,7 @@
 ﻿using DataLayer.DTOs.Passage;
 using DataLayer.DTOs.Prompt;
 using DataLayer.DTOs.Questions;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ServiceLayer.Import;
 using ServiceLayer.Questions;
@@ -114,10 +115,20 @@ namespace lumina.Controllers
         [HttpDelete("delete-question/{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var ok = await _questionService.DeleteQuestionAsync(id);
-            if (!ok) return NotFound("Không tồn tại question!");
-            return Ok(new { message = "Đã xóa!" });
+            try
+            {
+                var ok = await _questionService.DeleteQuestionAsync(id);
+                if (!ok)
+                    return NotFound(new { message = "Không tồn tại question!" });
+                return Ok(new { message = "Đã xóa!" });
+            }
+            catch (Exception ex)
+            {
+                // Trả về JSON message cho FE dễ xử lý
+                return BadRequest(new { message = ex.Message });
+            }
         }
+
 
 
         [HttpGet("statistics")]
@@ -128,5 +139,64 @@ namespace lumina.Controllers
         }
 
 
+        [HttpPost("save-prompts")]
+        public async Task<IActionResult> SavePromptsWithQuestionsAndOptions([FromBody] SaveBulkPromptRequest req)
+        {
+            if (req?.Prompts == null || !req.Prompts.Any())
+                return BadRequest("Không có dữ liệu Prompt nào để lưu!");
+
+            if (req.PartId <= 0)
+                return BadRequest("PartId không hợp lệ!");
+
+            try
+            {
+                var newPromptIds = await _questionService.SavePromptsWithQuestionsAndOptionsAsync(req.Prompts, req.PartId);
+                return Ok(new
+                {
+                    success = true,
+                    message = $"Đã lưu {newPromptIds.Count} prompt/câu hỏi vào Part {req.PartId}.",
+                    promptIds = newPromptIds
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi khi lưu dữ liệu: {ex.Message}");
+            }
+        }
+
+        [HttpGet("check-available-slots")]
+        public async Task<IActionResult> CheckAvailableSlots([FromQuery] int partId, [FromQuery] int count)
+        {
+            try
+            {
+                var available = await _questionService.GetAvailableSlots(partId, count);
+                return Ok(new { available, canAdd = true });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message, canAdd = false });
+            }
+        }
+
+        [HttpDelete("prompt/{promptId}")]
+        [Authorize(Roles = "Staff")]
+        public async Task<IActionResult> DeletePrompt(int promptId)
+        {
+            try
+            {
+                var result = await _questionService.DeletePromptAsync(promptId);
+                
+                if (!result)
+                {
+                    return NotFound(new { message = "Không tìm thấy prompt." });
+                }
+
+                return Ok(new { message = "Xóa prompt thành công." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
     }
 }

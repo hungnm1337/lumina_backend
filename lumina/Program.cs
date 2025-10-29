@@ -12,6 +12,7 @@ using RepositoryLayer.Exam;
 using RepositoryLayer.Import;
 using RepositoryLayer.Questions;
 using RepositoryLayer.UnitOfWork;
+using RepositoryLayer.User;
 using ServiceLayer.Article;
 using ServiceLayer.Configs;
 using ServiceLayer.Exam;
@@ -26,9 +27,18 @@ using System.Text;
 using RepositoryLayer.Slide;
 using ServiceLayer.Slide;
 using OfficeOpenXml;
+using DataLayer.DTOs;
+using ServiceLayer.ExamGenerationAI;
+using ServiceLayer.ExamGenerationAI.Mappers;
+using RepositoryLayer.UserNote;
+using ServiceLayer.UserNote;
 using ServiceLayer.Exam.Speaking;
 using ServiceLayer.Chat;
 using ServiceLayer.Email;
+using ServiceLayer.Exam.Listening;
+using ServiceLayer.Exam.Reading;
+using RepositoryLayer.Exam.ExamAttempt;
+using RepositoryLayer.Exam.Writting;
 
 namespace lumina
 {
@@ -51,17 +61,24 @@ namespace lumina
 
             });
             builder.Services.Configure<AzureSpeechSettings>(builder.Configuration.GetSection("AzureSpeechSettings"));
+            builder.Services.Configure<AzureSpeechSettings>(
+    builder.Configuration.GetSection("AzureSpeech"));
+            builder.Services.Configure<GeminiOptions>(
+    builder.Configuration.GetSection("GeminiAI"));
 
             builder.Services.AddScoped<IAzureSpeechService, AzureSpeechService>();
 
             builder.Services.AddScoped<ISpeakingScoringService, SpeakingScoringService>();
+            builder.Services.AddScoped<IListeningService, ListeningService>();
+            builder.Services.AddScoped<IReadingService, ReadingService>();
             builder.Services.AddScoped<IRoleRepository, RoleRepository>();
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<IRoleService, RoleService>();
-
             builder.Services.AddScoped<IPackageRepository, PackageRepository>();
             builder.Services.AddScoped<IPackageService, PackageService>();
 
+            builder.Services.AddScoped<RepositoryLayer.Exam.ExamAttempt.IExamAttemptRepository,RepositoryLayer.Exam.ExamAttempt.ExamAttemptRepository > ();
+            builder.Services.AddScoped<ServiceLayer.Exam.ExamAttempt.IExamAttemptService, ServiceLayer.Exam.ExamAttempt.ExamAttemptService>();
 
             builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
             
@@ -92,8 +109,9 @@ namespace lumina
             builder.Services.AddScoped<IExamPartRepository, ExamPartRepository>();
             builder.Services.AddScoped<IExamPartService, ExamPartService>();
             
+            builder.Services.AddScoped<IUserNoteRepository,UserNoteRepository>();
+            builder.Services.AddScoped<IUserNoteService, UserNoteService>();
 
-    
             builder.Services.AddScoped<IVocabularyListRepository, VocabularyListRepository>();
             builder.Services.AddScoped<IVocabularyListService, VocabularyListService>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -101,7 +119,15 @@ namespace lumina
 
             builder.Services.AddScoped<IExamPartService, ExamPartService>();
             builder.Services.AddScoped<IExamPartRepository, ExamPartRepository>();
+            builder.Services.AddScoped<IWrittingRepository, WrittingRepository>();
             builder.Services.AddScoped<IWritingService, WritingService>();
+            builder.Services.AddScoped<IAIExamMapper, AIExamMapper>();
+
+            builder.Services.AddHttpClient<IExamGenerationAIService, ExamGenerationAIService>("GeminiAI", c =>
+            {
+                c.Timeout = TimeSpan.FromMinutes(180);
+            });
+
             builder.Services.AddScoped<ServiceLayer.TextToSpeech.ITextToSpeechService, ServiceLayer.TextToSpeech.TextToSpeechService>();
             
             // Chat services
@@ -146,7 +172,46 @@ namespace lumina
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+            
+            // ✅ SWAGGER WITH JWT AUTHENTICATION
+            builder.Services.AddSwaggerGen(options =>
+            {
+                options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+                {
+                    Title = "Lumina TOEIC API",
+                    Version = "v1",
+                    Description = "API for Lumina TOEIC Learning Platform"
+                });
+
+                // Define JWT security scheme
+                options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                {
+                    Name = "Authorization",
+                    Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+                    Scheme = "Bearer",
+                    BearerFormat = "JWT",
+                    In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+                    Description = "JWT Authorization header using the Bearer scheme. \r\n\r\n" +
+                                  "Enter 'Bearer' [space] and then your token in the text input below.\r\n\r\n" +
+                                  "Example: \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\""
+                });
+
+                // Require JWT for all endpoints
+                options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+                {
+                    {
+                        new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                        {
+                            Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                            {
+                                Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        new string[] {}
+                    }
+                });
+            });
 
 
 

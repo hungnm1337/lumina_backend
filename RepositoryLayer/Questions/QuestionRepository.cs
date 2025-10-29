@@ -286,39 +286,54 @@ namespace RepositoryLayer.Questions
 
         public async Task<bool> DeleteQuestionAsync(int questionId)
         {
-            
-            var question = await _context.Questions.Include(q => q.Options)
-                                                   .FirstOrDefaultAsync(q => q.QuestionId == questionId);
-            //check question
+            // Lấy question và options (chỉ cần)
+            var question = await _context.Questions
+                .Include(q => q.Options)
+                .FirstOrDefaultAsync(q => q.QuestionId == questionId);
+
             if (question == null)
                 return false;
 
-            // xoa option
+            // Lấy ExamPart và Exam tương ứng qua PartId (trường trong Question)
+            var examPart = await _context.ExamParts
+                .Include(ep => ep.Exam)
+                .FirstOrDefaultAsync(ep => ep.PartId == question.PartId);
+
+            if (examPart.Exam != null && examPart.Exam.IsActive)
+                throw new Exception("Không thể xóa câu hỏi vì bài thi đang hoạt động.");
+
+            // Xoá options nếu có
             if (question.Options.Any())
             {
                 _context.Options.RemoveRange(question.Options);
             }
 
-            // xoa question
             _context.Questions.Remove(question);
-
             await _context.SaveChangesAsync();
 
             return true;
         }
 
+
+
         public async Task<QuestionStatisticDto> GetQuestionStatisticsAsync()
         {
+            // TODO: Fix after migration - UserAnswers đã split thành 3 bảng
             var total = await _context.Questions.CountAsync();
-            var used = await _context.UserAnswers
-                .Select(eq => eq.QuestionId)
-                .Distinct()
-                .CountAsync();
-            var unused = await _context.Questions
-                .CountAsync(q => !_context.UserAnswers
-                    .Select(eq => eq.QuestionId)
-                    .Distinct()
-                    .Contains(q.QuestionId));
+            
+            /* UNCOMMENT SAU KHI MIGRATION
+            // Combine all 3 answer types
+            var usedMultipleChoice = await _context.UserAnswerMultipleChoices.Select(eq => eq.QuestionId).Distinct().ToListAsync();
+            var usedSpeaking = await _context.UserAnswerSpeakings.Select(eq => eq.QuestionId).Distinct().ToListAsync();
+            var usedWriting = await _context.UserAnswerWritings.Select(eq => eq.QuestionId).Distinct().ToListAsync();
+            
+            var usedQuestions = usedMultipleChoice.Union(usedSpeaking).Union(usedWriting).Distinct().ToList();
+            var used = usedQuestions.Count;
+            var unused = total - used;
+            */
+            
+            var used = 0; // Temporary fix
+            var unused = total; // Temporary fix
 
             return new QuestionStatisticDto
             {
@@ -366,6 +381,54 @@ namespace RepositoryLayer.Questions
         //    await _context.SaveChangesAsync();
         //    return true;
         //}
+
+        public async Task<bool> DeletePromptAsync(int promptId)
+        {
+            // Lấy prompt với questions và options
+            var prompt = await _context.Prompts
+                .Include(p => p.Questions)
+                    .ThenInclude(q => q.Options)
+                .FirstOrDefaultAsync(p => p.PromptId == promptId);
+
+            if (prompt == null)
+                return false;
+
+            // ✅ Kiểm tra xem có question nào không
+            if (!prompt.Questions.Any())
+            {
+                // Nếu prompt không có question thì xóa luôn
+                _context.Prompts.Remove(prompt);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+
+            // ✅ Lấy PartId từ question đầu tiên để check exam
+            var firstQuestion = prompt.Questions.First();
+            var examPart = await _context.ExamParts
+                .Include(ep => ep.Exam)
+                .FirstOrDefaultAsync(ep => ep.PartId == firstQuestion.PartId);
+
+            // ✅ Kiểm tra xem bài thi có đang hoạt động không
+            if (examPart?.Exam != null && examPart.Exam.IsActive)
+            {
+                throw new Exception("Không thể xóa prompt vì bài thi đang hoạt động.");
+            }
+
+            // ✅ Xóa theo thứ tự: Options -> Questions -> Prompt
+            foreach (var question in prompt.Questions)
+            {
+                if (question.Options.Any())
+                {
+                    _context.Options.RemoveRange(question.Options);
+                }
+            }
+
+            _context.Questions.RemoveRange(prompt.Questions);
+            _context.Prompts.Remove(prompt);
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
 
     }
 }
