@@ -234,5 +234,18 @@ namespace ServiceLayer.Questions
 
             return available;
         }
+
+        public async Task<bool> DeletePromptAsync(int promptId)
+{
+    try
+    {
+        return await _questionRepository.DeletePromptAsync(promptId);
+    }
+    catch (Exception ex)
+    {
+        // Log error nếu cần
+        throw new Exception($"Lỗi khi xóa prompt: {ex.Message}");
+    }
+}
     }
 }
