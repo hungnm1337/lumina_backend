@@ -328,7 +328,6 @@ namespace RepositoryLayer.Exam.ExamAttempt
             };
         }
 
-<<<<<<< Updated upstream
         public async Task<bool> SaveReadingAnswer(ReadingAnswerRequestDTO model)
         {
             try
@@ -336,13 +335,13 @@ namespace RepositoryLayer.Exam.ExamAttempt
                 var option = await _context.Options
                     .Include(o => o.Question) 
                     .FirstOrDefaultAsync(o => o.OptionId == model.SelectedOptionId);
-                if (option == null || model.AttemptID<=0 || model.QuestionId<=0||option.QuestionId != model.QuestionId)
+                if (option == null || model.ExamAttemptId<=0 || model.QuestionId<=0||option.QuestionId != model.QuestionId)
                 {
                     throw new KeyNotFoundException($"Modle invalid");
                 }
                 var answer = new DataLayer.Models.UserAnswerMultipleChoice()
                 {
-                    AttemptID = model.AttemptID,
+                    AttemptID = model.ExamAttemptId,
                     QuestionId = model.QuestionId,
                     SelectedOptionId = model.SelectedOptionId,
                     IsCorrect = option.IsCorrect.Value,
@@ -376,8 +375,6 @@ namespace RepositoryLayer.Exam.ExamAttempt
                 return false;
             }
         }
-=======
 
->>>>>>> Stashed changes
     }
 }
