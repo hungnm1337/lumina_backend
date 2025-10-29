@@ -49,15 +49,12 @@ namespace DataLayer.DTOs.UserAnswer
     {
         public ExamAttemptResponseDTO? ExamAttemptInfo { get; set; }
 
-        //public List<ListeningAnswerDTO>? ListeningAnswers { get; set; }
+        public List<ListeningAnswerResponseDTO>? ListeningAnswers { get; set; }
 
-        //public List<SpeakingAnswerDTO>? SpeakingAnswers { get; set; }
-
+        public List<SpeakingAnswerResponseDTO>? SpeakingAnswers { get; set; }
 
         public List<ReadingAnswerResponseDTO>? ReadingAnswers { get; set; }
 
         public List<WritingAnswerResponseDTO>? WritingAnswers { get; set; }
-
-
     }
 }

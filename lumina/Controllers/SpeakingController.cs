@@ -55,8 +55,8 @@ public class SpeakingController : ControllerBase
             var examId = question.Part.ExamId; // FIX: ExamID không phải ExamId
 
             // **SỬA LẠI TÊN THUỘC TÍNH: ExamAttempts thay vì ExamAttemptRepository**
-            var examAttempt = await _unitOfWork.ExamAttempts.Get()
-                                .FirstOrDefaultAsync(e => e.UserID == userId && e.ExamID == examId && e.Status == "In Progress");
+            var examAttempt = await _unitOfWork.ExamAttemptsGeneric.GetAllAsync(e => e.UserID == userId && e.ExamID == examId && e.Status == "In Progress")
+                                .ContinueWith(t => t.Result.FirstOrDefault());
 
             if (examAttempt == null)
             {
@@ -67,7 +67,7 @@ public class SpeakingController : ControllerBase
                     StartTime = DateTime.UtcNow,
                     Status = "In Progress"
                 };
-                await _unitOfWork.ExamAttempts.AddAsync(examAttempt);
+                await _unitOfWork.ExamAttemptsGeneric.AddAsync(examAttempt);
                 await _unitOfWork.CompleteAsync();
             }
 

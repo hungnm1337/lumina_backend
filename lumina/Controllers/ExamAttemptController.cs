@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using ServiceLayer.Exam.ExamAttempt;
 using DataLayer.DTOs.UserAnswer;
+using DataLayer.DTOs.Exam;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -145,48 +146,53 @@ namespace lumina.Controllers
             }
         }
 
-
-        [HttpPost("save-reading-answer")]
-        [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+        [HttpPost("finalize")]
+        [ProducesResponseType(typeof(ExamAttemptSummaryDTO), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> SaveReadingAnswer([FromBody] ReadingAnswerRequestDTO model)
+        public async Task<IActionResult> FinalizeAttempt([FromBody] FinalizeAttemptRequestDTO request)
         {
             try
             {
-                if (model == null)
-                {
-                    return BadRequest(new { Message = "Request body cannot be null." });
-                }
-                var result = await _examAttemptService.SaveReadingAnswer(model);
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                var result = await _examAttemptService.FinalizeAttemptAsync(request.ExamAttemptId);
+
+                if (!result.Success)
+                    return BadRequest(new { message = "Failed to finalize exam attempt" });
+
                 return Ok(result);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while saving reading answer for AttemptID {AttemptID}", model?.AttemptID);
-                return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred while saving the reading answer.");
+                _logger.LogError(ex, "Error occurred while finalizing exam attempt {AttemptID}", request?.ExamAttemptId);
+                return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred while finalizing the exam.");
             }
         }
 
-        [HttpPost("save-writing-answer")]
-        [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+        [HttpPut("save-progress")]
+        [ProducesResponseType(typeof(SaveProgressResponseDTO), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> SaveWritingAnswer([FromBody] WritingAnswerRequestDTO model)
+        public async Task<IActionResult> SaveProgress([FromBody] SaveProgressRequestDTO request)
         {
             try
             {
-                if (model == null)
-                {
-                    return BadRequest(new { Message = "Request body cannot be null." });
-                }
-                var result = await _examAttemptService.SaveWritingAnswer(model);
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                var result = await _examAttemptService.SaveProgressAsync(request);
+
+                if (!result.Success)
+                    return BadRequest(result);
+
                 return Ok(result);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while saving writing answer for AttemptID {AttemptID}", model?.AttemptID);
-                return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred while saving the writing answer.");
+                _logger.LogError(ex, "Error occurred while saving progress for exam attempt {AttemptID}", request?.ExamAttemptId);
+                return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred while saving progress.");
             }
         }
     }
