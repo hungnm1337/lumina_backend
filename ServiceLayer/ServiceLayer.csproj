@@ -36,4 +36,8 @@
     <ProjectReference Include="..\RepositoryLayer\RepositoryLayer.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="UserNoteAI\" />
+  </ItemGroup>
+
 </Project>
