@@ -90,6 +90,10 @@ namespace lumina
             builder.Services.AddScoped<IExamService, ExamService>();
             builder.Services.AddScoped<ILeaderboardRepository, LeaderboardRepository>();
             builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
+            
+            // Scoring system services
+            builder.Services.AddScoped<IScoringRuleService, ScoringRuleService>();
+            builder.Services.AddScoped<IScoringMilestoneService, ScoringMilestoneService>();
             builder.Services.AddScoped<IExamPartRepository, ExamPartRepository>();
             builder.Services.AddScoped<IExamPartService, ExamPartService>();
             
