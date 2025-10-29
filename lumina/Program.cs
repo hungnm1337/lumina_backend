@@ -36,6 +36,8 @@ using ServiceLayer.ExamGenerationAI.Mappers;
 using RepositoryLayer.UserNote;
 using ServiceLayer.UserNote;
 using ServiceLayer.Exam.Speaking;
+using ServiceLayer.Exam.Listening;
+using ServiceLayer.Exam.Reading;
 using RepositoryLayer.Exam.ExamAttempt;
 
 namespace lumina
@@ -67,10 +69,11 @@ namespace lumina
             builder.Services.AddScoped<IAzureSpeechService, AzureSpeechService>();
 
             builder.Services.AddScoped<ISpeakingScoringService, SpeakingScoringService>();
+            builder.Services.AddScoped<IListeningService, ListeningService>();
+            builder.Services.AddScoped<IReadingService, ReadingService>();
             builder.Services.AddScoped<IRoleRepository, RoleRepository>();
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<IRoleService, RoleService>();
-
             builder.Services.AddScoped<IPackageRepository, PackageRepository>();
             builder.Services.AddScoped<IPackageService, PackageService>();
 
@@ -168,7 +171,46 @@ namespace lumina
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+            
+            // ✅ SWAGGER WITH JWT AUTHENTICATION
+            builder.Services.AddSwaggerGen(options =>
+            {
+                options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+                {
+                    Title = "Lumina TOEIC API",
+                    Version = "v1",
+                    Description = "API for Lumina TOEIC Learning Platform"
+                });
+
+                // Define JWT security scheme
+                options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                {
+                    Name = "Authorization",
+                    Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+                    Scheme = "Bearer",
+                    BearerFormat = "JWT",
+                    In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+                    Description = "JWT Authorization header using the Bearer scheme. \r\n\r\n" +
+                                  "Enter 'Bearer' [space] and then your token in the text input below.\r\n\r\n" +
+                                  "Example: \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\""
+                });
+
+                // Require JWT for all endpoints
+                options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+                {
+                    {
+                        new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                        {
+                            Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                            {
+                                Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        new string[] {}
+                    }
+                });
+            });
 
 
 

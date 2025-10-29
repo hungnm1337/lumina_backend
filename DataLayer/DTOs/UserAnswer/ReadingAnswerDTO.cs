@@ -9,19 +9,22 @@ using System.Threading.Tasks;
 
 namespace DataLayer.DTOs.UserAnswer
 {
+    /// <summary>
+    /// Request DTO for submitting a reading answer
+    /// Should only contain user input, not calculated values
+    /// </summary>
     public class ReadingAnswerRequestDTO
     {
-        public int AttemptID { get; set; }
+        public int ExamAttemptId { get; set; } // Changed from AttemptID for consistency
 
         public int QuestionId { get; set; }
 
-        public int? SelectedOptionId { get; set; }
-
-        public int? Score { get; set; }
-
-        public bool IsCorrect { get; set; }
+        public int SelectedOptionId { get; set; } // Changed from nullable for consistency
     }
 
+    /// <summary>
+    /// Response DTO for reading answer with detailed information
+    /// </summary>
     public class ReadingAnswerResponseDTO
     {
         public int AttemptID { get; set; }
