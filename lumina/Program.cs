@@ -15,9 +15,7 @@ using RepositoryLayer.Questions;
 using RepositoryLayer.UnitOfWork;
 using RepositoryLayer.User;
 using ServiceLayer.Article;
-using ServiceLayer.Auth;
 using ServiceLayer.Configs;
-using ServiceLayer.Email;
 using ServiceLayer.Exam;
 using ServiceLayer.Exam.Writting;
 using ServiceLayer.Import;
@@ -39,6 +37,7 @@ using ServiceLayer.Exam.Speaking;
 using ServiceLayer.Exam.Listening;
 using ServiceLayer.Exam.Reading;
 using RepositoryLayer.Exam.ExamAttempt;
+using RepositoryLayer.Exam.Writting;
 
 namespace lumina
 {
@@ -119,6 +118,7 @@ namespace lumina
 
             builder.Services.AddScoped<IExamPartService, ExamPartService>();
             builder.Services.AddScoped<IExamPartRepository, ExamPartRepository>();
+            builder.Services.AddScoped<IWrittingRepository, WrittingRepository>();
             builder.Services.AddScoped<IWritingService, WritingService>();
             builder.Services.AddScoped<IAIExamMapper, AIExamMapper>();
 

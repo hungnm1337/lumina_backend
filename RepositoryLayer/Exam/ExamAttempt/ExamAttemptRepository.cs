@@ -149,15 +149,27 @@ namespace RepositoryLayer.Exam.ExamAttempt
 
         private async Task<List<ReadingAnswerResponseDTO>> GetReadingAnswerByAttemptId(int attemptId)
         {
+            // The query is built as IQueryable, then executed once by ToListAsync()
             var readingAnswers = await _context.UserAnswerMultipleChoices
                 .AsNoTracking()
                 .Where(answer => answer.AttemptID == attemptId)
+                // Remove 'async' from the lambda. This is now just a projection.
                 .Select(answer => new ReadingAnswerResponseDTO()
                 {
                     AttemptID = answer.AttemptID,
                     Question = new DataLayer.DTOs.Exam.QuestionDTO()
                     {
-                        Options = null,
+                        // EF Core will translate this nested Select into part of the main query
+                        // Remove 'await' and use '.ToList()'
+                        Options = answer.Question.Options
+                            .Select(option => new DataLayer.DTOs.Exam.OptionDTO()
+                            {
+                                OptionId = option.OptionId,
+                                Content = option.Content,
+                                IsCorrect = option.IsCorrect,
+                                QuestionId = option.QuestionId
+                            })
+                            .ToList(), // Use .ToList(), not .ToListAsync()
                         PromptId = answer.Question.PromptId,
                         QuestionId = answer.Question.QuestionId,
                         Prompt = answer.Question.Prompt != null ? new DataLayer.DTOs.Exam.PromptDTO()
@@ -169,6 +181,7 @@ namespace RepositoryLayer.Exam.ExamAttempt
                             ReferenceAudioUrl = answer.Question.Prompt.ReferenceAudioUrl,
                             ReferenceImageUrl = answer.Question.Prompt.ReferenceImageUrl
                         } : null,
+
                         PartId = answer.Question.PartId,
                         QuestionExplain = answer.Question.QuestionExplain,
                         QuestionType = answer.Question.QuestionType,
@@ -187,7 +200,8 @@ namespace RepositoryLayer.Exam.ExamAttempt
                         QuestionId = answer.SelectedOption.QuestionId
                     } : null
                 })
-                .ToListAsync();
+                .ToListAsync(); // The one and only 'await' executes the entire translated query
+
             return readingAnswers;
         }
 
@@ -313,5 +327,57 @@ namespace RepositoryLayer.Exam.ExamAttempt
                 Status = attempt.Status
             };
         }
+
+<<<<<<< Updated upstream
+        public async Task<bool> SaveReadingAnswer(ReadingAnswerRequestDTO model)
+        {
+            try
+            {
+                var option = await _context.Options
+                    .Include(o => o.Question) 
+                    .FirstOrDefaultAsync(o => o.OptionId == model.SelectedOptionId);
+                if (option == null || model.AttemptID<=0 || model.QuestionId<=0||option.QuestionId != model.QuestionId)
+                {
+                    throw new KeyNotFoundException($"Modle invalid");
+                }
+                var answer = new DataLayer.Models.UserAnswerMultipleChoice()
+                {
+                    AttemptID = model.AttemptID,
+                    QuestionId = model.QuestionId,
+                    SelectedOptionId = model.SelectedOptionId,
+                    IsCorrect = option.IsCorrect.Value,
+                    Score = option.IsCorrect.Value ? option.Question.ScoreWeight : 0
+                };
+                await _context.UserAnswerMultipleChoices.AddAsync(answer);
+                return await _context.SaveChangesAsync() > 0;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
+
+        public async Task<bool> SaveWritingAnswer(WritingAnswerRequestDTO model)
+        {
+            try
+            {
+                var answer = new DataLayer.Models.UserAnswerWriting()
+                {
+                    AttemptID = model.AttemptID,
+                    QuestionId = model.QuestionId,
+                    UserAnswerContent = model.UserAnswerContent,
+                    FeedbackFromAI = model.FeedbackFromAI
+                };
+                _context.UserAnswerWritings.AddAsync(answer);
+                return await _context.SaveChangesAsync() > 0;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
+=======
+
+>>>>>>> Stashed changes
     }
 }
