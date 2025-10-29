@@ -25,9 +25,9 @@ namespace ServiceLayer.Chat
         {
             _context = context;
             _configuration = configuration;
-            _apiKey = _configuration["Gemini:ApiKey"];
-            _baseUrl = _configuration["Gemini:BaseUrl"];
-            _model = _configuration["Gemini:Model"];
+            _apiKey = _configuration["GeminiStudent:ApiKey"];
+            _baseUrl = _configuration["GeminiStudent:BaseUrl"];
+            _model = _configuration["GeminiStudent:Model"];
             _httpClientFactory = httpClientFactory;
         }
 
@@ -35,6 +35,24 @@ namespace ServiceLayer.Chat
         {
             try
             {
+                // Kiểm tra câu hỏi ngoài phạm vi TOEIC
+                if (IsOutOfScopeQuestion(request.Message))
+                {
+                    return new ChatResponseDTO
+                    {
+                        Answer = "Xin lỗi, tôi chỉ có thể hỗ trợ bạn về TOEIC và học tiếng Anh. Bạn có câu hỏi nào về từ vựng, ngữ pháp, chiến lược làm bài TOEIC, hoặc luyện tập không?",
+                        ConversationType = "out_of_scope",
+                        Suggestions = new List<string> 
+                        { 
+                            "Từ vựng TOEIC thường gặp",
+                            "Ngữ pháp Part 5",
+                            "Chiến lược làm Part 7", 
+                            "Luyện tập Listening",
+                            "Mẹo làm bài Reading"
+                        }
+                    };
+                }
+                
                 // Xác định loại câu hỏi
                 var questionType = DetermineQuestionType(request.Message);
                 
@@ -63,6 +81,65 @@ namespace ServiceLayer.Chat
                     Suggestions = new List<string> { "Hãy thử hỏi lại", "Liên hệ hỗ trợ" }
                 };
             }
+        }
+
+        private bool IsOutOfScopeQuestion(string message)
+        {
+            var lowerMessage = message.ToLower();
+            
+            // Danh sách từ khóa ngoài phạm vi TOEIC
+            var outOfScopeKeywords = new[]
+            {
+                "lập trình", "programming", "code", "javascript", "python", "java", "c#", "html", "css", "react", "angular",
+                "y tế", "medical", "bác sĩ", "thuốc", "bệnh", "sức khỏe", "bệnh viện", "khám bệnh",
+                "pháp luật", "legal", "luật sư", "tòa án", "luật", "kiện tụng", "hợp đồng",
+                "chính trị", "politics", "bầu cử", "chính phủ", "đảng phái", "tổng thống", "thủ tướng",
+                "thời sự", "news", "tin tức", "sự kiện", "báo chí", "phóng viên", "truyền hình",
+                "công nghệ", "technology", "máy tính", "phần mềm", "app", "website", "database",
+                "nấu ăn", "cooking", "nấu", "món ăn", "thực phẩm", "nhà hàng", "đầu bếp",
+                "du lịch", "travel", "đi du lịch", "khách sạn", "vé máy bay", "tour", "nghỉ dưỡng",
+                "thể thao", "sport", "bóng đá", "bóng rổ", "tennis", "cầu lông", "bơi lội",
+                "giải trí", "entertainment", "phim", "nhạc", "game", "game show", "ca sĩ", "diễn viên",
+                "kinh tế", "tài chính", "ngân hàng", "đầu tư", "cổ phiếu", "chứng khoán", "bitcoin",
+                "toán học", "math", "vật lý", "physics", "hóa học", "chemistry", "sinh học", "biology",
+                "lịch sử", "history", "địa lý", "geography", "văn học", "literature", "triết học",
+                "nghệ thuật", "art", "hội họa", "điêu khắc", "kiến trúc", "thiết kế",
+                "tâm lý học", "psychology", "xã hội học", "sociology", "nhân chủng học"
+            };
+            
+            return outOfScopeKeywords.Any(keyword => lowerMessage.Contains(keyword));
+        }
+
+        private string GetSystemPrompt()
+        {
+            return @"You are Lumina AI Tutor, a specialized TOEIC English learning assistant. 
+
+**YOUR EXPERTISE AREAS:**
+- TOEIC vocabulary and word usage
+- English grammar for TOEIC test  
+- TOEIC test strategies and tips
+- Practice exercises and study plans
+- English learning motivation and guidance
+
+**IMPORTANT RULES:**
+1. ONLY answer questions related to TOEIC English learning
+2. If asked about topics outside TOEIC/English learning, politely redirect:
+   'Xin lỗi, tôi chỉ có thể hỗ trợ bạn về TOEIC và học tiếng Anh. Bạn có câu hỏi nào về từ vựng, ngữ pháp, chiến lược làm bài TOEIC, hoặc luyện tập không?'
+
+3. Always respond in Vietnamese with English examples when relevant
+4. Be encouraging and educational
+5. Provide TOEIC-specific context when applicable
+
+**OUT OF SCOPE TOPICS:**
+- General knowledge outside English learning
+- Technical programming questions
+- Personal advice unrelated to English learning
+- Current events or politics
+- Medical or legal advice
+- Any topic not related to TOEIC English learning
+
+**RESPONSE FORMAT:**
+Always respond with a valid JSON object in the specified format for each question type.";
         }
 
         private string DetermineQuestionType(string message)
@@ -280,6 +357,10 @@ Do not include any text outside the JSON object. Start your response with {{ and
                     throw new Exception("Gemini API key is not configured");
                 }
                 
+                // Thêm System Prompt vào đầu
+                var systemPrompt = GetSystemPrompt();
+                var fullPrompt = $"{systemPrompt}\n\n{prompt}";
+                
                 // Create HttpClient from factory
                 using var httpClient = _httpClientFactory.CreateClient();
                 
@@ -292,7 +373,7 @@ Do not include any text outside the JSON object. Start your response with {{ and
                         {
                             parts = new[]
                             {
-                                new { text = prompt }
+                                new { text = fullPrompt }
                             }
                         }
                     },

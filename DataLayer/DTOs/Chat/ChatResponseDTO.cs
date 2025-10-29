@@ -16,6 +16,10 @@ namespace DataLayer.DTOs.Chat
         public bool HasSaveOption { get; set; } = false;
         public string? SaveAction { get; set; }
         public List<GeneratedVocabularyDTO>? Vocabularies { get; set; }
+        
+        // Thêm properties cho out_of_scope
+        public bool IsOutOfScope { get; set; } = false;
+        public string? ScopeMessage { get; set; }
     }
 
     public class GeneratedVocabularyDTO
