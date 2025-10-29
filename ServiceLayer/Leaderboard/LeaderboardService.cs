@@ -84,5 +84,53 @@ namespace ServiceLayer.Leaderboard
 
         public Task<int> RecalculateSeasonScoresAsync(int leaderboardId)
             => _repository.RecalculateSeasonScoresAsync(leaderboardId);
+
+        public Task<int> ResetSeasonAsync(int leaderboardId, bool archiveScores = true)
+            => _repository.ResetSeasonScoresAsync(leaderboardId, archiveScores);
+
+        public async Task<UserSeasonStatsDTO?> GetUserStatsAsync(int userId, int? leaderboardId = null)
+        {
+            if (!leaderboardId.HasValue)
+            {
+                var current = await _repository.GetCurrentAsync();
+                if (current == null) return null;
+                leaderboardId = current.LeaderboardId;
+            }
+
+            return await _repository.GetUserSeasonStatsAsync(userId, leaderboardId.Value);
+        }
+
+        public async Task<TOEICScoreCalculationDTO?> GetUserTOEICCalculationAsync(int userId, int? leaderboardId = null)
+        {
+            if (!leaderboardId.HasValue)
+            {
+                var current = await _repository.GetCurrentAsync();
+                if (current == null) return null;
+                leaderboardId = current.LeaderboardId;
+            }
+
+            return await _repository.GetUserTOEICCalculationAsync(userId, leaderboardId.Value);
+        }
+
+        public async Task<int> GetUserRankAsync(int userId, int? leaderboardId = null)
+        {
+            if (!leaderboardId.HasValue)
+            {
+                var current = await _repository.GetCurrentAsync();
+                if (current == null) return 0;
+                leaderboardId = current.LeaderboardId;
+            }
+
+            return await _repository.GetUserRankInSeasonAsync(userId, leaderboardId.Value);
+        }
+
+        public async Task AutoManageSeasonsAsync()
+        {
+            // Tự động kích hoạt seasons đã đến ngày bắt đầu
+            await _repository.AutoActivateSeasonAsync();
+            
+            // Tự động kết thúc seasons đã hết hạn
+            await _repository.AutoEndSeasonAsync();
+        }
     }
 }
