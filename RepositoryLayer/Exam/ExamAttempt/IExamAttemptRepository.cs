@@ -17,5 +17,9 @@ namespace RepositoryLayer.Exam.ExamAttempt
         public Task<ExamAttemptRequestDTO> StartAnExam(ExamAttemptRequestDTO model);
 
         public Task<ExamAttemptRequestDTO> EndAnExam(ExamAttemptRequestDTO model);
+
+        public Task<bool> SaveReadingAnswer(ReadingAnswerRequestDTO model);
+        public Task<bool> SaveWritingAnswer(WritingAnswerRequestDTO model);
+
     }
 }

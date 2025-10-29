@@ -20,15 +20,35 @@ namespace RepositoryLayer.Generic
             return _dbSet.AsQueryable();
         }
 
-        public async Task<T?> GetAsync(Expression<Func<T, bool>> expression)
+        public async Task<T?> GetAsync(Expression<Func<T, bool>> expression, string includeProperties = "")
         {
-            return await _dbSet.FirstOrDefaultAsync(expression);
+            IQueryable<T> query = _dbSet;
+
+            if (!string.IsNullOrWhiteSpace(includeProperties))
+            {
+                foreach (var includeProperty in includeProperties.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    query = query.Include(includeProperty.Trim());
+                }
+            }
+
+            return await query.FirstOrDefaultAsync(expression);
+        }
+
+        public async Task<List<T>> GetAllAsync(Expression<Func<T, bool>> expression)
+        {
+            return await _dbSet.Where(expression).ToListAsync();
         }
 
         // **THÊM PHẦN TRIỂN KHAI CHO HÀM NÀY**
         public async Task AddAsync(T entity)
         {
             await _dbSet.AddAsync(entity);
+        }
+
+        public void Update(T entity)
+        {
+            _dbSet.Update(entity);
         }
     }
 }

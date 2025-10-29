@@ -5,10 +5,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace RepositoryLayer.Exam.Writting
+namespace ServiceLayer.Exam.Reading
 {
-    public interface IWrittingRepository
+    public interface IReadingService
     {
-        Task<bool> SaveWritingAnswer(WritingAnswerRequestDTO writingAnswerRequestDTO);
+        Task<SubmitAnswerResponseDTO> SubmitAnswerAsync(ReadingAnswerRequestDTO request);
+
     }
 }

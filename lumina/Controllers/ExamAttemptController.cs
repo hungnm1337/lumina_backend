@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using ServiceLayer.Exam.ExamAttempt;
 using DataLayer.DTOs.UserAnswer;
+using DataLayer.DTOs.Exam;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -142,6 +143,56 @@ namespace lumina.Controllers
             {
                 _logger.LogError(ex, "Error occurred while retrieving details for Exam Attempt ID {AttemptID}", attemptId);
                 return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred while retrieving exam attempt details.");
+            }
+        }
+
+        [HttpPost("finalize")]
+        [ProducesResponseType(typeof(ExamAttemptSummaryDTO), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> FinalizeAttempt([FromBody] FinalizeAttemptRequestDTO request)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                var result = await _examAttemptService.FinalizeAttemptAsync(request.ExamAttemptId);
+
+                if (!result.Success)
+                    return BadRequest(new { message = "Failed to finalize exam attempt" });
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while finalizing exam attempt {AttemptID}", request?.ExamAttemptId);
+                return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred while finalizing the exam.");
+            }
+        }
+
+        [HttpPut("save-progress")]
+        [ProducesResponseType(typeof(SaveProgressResponseDTO), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> SaveProgress([FromBody] SaveProgressRequestDTO request)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                var result = await _examAttemptService.SaveProgressAsync(request);
+
+                if (!result.Success)
+                    return BadRequest(result);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while saving progress for exam attempt {AttemptID}", request?.ExamAttemptId);
+                return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred while saving progress.");
             }
         }
     }

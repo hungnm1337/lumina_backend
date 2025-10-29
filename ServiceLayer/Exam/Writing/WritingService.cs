@@ -1,7 +1,9 @@
 ﻿
 using DataLayer.DTOs.Exam.Writting;
+using DataLayer.DTOs.UserAnswer;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
+using RepositoryLayer.Exam.Writting;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -14,12 +16,26 @@ namespace ServiceLayer.Exam.Writting
     public class WritingService : IWritingService
     {
         private readonly IConfiguration _configuration;
+        private readonly IWrittingRepository _writtingRepository;
         private readonly string _apiKey;
 
-        public WritingService(IConfiguration configuration)
+        public WritingService(IConfiguration configuration, IWrittingRepository writtingRepository)
         {
             _configuration = configuration;
-            _apiKey = _configuration["Gemini:ApiKey"];
+            _writtingRepository = writtingRepository;
+            _apiKey = _configuration["Gemini:ApiKey"] ?? throw new InvalidOperationException("Gemini API key is not configured.");
+        }
+
+        public async Task<bool> SaveWritingAnswer(WritingAnswerRequestDTO writingAnswerRequestDTO)
+        {
+            try
+            {
+                return await _writtingRepository.SaveWritingAnswer(writingAnswerRequestDTO);
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
 
         public async Task<WritingResponseDTO> GetFeedbackFromAI(WritingRequestDTO request)
