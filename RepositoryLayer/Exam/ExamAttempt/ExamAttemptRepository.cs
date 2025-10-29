@@ -328,6 +328,7 @@ namespace RepositoryLayer.Exam.ExamAttempt
             };
         }
 
+<<<<<<< Updated upstream
         public async Task<bool> SaveReadingAnswer(ReadingAnswerRequestDTO model)
         {
             try
@@ -375,5 +376,8 @@ namespace RepositoryLayer.Exam.ExamAttempt
                 return false;
             }
         }
+=======
+
+>>>>>>> Stashed changes
     }
 }
