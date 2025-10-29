@@ -553,7 +553,7 @@ namespace ServiceLayer.AI.Prompt
                  -   Để phù hợp với hệ thống đọc văn bản (TTS) một giọng, kịch bản phải được viết theo **kiểu tường thuật (narrator style)**.
                  -   **KHÔNG** dùng các nhãn như `[Man]:` hay `[Woman]:`.
                  -   Thay vào đó, hãy mô tả ai đang nói. Ví dụ: `A man asks, "..."` sau đó `The woman replies, "..."`.
-                 -   Điền kịch bản tường thuật này vào cả hai trường `Description` và `ReferenceAudioUrl`.
+                 -   Điền kịch bản tường thuật này vào trường `ReferenceAudioUrl`.
 
                  **Yêu cầu khác:**
                 1.  **Câu hỏi:** Dựa vào bài nói, tạo ra **chính xác ba (3)** câu hỏi trắc nghiệm.
@@ -644,7 +644,7 @@ namespace ServiceLayer.AI.Prompt
                      new AIGeneratedPromptDTO {
                          ExamTitle = "Text Completion",
                          // Đoạn văn giờ nằm trong Description của Prompt
-                         Description = "To: All Staff\nSubject: Office Renovation Update\nPlease be advised that the main entrance [BLANK_1] closed next Monday due to ongoing renovations. Access to the building will be available [BLANK_2] the rear entrance near the parking lot. [BLANK_3]. We expect the work to be completed by Friday. Thank you for your [BLANK_4].",
+                         Description = "To: All Staff\nSubject: Office Renovation Update\nPlease be advised that the main entrance [__1__] closed next Monday due to ongoing renovations. Access to the building will be available [__2__] the rear entrance near the parking lot. [__3__]. We expect the work to be completed by Friday. Thank you for your [__4__].",
                          Questions = new List<AIGeneratedQuestionDTO> {
                              new AIGeneratedQuestionDTO {
                                  PartId = 6, QuestionType = "MultipleChoice_TextCompletion",
@@ -661,7 +661,7 @@ namespace ServiceLayer.AI.Prompt
 
                              },
                              new AIGeneratedQuestionDTO { /* Câu 2 */ },
-                             new AIGeneratedQuestionDTO { /* Câu 3 (Điền câu) */ },
+                             new AIGeneratedQuestionDTO { /* Câu 3 */ },
                              new AIGeneratedQuestionDTO { /* Câu 4 */ }
                          }
                      }
@@ -676,10 +676,9 @@ namespace ServiceLayer.AI.Prompt
             - Tạo ra chính xác **{quantity}** cụm đề thi Part 6 (mỗi cụm là một đoạn văn).  KHÔNG HƠN, KHÔNG KÉM
             - Chủ đề chung: **{topic}**.
             - Mỗi cụm đề thi (prompt) phải bao gồm:
-                - Một đoạn văn bản hoàn chỉnh (đặt trong `Description` của `AIGeneratedPromptDTO`) có **bốn (4)** chỗ trống `[BLANK_1]` đến `[BLANK_4]`.
+                - Một đoạn văn bản hoàn chỉnh (đặt trong `Description` của `AIGeneratedPromptDTO`) có **bốn (4)** chỗ trống `[__1__]` đến `[__4__]`.
                 - **Bốn (4)** câu hỏi trắc nghiệm (`Questions` là `AIGeneratedQuestionDTO`), mỗi câu tương ứng một chỗ trống.
                     - `StemText` của câu hỏi chỉ rõ vị trí blank.
-                    - Câu hỏi thứ 3 hoặc 4 thường yêu cầu điền cả câu.
                 - Mỗi câu hỏi có 4 `Options`. Chỉ MỘT lựa chọn đúng.
                 - Cung cấp `Explanation` cho mỗi câu.
                 - Điền các thông tin khác như `ExamExamTitle`, `Skill`, `PartLabel`, `PartId`, `QuestionType`... như trong ví dụ.

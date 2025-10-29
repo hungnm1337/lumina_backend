@@ -382,5 +382,53 @@ namespace RepositoryLayer.Questions
         //    return true;
         //}
 
+        public async Task<bool> DeletePromptAsync(int promptId)
+        {
+            // Lấy prompt với questions và options
+            var prompt = await _context.Prompts
+                .Include(p => p.Questions)
+                    .ThenInclude(q => q.Options)
+                .FirstOrDefaultAsync(p => p.PromptId == promptId);
+
+            if (prompt == null)
+                return false;
+
+            // ✅ Kiểm tra xem có question nào không
+            if (!prompt.Questions.Any())
+            {
+                // Nếu prompt không có question thì xóa luôn
+                _context.Prompts.Remove(prompt);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+
+            // ✅ Lấy PartId từ question đầu tiên để check exam
+            var firstQuestion = prompt.Questions.First();
+            var examPart = await _context.ExamParts
+                .Include(ep => ep.Exam)
+                .FirstOrDefaultAsync(ep => ep.PartId == firstQuestion.PartId);
+
+            // ✅ Kiểm tra xem bài thi có đang hoạt động không
+            if (examPart?.Exam != null && examPart.Exam.IsActive)
+            {
+                throw new Exception("Không thể xóa prompt vì bài thi đang hoạt động.");
+            }
+
+            // ✅ Xóa theo thứ tự: Options -> Questions -> Prompt
+            foreach (var question in prompt.Questions)
+            {
+                if (question.Options.Any())
+                {
+                    _context.Options.RemoveRange(question.Options);
+                }
+            }
+
+            _context.Questions.RemoveRange(prompt.Questions);
+            _context.Prompts.Remove(prompt);
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
     }
 }

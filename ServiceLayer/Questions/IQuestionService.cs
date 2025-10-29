@@ -30,5 +30,7 @@ namespace ServiceLayer.Questions
     List<CreatePromptWithQuestionsDTO> promptDtos, int partId);
 
         Task<int> GetAvailableSlots(int partId, int requestedCount);
+
+        Task<bool> DeletePromptAsync(int promptId);
     }
 }
