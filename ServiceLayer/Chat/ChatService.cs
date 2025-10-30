@@ -469,7 +469,7 @@ Do not include any text outside the JSON object. Start your response with {{ and
         private async Task<List<DataLayer.Models.ExamAttempt>> GetUserRecentScores(int userId)
         {
             return await _context.ExamAttempts
-                .Where(e => e.UserId == userId)
+                .Where(e => e.UserID == userId)
                 .Include(e => e.Exam)
                 .OrderByDescending(e => e.StartTime)
                 .Take(5)
