@@ -43,35 +43,58 @@ public class SpeakingController : ControllerBase
                 return Unauthorized("User ID not found in token.");
             }
 
-            // **SỬA LẠI TÊN THUỘC TÍNH: Questions thay vì QuestionRepository**
-            var question = await _unitOfWork.Questions.Get()
-                                .Include(q => q.Part)
-                                .FirstOrDefaultAsync(q => q.QuestionId == request.QuestionId);
-
-            if (question == null)
+            // ✅ SỬA: Sử dụng attemptId từ request thay vì tự tìm
+            int attemptId;
+            
+            if (request.AttemptId > 0)
             {
-                return NotFound("Question not found.");
-            }
-            var examId = question.Part.ExamId; // FIX: ExamID không phải ExamId
-
-            // **SỬA LẠI TÊN THUỘC TÍNH: ExamAttempts thay vì ExamAttemptRepository**
-            var examAttempt = await _unitOfWork.ExamAttemptsGeneric.GetAllAsync(e => e.UserID == userId && e.ExamID == examId && e.Status == "In Progress")
-                                .ContinueWith(t => t.Result.FirstOrDefault());
-
-            if (examAttempt == null)
-            {
-                examAttempt = new ExamAttempt
+                // Nếu frontend gửi attemptId, verify nó tồn tại và thuộc về user
+                var existingAttempt = await _unitOfWork.ExamAttemptsGeneric
+                    .GetAllAsync(e => e.AttemptID == request.AttemptId && e.UserID == userId)
+                    .ContinueWith(t => t.Result.FirstOrDefault());
+                
+                if (existingAttempt == null)
                 {
-                    UserID = userId,      // FIX: UserID không phải UserId
-                    ExamID = examId,      // FIX: ExamID không phải ExamId
-                    StartTime = DateTime.UtcNow,
-                    Status = "In Progress"
-                };
-                await _unitOfWork.ExamAttemptsGeneric.AddAsync(examAttempt);
-                await _unitOfWork.CompleteAsync();
+                    return BadRequest($"Invalid attempt ID {request.AttemptId} for current user.");
+                }
+                
+                attemptId = request.AttemptId;
+                Console.WriteLine($"[Speaking] Using provided attemptId: {attemptId}");
+            }
+            else
+            {
+                // Fallback: Tìm hoặc tạo attempt (legacy behavior)
+                var question = await _unitOfWork.Questions.Get()
+                                    .Include(q => q.Part)
+                                    .FirstOrDefaultAsync(q => q.QuestionId == request.QuestionId);
+
+                if (question == null)
+                {
+                    return NotFound("Question not found.");
+                }
+                var examId = question.Part.ExamId;
+
+                var examAttempt = await _unitOfWork.ExamAttemptsGeneric.GetAllAsync(e => e.UserID == userId && e.ExamID == examId && e.Status == "In Progress")
+                                    .ContinueWith(t => t.Result.FirstOrDefault());
+
+                if (examAttempt == null)
+                {
+                    examAttempt = new ExamAttempt
+                    {
+                        UserID = userId,
+                        ExamID = examId,
+                        StartTime = DateTime.UtcNow,
+                        Status = "In Progress"
+                    };
+                    await _unitOfWork.ExamAttemptsGeneric.AddAsync(examAttempt);
+                    await _unitOfWork.CompleteAsync();
+                }
+                
+                attemptId = examAttempt.AttemptID;
+                Console.WriteLine($"[Speaking] Created/Found attemptId: {attemptId}");
             }
 
-            var result = await _speakingScoringService.ProcessAndScoreAnswerAsync(request.Audio, request.QuestionId, examAttempt.AttemptID);
+            var result = await _speakingScoringService.ProcessAndScoreAnswerAsync(request.Audio, request.QuestionId, attemptId);
 
             return Ok(result);
         }

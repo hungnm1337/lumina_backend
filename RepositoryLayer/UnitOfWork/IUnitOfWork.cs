@@ -24,6 +24,7 @@ public interface IUnitOfWork : IDisposable
     RepositoryLayer.Exam.ExamAttempt.IExamAttemptRepository ExamAttempts { get; }
 
     IUserAnswerRepository UserAnswers { get; }
+    IUserAnswerSpeakingRepository UserAnswersSpeaking { get; }
 
     // Generic repositories for direct entity access
     IRepository<ExamAttempt> ExamAttemptsGeneric { get; }
