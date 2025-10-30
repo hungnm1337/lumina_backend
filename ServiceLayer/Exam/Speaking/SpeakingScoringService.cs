@@ -78,26 +78,34 @@ namespace ServiceLayer.Exam.Speaking
             var nlpResult = await GetNlpScoresAsync(azureResult.Transcript, question.SampleAnswer);
             var overallScore = CalculateOverallScore(question.QuestionType, azureResult, nlpResult);
 
-            // Save speaking answer to database
-            var userAnswerSpeaking = new UserAnswerSpeaking
-            {
-                AttemptID = attemptId,
-                QuestionId = questionId,
-                Transcript = azureResult.Transcript,
-                AudioUrl = transformedMp3Url,
-                PronunciationScore = (decimal?)azureResult.PronunciationScore,
-                AccuracyScore = (decimal?)azureResult.AccuracyScore,
-                FluencyScore = (decimal?)azureResult.FluencyScore,
-                CompletenessScore = (decimal?)azureResult.CompletenessScore,
-                GrammarScore = (decimal?)nlpResult.Grammar_score,
-                VocabularyScore = (decimal?)nlpResult.Vocabulary_score,
-                ContentScore = (decimal?)nlpResult.Content_score
-            };
+            // TODO: Uncomment after migration - UserAnswer and SpeakingResult models have been modified
+            // var userAnswer = new UserAnswer
+            // {
+            //     AttemptId = attemptId,
+            //     QuestionId = questionId,
+            //     AnswerContent = azureResult.Transcript,
+            //     AudioUrl = transformedMp3Url,
+            //     Score = overallScore
+            // };
 
-            await _unitOfWork.UserAnswersSpeaking.AddAsync(userAnswerSpeaking);
-            await _unitOfWork.CompleteAsync();
+            // // Sử dụng đúng tên thuộc tính 'UserAnswers' và hàm
+            // await _unitOfWork.UserAnswers.AddAsync(userAnswer);
+            // await _unitOfWork.CompleteAsync(); // Sử dụng SaveChangesAsync
 
-            Console.WriteLine($"[Speaking] Saved answer to database: UserAnswerSpeakingId={userAnswerSpeaking.UserAnswerSpeakingId}, QuestionId={questionId}, AttemptId={attemptId}");
+            // var speakingResult = new SpeakingResult
+            // {
+            //     UserAnswerId = userAnswer.UserAnswerId,
+            //     PronunciationScore = (float?)azureResult.PronunciationScore,
+            //     AccuracyScore = (float?)azureResult.AccuracyScore,
+            //     FluencyScore = (float?)azureResult.FluencyScore,
+            //     CompletenessScore = (float?)azureResult.CompletenessScore,
+            //     GrammarScore = nlpResult.Grammar_score,
+            //     VocabularyScore = nlpResult.Vocabulary_score,
+            //     ContentScore = nlpResult.Content_score
+            // };
+
+            // await _unitOfWork.SpeakingResults.AddAsync(speakingResult);
+            // await _unitOfWork.CompleteAsync(); // Sử dụng SaveChangesAsync
 
             // Trả về DTO đầy đủ cho frontend
             return new SpeakingScoringResultDTO

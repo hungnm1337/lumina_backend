@@ -26,7 +26,6 @@ public class UnitOfWork : IUnitOfWork
     public RepositoryLayer.Exam.ExamAttempt.IExamAttemptRepository ExamAttempts { get; private set; }
 
     public IUserAnswerRepository UserAnswers { get; private set; }
-    public IUserAnswerSpeakingRepository UserAnswersSpeaking { get; private set; }
 
     // Generic repositories for direct entity access
     public IRepository<ExamAttempt> ExamAttemptsGeneric { get; private set; }
@@ -49,7 +48,6 @@ public class UnitOfWork : IUnitOfWork
         ExamAttempts = new RepositoryLayer.Exam.ExamAttempt.ExamAttemptRepository(_context);
 
         UserAnswers = new UserAnswerRepository(_context);
-        UserAnswersSpeaking = new UserAnswerSpeakingRepository(_context);
 
         // Initialize generic repositories
         ExamAttemptsGeneric = new Repository<ExamAttempt>(_context);
