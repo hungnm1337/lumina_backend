@@ -1,4 +1,5 @@
-﻿using DataLayer.DTOs.Passage;
+﻿using CloudinaryDotNet.Actions;
+using DataLayer.DTOs.Passage;
 using DataLayer.DTOs.Prompt;
 using DataLayer.DTOs.Questions;
 using Microsoft.AspNetCore.Authorization;
@@ -26,6 +27,7 @@ namespace lumina.Controllers
 
 
         [HttpPost("prompt-with-questions")]
+        [Authorize(Roles = "Staff")]
         public async Task<IActionResult> CreatePromptWithQuestions([FromBody] CreatePromptWithQuestionsDTO dto)
         {
             if (dto == null)
@@ -69,6 +71,7 @@ namespace lumina.Controllers
         }
 
         [HttpGet("passage-question-tree-paged")]
+        [Authorize(Roles = "Staff")]
         public async Task<IActionResult> GetPaged(
     [FromQuery] int page = 1,
     [FromQuery] int size = 10,
@@ -83,6 +86,7 @@ namespace lumina.Controllers
         }
 
         [HttpPut("edit-passage")]
+        [Authorize(Roles = "Staff")]
         public async Task<IActionResult> EditPassage([FromBody] PromptEditDto dto)
         {
             if (dto == null || dto.PromptId <= 0)
