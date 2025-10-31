@@ -197,7 +197,6 @@ namespace lumina
                                   "Enter 'Bearer' [space] and then your token in the text input below.\r\n\r\n" +
                                   "Example: \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\""
                 });
-
                 // Require JWT for all endpoints
                 options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
                 {
@@ -213,6 +212,8 @@ namespace lumina
                         new string[] {}
                     }
                 });
+                options.CustomSchemaIds(type => type.FullName);
+
             });
 
 

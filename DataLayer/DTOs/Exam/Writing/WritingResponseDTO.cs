@@ -13,8 +13,6 @@ namespace DataLayer.DTOs.Exam.Writting
 
         public string VocabularyFeedback { get; set; }
 
-        public string RequiredWordsCheck { get; set; }
-
         public string ContentAccuracyFeedback { get; set; }
 
         public string CorreededAnswerProposal { get; set; }
