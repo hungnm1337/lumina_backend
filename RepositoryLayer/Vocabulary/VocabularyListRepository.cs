@@ -81,4 +81,33 @@ public class VocabularyListRepository : IVocabularyListRepository
             })
             .ToListAsync();
     }
+
+    public async Task<IEnumerable<VocabularyListDTO>> GetPublishedAsync(string? searchTerm)
+    {
+        var query = _context.VocabularyLists
+            .Where(vl => vl.IsDeleted != true && 
+                        vl.Status == "Published" && 
+                        vl.IsPublic == true)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            query = query.Where(vl => vl.Name.Contains(searchTerm));
+        }
+
+        return await query
+            .OrderByDescending(vl => vl.CreateAt)
+            .Select(vl => new VocabularyListDTO
+            {
+                VocabularyListId = vl.VocabularyListId,
+                Name = vl.Name,
+                IsPublic = vl.IsPublic,
+                MakeByName = vl.MakeByNavigation.FullName, // Lấy tên người tạo
+                CreateAt = vl.CreateAt,
+                VocabularyCount = vl.Vocabularies.Count(v => v.IsDeleted != true), // Đếm số từ
+                Status = vl.Status,
+                RejectionReason = vl.RejectionReason
+            })
+            .ToListAsync();
+    }
 }

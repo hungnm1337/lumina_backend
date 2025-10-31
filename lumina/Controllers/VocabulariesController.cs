@@ -422,6 +422,44 @@ public class VocabulariesController : ControllerBase
         });
     }
 
+    // GET api/vocabularies/public/{listId} - Lấy vocabulary words từ published list cho Flashcards
+    [HttpGet("public/{listId}")]
+    [AllowAnonymous] // Cho phép truy cập không cần đăng nhập
+    public async Task<IActionResult> GetPublicVocabularyByList(int listId)
+    {
+        try
+        {
+            // Kiểm tra vocabulary list có tồn tại và đã được published không
+            var vocabularyList = await _unitOfWork.VocabularyLists.FindByIdAsync(listId);
+            if (vocabularyList == null || vocabularyList.IsDeleted == true)
+            {
+                return NotFound(new { message = "Vocabulary list not found" });
+            }
+
+            if (vocabularyList.Status != "Published" || vocabularyList.IsPublic != true)
+            {
+                return NotFound(new { message = "Vocabulary list is not available for public access" });
+            }
+
+            // Lấy tất cả vocabulary words từ list này
+            var vocabularies = await _unitOfWork.Vocabularies.GetByListAsync(listId, null);
+            
+            return Ok(vocabularies.Select(v => new
+            {
+                id = v.VocabularyId,
+                word = v.Word,
+                type = v.TypeOfWord,
+                category = v.Category,
+                definition = v.Definition,
+                example = v.Example
+            }));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "An internal server error occurred." });
+        }
+    }
+
     public sealed class UpdateVocabularyRequest
     {
         public string Word { get; set; } = string.Empty;

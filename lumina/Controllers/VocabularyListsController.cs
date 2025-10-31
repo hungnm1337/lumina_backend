@@ -269,6 +269,29 @@ namespace lumina.Controllers
                 return StatusCode(500, new ErrorResponse("An internal server error occurred."));
             }
         }
+
+        // GET api/vocabulary-lists/public - Lấy vocabulary lists đã được duyệt cho trang Flashcards
+        [HttpGet("public")]
+        [AllowAnonymous] // Cho phép truy cập không cần đăng nhập
+        public async Task<IActionResult> GetPublicVocabularyLists([FromQuery] string? searchTerm)
+        {
+            try
+            {
+                _logger.LogInformation("Getting public vocabulary lists for flashcards page");
+                
+                // Lấy tất cả vocabulary lists có status = "Published" và IsPublic = true
+                var publishedLists = await _vocabularyListService.GetPublishedListsAsync(searchTerm);
+                
+                _logger.LogInformation("Found {Count} published vocabulary lists", publishedLists.Count());
+                
+                return Ok(publishedLists);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while fetching public vocabulary lists.");
+                return StatusCode(500, new ErrorResponse("An internal server error occurred."));
+            }
+        }
     }
 
     public class VocabularyListReviewRequest
