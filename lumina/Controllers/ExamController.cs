@@ -57,10 +57,13 @@ namespace lumina.Controllers
         }
 
         [HttpPost("CreateExam")]
+        [Authorize(Roles = "Staff")]
         public async Task<IActionResult> CreateExams(
-            [FromQuery] string fromExamSetKey,
             [FromQuery] string toExamSetKey)
         {
+            // ✅ Fix cứng giá trị fromExamSetKey
+            const string fromExamSetKey = "10-2025";
+
             // lấy user id từ token
             var userIdClaim = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
             if (userIdClaim == null)
