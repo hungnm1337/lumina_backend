@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using RepositoryLayer.Event;
 using ServiceLayer.Auth;
-using ServiceLayer.Email;
 using RepositoryLayer.Leaderboard;
 using ServiceLayer.Leaderboard;
 using ServiceLayer.Event;
@@ -34,6 +33,8 @@ using ServiceLayer.ExamGenerationAI.Mappers;
 using RepositoryLayer.UserNote;
 using ServiceLayer.UserNote;
 using ServiceLayer.Exam.Speaking;
+using ServiceLayer.Chat;
+using ServiceLayer.Email;
 using ServiceLayer.Exam.Listening;
 using ServiceLayer.Exam.Reading;
 using RepositoryLayer.Exam.ExamAttempt;
@@ -130,9 +131,9 @@ namespace lumina
             });
 
             builder.Services.AddScoped<ServiceLayer.TextToSpeech.ITextToSpeechService, ServiceLayer.TextToSpeech.TextToSpeechService>();
-
-
-
+            
+            // Chat services
+            builder.Services.AddScoped<IChatService, ChatService>();
             builder.Services.AddCors(options =>
             {
                 options.AddDefaultPolicy(policy =>

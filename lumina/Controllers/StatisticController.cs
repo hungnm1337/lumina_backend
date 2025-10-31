@@ -59,6 +59,7 @@ namespace lumina.Controllers
         }
 
         [HttpGet("statistic-packages")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetFullDashboardStats()
         {
             var now = DateTime.UtcNow;

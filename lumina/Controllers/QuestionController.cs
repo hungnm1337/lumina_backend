@@ -1,6 +1,7 @@
 ﻿using DataLayer.DTOs.Passage;
 using DataLayer.DTOs.Prompt;
 using DataLayer.DTOs.Questions;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ServiceLayer.Import;
 using ServiceLayer.Questions;
@@ -174,6 +175,27 @@ namespace lumina.Controllers
             catch (Exception ex)
             {
                 return BadRequest(new { error = ex.Message, canAdd = false });
+            }
+        }
+
+        [HttpDelete("prompt/{promptId}")]
+        [Authorize(Roles = "Staff")]
+        public async Task<IActionResult> DeletePrompt(int promptId)
+        {
+            try
+            {
+                var result = await _questionService.DeletePromptAsync(promptId);
+                
+                if (!result)
+                {
+                    return NotFound(new { message = "Không tìm thấy prompt." });
+                }
+
+                return Ok(new { message = "Xóa prompt thành công." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
             }
         }
     }

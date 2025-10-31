@@ -28,6 +28,8 @@ namespace RepositoryLayer.Questions
         Task<bool> UpdateQuestionAsync(QuestionCrudDto dto);
         Task<bool> DeleteQuestionAsync(int questionId);
 
+        Task<bool> DeletePromptAsync(int promptId);
+
         Task<QuestionStatisticDto> GetQuestionStatisticsAsync();
     }
 }
