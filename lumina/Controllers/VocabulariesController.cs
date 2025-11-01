@@ -290,7 +290,8 @@ public class VocabulariesController : ControllerBase
         {
             return StatusCode(500, new ErrorResponse("An internal server error occurred."));
         }
-    }
+        }
+    
 
     // DELETE api/vocabularies/{id}
     [HttpDelete("{id}")]
@@ -443,7 +444,7 @@ public class VocabulariesController : ControllerBase
 
             // Lấy tất cả vocabulary words từ list này
             var vocabularies = await _unitOfWork.Vocabularies.GetByListAsync(listId, null);
-            
+
             return Ok(vocabularies.Select(v => new
             {
                 id = v.VocabularyId,
@@ -457,6 +458,48 @@ public class VocabulariesController : ControllerBase
         catch (Exception ex)
         {
             return StatusCode(500, new { message = "An internal server error occurred." });
+        }
+    }
+    [HttpGet("student-list")]
+    [Authorize(Roles = "Student,Staff,Manager,Admin")] // Thêm các role khác nếu cần
+    public async Task<IActionResult> GetStudentVocabularyList([FromQuery] int listId, [FromQuery] string? search)
+    {
+        try
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var currentUserId))
+                return Unauthorized(new { message = "Invalid token" });
+
+            var user = await _unitOfWork.Users.GetUserByIdAsync(currentUserId);
+            if (user == null)
+                return Unauthorized(new { message = "User not found" });
+
+            var vocabularyList = await _unitOfWork.VocabularyLists.FindByIdAsync(listId);
+            if (vocabularyList == null)
+                return NotFound(new { message = "Folder not found" });
+
+            // Cho phép nếu user là chủ sở hữu, hoặc là public/published
+            if (vocabularyList.MakeBy != currentUserId
+                && (vocabularyList.IsPublic != true || vocabularyList.Status != "Published"))
+            {
+                return Forbid("Bạn chỉ được xem các folder của mình hoặc folder công khai đã được duyệt.");
+            }
+
+            var items = await _unitOfWork.Vocabularies.GetByListAsync(listId, search);
+
+            return Ok(items.Select(v => new {
+                id = v.VocabularyId,
+                word = v.Word,
+                type = v.TypeOfWord,
+                category = v.Category,
+                definition = v.Definition,
+                example = v.Example,
+               
+            }));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = ex.Message });
         }
     }
 

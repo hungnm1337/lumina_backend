@@ -488,9 +488,10 @@ Do not include any text outside the JSON object. Start your response with {{ and
                     MakeBy = request.UserId,
                     Name = request.FolderName,
                     CreateAt = DateTime.Now,
-                    IsPublic = false,
+                    // Tự động public và publish folder khi lưu từ từ AI để học sinh xem được ngay
+                    IsPublic = true,
                     IsDeleted = false,
-                    Status = "Approved"
+                    Status = "Published"
                 };
                 
                 _context.VocabularyLists.Add(vocabularyList);
