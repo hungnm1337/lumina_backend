@@ -97,7 +97,7 @@ public class VocabulariesController : ControllerBase
 
     // POST api/vocabularies
     [HttpPost]
-    [Authorize(Roles = "Staff")]
+    [Authorize] // Cho phép cả Student và Staff
     public async Task<IActionResult> Create([FromBody] CreateVocabularyRequest req)
     {
         if (!ModelState.IsValid)
@@ -113,21 +113,11 @@ public class VocabulariesController : ControllerBase
                 return Unauthorized(new ErrorResponse("Invalid token - User ID could not be determined."));
             }
 
-            // Lấy thông tin user để kiểm tra role
-            var user = await _unitOfWork.Users.GetUserByIdAsync(currentUserId);
-            if (user == null)
+            // Kiểm tra vocabulary list có tồn tại không
+            var vocabularyList = await _unitOfWork.VocabularyLists.FindByIdAsync(req.VocabularyListId);
+            if (vocabularyList == null)
             {
-                return Unauthorized(new ErrorResponse("User not found."));
-            }
-
-            // Nếu là Staff (RoleID = 3), kiểm tra vocabulary list có thuộc về họ không
-            if (user.RoleId == 3)
-            {
-                var vocabularyList = await _unitOfWork.VocabularyLists.FindByIdAsync(req.VocabularyListId);
-                if (vocabularyList == null || vocabularyList.MakeBy != currentUserId)
-                {
-                    return Forbid("You can only add vocabulary to your own lists.");
-                }
+                return NotFound(new ErrorResponse("Vocabulary list not found."));
             }
 
             string? audioUrl = null;
@@ -236,7 +226,7 @@ public class VocabulariesController : ControllerBase
 
     // PUT api/vocabularies/{id}
     [HttpPut("{id}")]
-    [Authorize(Roles = "Staff")]
+    [Authorize] // Cho phép cả Student và Staff
     public async Task<IActionResult> Update(int id, [FromBody] UpdateVocabularyRequest req)
     {
         if (!ModelState.IsValid)
@@ -252,27 +242,10 @@ public class VocabulariesController : ControllerBase
                 return Unauthorized(new ErrorResponse("Invalid token - User ID could not be determined."));
             }
 
-            // Lấy thông tin user để kiểm tra role
-            var user = await _unitOfWork.Users.GetUserByIdAsync(currentUserId);
-            if (user == null)
-            {
-                return Unauthorized(new ErrorResponse("User not found."));
-            }
-
             var vocab = await _unitOfWork.Vocabularies.GetByIdAsync(id);
             if (vocab == null)
             {
                 return NotFound(new { message = "Vocabulary not found" });
-            }
-
-            // Nếu là Staff (RoleID = 3), kiểm tra vocabulary có thuộc về list của họ không
-            if (user.RoleId == 3)
-            {
-                var vocabularyList = await _unitOfWork.VocabularyLists.FindByIdAsync(vocab.VocabularyListId);
-                if (vocabularyList == null || vocabularyList.MakeBy != currentUserId)
-                {
-                    return Forbid("You can only update vocabulary in your own lists.");
-                }
             }
 
             vocab.Word = req.Word;
@@ -290,12 +263,11 @@ public class VocabulariesController : ControllerBase
         {
             return StatusCode(500, new ErrorResponse("An internal server error occurred."));
         }
-        }
-    
+    }
 
     // DELETE api/vocabularies/{id}
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Staff")]
+    [Authorize] // Cho phép cả Student và Staff
     public async Task<IActionResult> Delete(int id)
     {
         try
@@ -306,27 +278,10 @@ public class VocabulariesController : ControllerBase
                 return Unauthorized(new ErrorResponse("Invalid token - User ID could not be determined."));
             }
 
-            // Lấy thông tin user để kiểm tra role
-            var user = await _unitOfWork.Users.GetUserByIdAsync(currentUserId);
-            if (user == null)
-            {
-                return Unauthorized(new ErrorResponse("User not found."));
-            }
-
             var vocab = await _unitOfWork.Vocabularies.GetByIdAsync(id);
             if (vocab == null)
             {
                 return NotFound(new { message = "Vocabulary not found" });
-            }
-
-            // Nếu là Staff (RoleID = 3), kiểm tra vocabulary có thuộc về list của họ không
-            if (user.RoleId == 3)
-            {
-                var vocabularyList = await _unitOfWork.VocabularyLists.FindByIdAsync(vocab.VocabularyListId);
-                if (vocabularyList == null || vocabularyList.MakeBy != currentUserId)
-                {
-                    return Forbid("You can only delete vocabulary from your own lists.");
-                }
             }
 
             await _unitOfWork.Vocabularies.DeleteAsync(id);
@@ -423,83 +378,74 @@ public class VocabulariesController : ControllerBase
         });
     }
 
-    // GET api/vocabularies/public/{listId} - Lấy vocabulary words từ published list cho Flashcards
-    [HttpGet("public/{listId}")]
-    [AllowAnonymous] // Cho phép truy cập không cần đăng nhập
-    public async Task<IActionResult> GetPublicVocabularyByList(int listId)
-    {
-        try
-        {
-            // Kiểm tra vocabulary list có tồn tại và đã được published không
-            var vocabularyList = await _unitOfWork.VocabularyLists.FindByIdAsync(listId);
-            if (vocabularyList == null || vocabularyList.IsDeleted == true)
-            {
-                return NotFound(new { message = "Vocabulary list not found" });
-            }
-
-            if (vocabularyList.Status != "Published" || vocabularyList.IsPublic != true)
-            {
-                return NotFound(new { message = "Vocabulary list is not available for public access" });
-            }
-
-            // Lấy tất cả vocabulary words từ list này
-            var vocabularies = await _unitOfWork.Vocabularies.GetByListAsync(listId, null);
-
-            return Ok(vocabularies.Select(v => new
-            {
-                id = v.VocabularyId,
-                word = v.Word,
-                type = v.TypeOfWord,
-                category = v.Category,
-                definition = v.Definition,
-                example = v.Example
-            }));
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "An internal server error occurred." });
-        }
-    }
+    // GET api/vocabularies/student-list - Endpoint cho Student và Staff để lấy vocabulary
     [HttpGet("student-list")]
-    [Authorize(Roles = "Student,Staff,Manager,Admin")] // Thêm các role khác nếu cần
-    public async Task<IActionResult> GetStudentVocabularyList([FromQuery] int listId, [FromQuery] string? search)
+    [Authorize]
+    public async Task<IActionResult> GetStudentList([FromQuery] int? listId, [FromQuery] string? search)
     {
         try
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
             if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var currentUserId))
-                return Unauthorized(new { message = "Invalid token" });
-
-            var user = await _unitOfWork.Users.GetUserByIdAsync(currentUserId);
-            if (user == null)
-                return Unauthorized(new { message = "User not found" });
-
-            var vocabularyList = await _unitOfWork.VocabularyLists.FindByIdAsync(listId);
-            if (vocabularyList == null)
-                return NotFound(new { message = "Folder not found" });
-
-            // Cho phép nếu user là chủ sở hữu, hoặc là public/published
-            if (vocabularyList.MakeBy != currentUserId
-                && (vocabularyList.IsPublic != true || vocabularyList.Status != "Published"))
             {
-                return Forbid("Bạn chỉ được xem các folder của mình hoặc folder công khai đã được duyệt.");
+                return Unauthorized(new ErrorResponse("Invalid token - User ID could not be determined."));
+            }
+
+            // Kiểm tra vocabulary list có tồn tại không (nếu có listId)
+            if (listId.HasValue)
+            {
+                var vocabularyList = await _unitOfWork.VocabularyLists.FindByIdAsync(listId.Value);
+                if (vocabularyList == null)
+                {
+                    return NotFound(new ErrorResponse("Vocabulary list not found."));
+                }
             }
 
             var items = await _unitOfWork.Vocabularies.GetByListAsync(listId, search);
-
-            return Ok(items.Select(v => new {
+            return Ok(items.Select(v => new
+            {
                 id = v.VocabularyId,
+                listId = v.VocabularyListId,
                 word = v.Word,
                 type = v.TypeOfWord,
                 category = v.Category,
                 definition = v.Definition,
                 example = v.Example,
-               
+                //audioUrl = v.AudioUrl
             }));
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = ex.Message });
+            return StatusCode(500, new ErrorResponse("An internal server error occurred."));
+        }
+    }
+
+    // GET api/vocabularies/public/{listId} - Endpoint công khai để lấy vocabulary từ list đã được publish
+    [HttpGet("public/{listId}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetPublicVocabulary(int listId)
+    {
+        try
+        {
+            var vocabularyList = await _unitOfWork.VocabularyLists.FindByIdAsync(listId);
+            if (vocabularyList == null || vocabularyList.Status != "Approved")
+            {
+                return NotFound(new ErrorResponse("Vocabulary list not found or not published."));
+            }
+
+            var items = await _unitOfWork.Vocabularies.GetByListAsync(listId, null);
+            return Ok(items.Select(v => new
+            {
+                id = v.VocabularyId,
+                word = v.Word,
+                definition = v.Definition,
+                category = v.Category,
+                example = v.Example
+            }));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new ErrorResponse("An internal server error occurred."));
         }
     }
 
