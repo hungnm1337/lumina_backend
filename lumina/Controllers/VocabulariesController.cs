@@ -428,7 +428,7 @@ public class VocabulariesController : ControllerBase
         try
         {
             var vocabularyList = await _unitOfWork.VocabularyLists.FindByIdAsync(listId);
-            if (vocabularyList == null || vocabularyList.Status != "Approved")
+            if (vocabularyList == null || vocabularyList.Status != "Published")
             {
                 return NotFound(new ErrorResponse("Vocabulary list not found or not published."));
             }
@@ -440,7 +440,8 @@ public class VocabulariesController : ControllerBase
                 word = v.Word,
                 definition = v.Definition,
                 category = v.Category,
-                example = v.Example
+                example = v.Example,
+                audioUrl = (string?)null // Vocabulary model không có AudioUrl, để null cho frontend xử lý
             }));
         }
         catch (Exception ex)
