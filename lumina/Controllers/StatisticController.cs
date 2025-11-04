@@ -1,8 +1,11 @@
 ﻿using DataLayer.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore; // Khai báo namespace EF Core
+using Microsoft.EntityFrameworkCore;
+using ServiceLayer.Statistic;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace lumina.Controllers
@@ -12,34 +15,37 @@ namespace lumina.Controllers
     public class StatisticController : ControllerBase
     {
         private readonly LuminaSystemContext _systemContext;
+        private readonly IStatisticService _statisticService;
 
-        public StatisticController(LuminaSystemContext systemContext)
+        public StatisticController(LuminaSystemContext systemContext, IStatisticService statisticService)
         {
             _systemContext = systemContext;
+            _statisticService = statisticService;
         }
 
-        [HttpGet("dashboard-stats")]
-        public async Task<IActionResult> GetDashboardStats()
+        // ==================== CÁC API CŨ (GỌI TRỰC TIẾP) ====================
+
+        /// <summary>
+        /// ✅ API cũ - Thống kê dashboard cơ bản (không authorize)
+        /// </summary>
+        [HttpGet("dashboard-stats-basic")]
+        public async Task<IActionResult> GetDashboardStatsBasic()
         {
-            
             var totalUsers = await _systemContext.Users.CountAsync(u => u.RoleId == 4);
 
-            
             var today = DateTime.UtcNow.Date;
             var registeredToday = await _systemContext.Users
-     .Where(u => u.RoleId == 4
-         && u.Accounts.Any()
-         && u.Accounts.OrderBy(a => a.CreateAt).FirstOrDefault()!.CreateAt.Date == today)
-     .CountAsync();
+                .Where(u => u.RoleId == 4
+                    && u.Accounts.Any()
+                    && u.Accounts.OrderBy(a => a.CreateAt).FirstOrDefault()!.CreateAt.Date == today)
+                .CountAsync();
 
-            
             var now = DateTime.UtcNow;
             var firstOfMonth = new DateTime(now.Year, now.Month, 1);
             var monthlyRevenue = await _systemContext.Payments
                 .Where(p => p.Status == "Success" && p.CreatedAt >= firstOfMonth)
                 .SumAsync(p => (decimal?)p.Amount) ?? 0;
 
-           
             var proUserCount = await _systemContext.Subscriptions
                 .Where(s => s.Status == "Active")
                 .Select(s => s.UserId)
@@ -58,6 +64,9 @@ namespace lumina.Controllers
             });
         }
 
+        /// <summary>
+        /// ✅ API cũ - Thống kê packages đầy đủ
+        /// </summary>
         [HttpGet("statistic-packages")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetFullDashboardStats()
@@ -66,13 +75,11 @@ namespace lumina.Controllers
             var firstOfMonth = new DateTime(now.Year, now.Month, 1);
             var last30Days = now.AddDays(-30);
 
-            // 1. Lấy các Packages Pro active (id 1,2,3 và IsActive = true)
             var proPackageIds = new int[] { 1, 2, 3 };
             var proPackages = await _systemContext.Packages
                 .Where(p => proPackageIds.Contains(p.PackageId) && p.IsActive == true)
                 .ToListAsync();
 
-            // 2. Số người dùng từng gói (subscription đang active, date trong khoảng StartTime đến EndTime)
             var usersByPackage = await _systemContext.Subscriptions
                 .Where(s => s.Status == "Active"
                             && proPackageIds.Contains(s.PackageId)
@@ -86,7 +93,6 @@ namespace lumina.Controllers
 
             int totalProUsers = usersByPackage.Sum(x => x.UserCount);
 
-            // 3. Doanh thu từng gói (30 ngày gần nhất, Payment.Status = Success)
             var revenueByPackage = await _systemContext.Payments
                 .Where(p => p.Status == "Success"
                             && proPackageIds.Contains(p.PackageId)
@@ -100,13 +106,11 @@ namespace lumina.Controllers
 
             decimal totalRevenue = revenueByPackage.Sum(x => x.Revenue);
 
-            // 4. Tăng trưởng tháng này - Người dùng mới đăng ký trong tháng (roleId =4)
             var newUsers = await _systemContext.Users
                 .Where(u => u.RoleId == 4 &&
                             u.Accounts.Any(a => a.CreateAt >= firstOfMonth))
                 .CountAsync();
 
-            // 5. Tăng trưởng tháng này - Người nâng cấp Pro (subscriptions active bắt đầu tháng này)
             var upgradedPro = await _systemContext.Subscriptions
                 .Where(s => s.Status == "Active"
                             && s.StartTime >= firstOfMonth)
@@ -114,13 +118,11 @@ namespace lumina.Controllers
                 .Distinct()
                 .CountAsync();
 
-            // 6. Doanh thu tháng này từ payments status success
             var monthlyRevenue = await _systemContext.Payments
                 .Where(p => p.Status == "Success"
                             && p.CreatedAt >= firstOfMonth)
                 .SumAsync(p => (decimal?)p.Amount) ?? 0m;
 
-            // Chuẩn bị trả data theo gói cho người dùng và doanh thu (có giá, tên)
             var packageStats = proPackages.Select(pkg =>
             {
                 var userCount = usersByPackage.FirstOrDefault(x => x.PackageId == pkg.PackageId)?.UserCount ?? 0;
@@ -152,34 +154,33 @@ namespace lumina.Controllers
             });
         }
 
+        /// <summary>
+        /// ✅ API cũ - Tổng kết Pro của user
+        /// </summary>
         [HttpGet("user-pro-summary/{userId}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetUserProSummary(int userId)
         {
             var now = DateTime.UtcNow.Date;
-
             var proPackageIds = new int[] { 1, 2, 3 };
 
-            // Tổng số tiền user đã chi cho các gói Pro (trạng thái Success, package Pro)
             var totalMoney = await _systemContext.Payments
                 .Where(p => p.UserId == userId && p.Status == "Success" && proPackageIds.Contains(p.PackageId))
                 .SumAsync(p => (decimal?)p.Amount) ?? 0m;
 
-            // Tổng số gói Pro user đã mua (đếm số subscription package Pro)
             var totalPackages = await _systemContext.Subscriptions
                 .Where(s => s.UserId == userId && proPackageIds.Contains(s.PackageId))
                 .CountAsync();
 
-            // Lấy tất cả subscription Pro của user, giới hạn ngày kết thúc không vượt quá ngày hôm nay (tính đúng tổng ngày chưa trùng)
             var allSubs = await _systemContext.Subscriptions
-       .Where(s => s.UserId == userId && proPackageIds.Contains(s.PackageId))
-       .Select(s => new
-       {
-           StartDate = s.StartTime.HasValue ? s.StartTime.Value.Date : DateTime.MinValue,
-           EndDate = s.EndTime.HasValue && s.EndTime.Value.Date < now ? s.EndTime.Value.Date : now
-       })
-       .OrderBy(s => s.StartDate)
-       .ToListAsync();
+                .Where(s => s.UserId == userId && proPackageIds.Contains(s.PackageId))
+                .Select(s => new
+                {
+                    StartDate = s.StartTime.HasValue ? s.StartTime.Value.Date : DateTime.MinValue,
+                    EndDate = s.EndTime.HasValue && s.EndTime.Value.Date < now ? s.EndTime.Value.Date : now
+                })
+                .OrderBy(s => s.StartDate)
+                .ToListAsync();
 
             DateTime? currentStart = null;
             DateTime? currentEnd = null;
@@ -213,8 +214,6 @@ namespace lumina.Controllers
                 totalDays += (int)((currentEnd!.Value - currentStart!.Value).TotalDays) + 1;
             }
 
-
-            // Tổng ngày còn lại của subscription đang active (nếu có)
             var activeSub = await _systemContext.Subscriptions
                 .Where(s => s.UserId == userId
                     && proPackageIds.Contains(s.PackageId)
@@ -238,6 +237,9 @@ namespace lumina.Controllers
             });
         }
 
+        /// <summary>
+        /// ✅ API cũ - Dashboard cho Staff
+        /// </summary>
         [HttpGet("staff-dashboard")]
         [Authorize(Roles = "Staff")]
         public async Task<IActionResult> GetStaffDashboardStats()
@@ -247,7 +249,6 @@ namespace lumina.Controllers
             var lastMonth = firstOfMonth.AddMonths(-1);
             var firstOfLastMonth = new DateTime(lastMonth.Year, lastMonth.Month, 1);
 
-            // 1. Thống kê Articles
             var totalArticles = await _systemContext.Articles.CountAsync();
             var articlesThisMonth = await _systemContext.Articles
                 .Where(a => a.CreatedAt >= firstOfMonth)
@@ -256,12 +257,10 @@ namespace lumina.Controllers
                 .Where(a => a.CreatedAt >= firstOfLastMonth && a.CreatedAt < firstOfMonth)
                 .CountAsync();
 
-            // 2. Thống kê Vocabulary (không có CreatedAt field)
             var totalVocabulary = await _systemContext.Vocabularies.CountAsync();
-            var vocabularyThisMonth = 0; // Vocabulary model không có CreatedAt field
+            var vocabularyThisMonth = 0;
             var vocabularyLastMonth = 0;
 
-            // 3. Thống kê Questions (từ ExamParts -> Questions)
             var totalQuestions = await _systemContext.Questions.CountAsync();
             var questionsThisMonth = await _systemContext.Questions
                 .Where(q => q.Part.Exam.CreatedAt >= firstOfMonth)
@@ -270,7 +269,6 @@ namespace lumina.Controllers
                 .Where(q => q.Part.Exam.CreatedAt >= firstOfLastMonth && q.Part.Exam.CreatedAt < firstOfMonth)
                 .CountAsync();
 
-            // 4. Thống kê Tests (Exams)
             var totalTests = await _systemContext.Exams.CountAsync();
             var testsThisMonth = await _systemContext.Exams
                 .Where(e => e.CreatedAt >= firstOfMonth)
@@ -279,10 +277,8 @@ namespace lumina.Controllers
                 .Where(e => e.CreatedAt >= firstOfLastMonth && e.CreatedAt < firstOfMonth)
                 .CountAsync();
 
-            // 5. Recent Activities - Lấy từ nhiều nguồn
             var recentActivities = new List<object>();
 
-            // Articles activities
             var articleActivities = await _systemContext.Articles
                 .OrderByDescending(a => a.CreatedAt)
                 .Take(3)
@@ -297,7 +293,6 @@ namespace lumina.Controllers
                 })
                 .ToListAsync();
 
-            // Exam activities
             var examActivities = await _systemContext.Exams
                 .OrderByDescending(e => e.CreatedAt)
                 .Take(2)
@@ -312,7 +307,6 @@ namespace lumina.Controllers
                 })
                 .ToListAsync();
 
-            // Vocabulary activities (không có CreatedAt field)
             var vocabularyActivities = await _systemContext.Vocabularies
                 .Take(2)
                 .Select(v => new
@@ -321,12 +315,11 @@ namespace lumina.Controllers
                     type = "vocabulary",
                     title = v.Word,
                     action = "Thêm từ vựng mới",
-                    timestamp = DateTime.UtcNow.AddDays(-1), // Sử dụng thời gian giả định
+                    timestamp = DateTime.UtcNow.AddDays(-1),
                     status = "created"
                 })
                 .ToListAsync();
 
-            // Combine và sort by timestamp
             recentActivities.AddRange(articleActivities);
             recentActivities.AddRange(examActivities);
             recentActivities.AddRange(vocabularyActivities);
@@ -345,17 +338,15 @@ namespace lumina.Controllers
                 })
                 .ToList();
 
-            // 6. Productivity metrics - tính dựa trên tổng content
             var totalContentThisMonth = articlesThisMonth + questionsThisMonth + testsThisMonth + vocabularyThisMonth;
             var totalContentLastMonth = articlesLastMonth + questionsLastMonth + testsLastMonth + vocabularyLastMonth;
-            var productivityGrowth = totalContentLastMonth > 0 
+            var productivityGrowth = totalContentLastMonth > 0
                 ? Math.Round((double)(totalContentThisMonth - totalContentLastMonth) / totalContentLastMonth * 100, 1)
                 : 0;
 
-            // 7. Engagement metrics
             var totalExamAttempts = await _systemContext.ExamAttempts.CountAsync();
-            var contentLikes = totalExamAttempts; // Sử dụng số lượt thi làm proxy cho engagement
-            var qualityRating = 4.8; // TODO: Implement rating system
+            var contentLikes = totalExamAttempts;
+            var qualityRating = 4.8;
 
             return Ok(new
             {
@@ -387,7 +378,7 @@ namespace lumina.Controllers
         private string GetTimeAgo(DateTime dateTime)
         {
             var timeSpan = DateTime.UtcNow - dateTime;
-            
+
             if (timeSpan.TotalMinutes < 1)
                 return "Vừa xong";
             else if (timeSpan.TotalMinutes < 60)
@@ -400,5 +391,143 @@ namespace lumina.Controllers
                 return dateTime.ToString("dd/MM/yyyy");
         }
 
+        // ==================== CÁC API MỚI (QUA 3 LAYER) ====================
+
+        /// <summary>
+        /// ✅ Lấy 4 key metrics cho dashboard (Doanh thu, User mới, Chuyển đổi Pro, Tỷ lệ giữ chân)
+        /// </summary>
+        [HttpGet("dashboard-stats")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetDashboardStats()
+        {
+            try
+            {
+                var stats = await _statisticService.GetDashboardStatsAsync();
+                return Ok(new
+                {
+                    success = true,
+                    data = stats
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Lỗi khi lấy thống kê dashboard",
+                    error = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
+        /// ✅ Lấy dữ liệu biểu đồ doanh thu theo tháng (12 tháng)
+        /// </summary>
+        [HttpGet("revenue-chart")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetRevenueChart([FromQuery] int year = 0)
+        {
+            try
+            {
+                if (year == 0) year = DateTime.UtcNow.Year;
+
+                var data = await _statisticService.GetRevenueChartDataAsync(year);
+                return Ok(new
+                {
+                    success = true,
+                    data = data
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Lỗi khi lấy dữ liệu biểu đồ doanh thu",
+                    error = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
+        /// ✅ Lấy dữ liệu biểu đồ tăng trưởng người dùng (Free vs Pro)
+        /// </summary>
+        [HttpGet("user-growth-chart")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetUserGrowthChart([FromQuery] int months = 6)
+        {
+            try
+            {
+                var data = await _statisticService.GetUserGrowthChartDataAsync(months);
+                return Ok(new
+                {
+                    success = true,
+                    data = data
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Lỗi khi lấy dữ liệu tăng trưởng người dùng",
+                    error = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
+        /// ✅ Lấy dữ liệu phân bổ gói dịch vụ (Free, Pro 1M, Pro 6M, Pro 12M)
+        /// </summary>
+        [HttpGet("plan-distribution")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetPlanDistribution()
+        {
+            try
+            {
+                var data = await _statisticService.GetPlanDistributionDataAsync();
+                return Ok(new
+                {
+                    success = true,
+                    data = data
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Lỗi khi lấy dữ liệu phân bổ gói",
+                    error = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
+        /// ✅ Lấy dữ liệu phân tích theo ngày (bảng chi tiết)
+        /// </summary>
+        [HttpGet("daily-analytics")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetDailyAnalytics([FromQuery] int days = 7)
+        {
+            try
+            {
+                var data = await _statisticService.GetDailyAnalyticsAsync(days);
+                return Ok(new
+                {
+                    success = true,
+                    data = data
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Lỗi khi lấy dữ liệu phân tích hàng ngày",
+                    error = ex.Message
+                });
+            }
+        }
     }
 }
