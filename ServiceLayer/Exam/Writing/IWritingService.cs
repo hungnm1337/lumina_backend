@@ -13,6 +13,9 @@ namespace ServiceLayer.Exam.Writting
     {
         Task<bool> SaveWritingAnswer(WritingAnswerRequestDTO writingAnswerRequestDTO);
 
-        public Task<WritingResponseDTO> GetFeedbackFromAI(WritingRequestDTO request);
+        public Task<WritingResponseDTO> GetFeedbackP1FromAI(WritingRequestP1DTO request);
+
+        public Task<WritingResponseDTO> GetFeedbackP23FromAI(WritingRequestP23DTO request);
+
     }
 }
