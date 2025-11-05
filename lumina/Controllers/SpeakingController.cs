@@ -45,21 +45,26 @@ public class SpeakingController : ControllerBase
 
             // ✅ SỬA: Sử dụng attemptId từ request thay vì tự tìm
             int attemptId;
-            
+
             if (request.AttemptId > 0)
             {
-                // Nếu frontend gửi attemptId, verify nó tồn tại và thuộc về user
                 var existingAttempt = await _unitOfWork.ExamAttemptsGeneric
-                    .GetAllAsync(e => e.AttemptID == request.AttemptId && e.UserID == userId)
-                    .ContinueWith(t => t.Result.FirstOrDefault());
-                
+        .GetAsync(
+            a => a.AttemptID == request.AttemptId,
+            includeProperties: "User" // ✅ THÊM: Include User để check
+        );
+
                 if (existingAttempt == null)
                 {
-                    return BadRequest($"Invalid attempt ID {request.AttemptId} for current user.");
+                    return NotFound($"ExamAttempt {request.AttemptId} not found.");
                 }
-                
+
+                if (existingAttempt.UserID != userId)
+                {
+                    return Forbid("You don't have permission to submit answers to this attempt.");
+                }
+
                 attemptId = request.AttemptId;
-                Console.WriteLine($"[Speaking] Using provided attemptId: {attemptId}");
             }
             else
             {
@@ -89,7 +94,7 @@ public class SpeakingController : ControllerBase
                     await _unitOfWork.ExamAttemptsGeneric.AddAsync(examAttempt);
                     await _unitOfWork.CompleteAsync();
                 }
-                
+
                 attemptId = examAttempt.AttemptID;
                 Console.WriteLine($"[Speaking] Created/Found attemptId: {attemptId}");
             }
