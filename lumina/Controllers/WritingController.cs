@@ -35,37 +35,19 @@ namespace lumina.Controllers
         {
             try
             {
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(ModelState);
-                }
-
-                if (request.AttemptID <= 0)
-                {
-                    return BadRequest(new { Message = "Invalid AttemptID." });
-                }
-
-                if (request.QuestionId <= 0)
-                {
-                    return BadRequest(new { Message = "Invalid QuestionId." });
-                }
-
-                if (string.IsNullOrWhiteSpace(request.UserAnswerContent))
-                {
+                if (request == null) return BadRequest(new { Message = "Request cannot be null." });
+                if (!ModelState.IsValid) return BadRequest(ModelState);
+                if (request.AttemptID <= 0) return BadRequest(new { Message = "Invalid AttemptID." });
+                if (request.QuestionId <= 0) return BadRequest(new { Message = "Invalid QuestionId." });
+                if (string.IsNullOrWhiteSpace(request.UserAnswerContent)) 
                     return BadRequest(new { Message = "UserAnswerContent cannot be empty." });
-                }
 
                 var result = await _writingService.SaveWritingAnswer(request);
 
-                if (result)
-                {
-                    return Ok(new { Message = "Writing answer saved successfully.", Success = true });
-                }
-                else
-                {
-                    return StatusCode(StatusCodes.Status500InternalServerError, 
+                return result 
+                    ? Ok(new { Message = "Writing answer saved successfully.", Success = true })
+                    : StatusCode(StatusCodes.Status500InternalServerError, 
                         new { Message = "Failed to save writing answer.", Success = false });
-                }
             }
             catch (Exception ex)
             {
