@@ -4,6 +4,7 @@ using RepositoryLayer.Exam;
 using RepositoryLayer.Questions;
 using RepositoryLayer.Speaking;
 using RepositoryLayer.User;
+using RepositoryLayer.UserSpacedRepetition;
 using RepositoryLayer.Generic;
 
 
@@ -27,6 +28,7 @@ public class UnitOfWork : IUnitOfWork
 
     public IUserAnswerRepository UserAnswers { get; private set; }
     public IUserAnswerSpeakingRepository UserAnswersSpeaking { get; private set; }
+    public IUserSpacedRepetitionRepository UserSpacedRepetitions { get; private set; }
 
     // Generic repositories for direct entity access
     public IRepository<ExamAttempt> ExamAttemptsGeneric { get; private set; }
@@ -50,6 +52,7 @@ public class UnitOfWork : IUnitOfWork
 
         UserAnswers = new UserAnswerRepository(_context);
         UserAnswersSpeaking = new UserAnswerSpeakingRepository(_context);
+        UserSpacedRepetitions = new UserSpacedRepetitionRepository(_context);
 
         // Initialize generic repositories
         ExamAttemptsGeneric = new Repository<ExamAttempt>(_context);

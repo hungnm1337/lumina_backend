@@ -115,6 +115,7 @@ namespace lumina
 
             builder.Services.AddScoped<IVocabularyListRepository, VocabularyListRepository>();
             builder.Services.AddScoped<IVocabularyListService, VocabularyListService>();
+            builder.Services.AddScoped<ISpacedRepetitionService, SpacedRepetitionService>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
             builder.Services.AddScoped<IArticleService, ArticleService>();
 
