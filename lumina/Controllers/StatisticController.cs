@@ -153,6 +153,7 @@ namespace lumina.Controllers
         }
 
         [HttpGet("user-pro-summary/{userId}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetUserProSummary(int userId)
         {
             var now = DateTime.UtcNow.Date;
