@@ -41,6 +41,7 @@ using RepositoryLayer.Exam.ExamAttempt;
 using RepositoryLayer.Exam.Writting;
 using RepositoryLayer.Statistic;
 using ServiceLayer.Statistic;
+using ServiceLayer.UserNoteAI;
 
 namespace lumina
 {
@@ -123,6 +124,7 @@ namespace lumina
             builder.Services.AddScoped<IExamPartRepository, ExamPartRepository>();
             builder.Services.AddScoped<IWrittingRepository, WrittingRepository>();
             builder.Services.AddScoped<IWritingService, WritingService>();
+            builder.Services.AddScoped<IAIChatService, AIChatService>();
             builder.Services.AddScoped<IAIExamMapper, AIExamMapper>();
 
             builder.Services.AddScoped<IStatisticRepository, StatisticRepository>();
@@ -200,7 +202,6 @@ namespace lumina
                                   "Enter 'Bearer' [space] and then your token in the text input below.\r\n\r\n" +
                                   "Example: \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\""
                 });
-
                 // Require JWT for all endpoints
                 options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
                 {
@@ -216,6 +217,8 @@ namespace lumina
                         new string[] {}
                     }
                 });
+                options.CustomSchemaIds(type => type.FullName);
+
             });
 
 
