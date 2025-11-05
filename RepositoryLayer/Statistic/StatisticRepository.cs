@@ -43,7 +43,7 @@ namespace RepositoryLayer.Statistic
                 .CountAsync();
         }
 
-        // ✅ Tính doanh thu theo tháng (chia đều từ subscription)
+        // ✅ Tính doanh thu theo tháng (PHÂN BỔ THEO NGÀY)
         public async Task<decimal> GetMonthlyRevenueAsync(int year, int month)
         {
             var startOfMonth = new DateTime(year, month, 1);
@@ -61,20 +61,22 @@ namespace RepositoryLayer.Statistic
             {
                 if (payment.Package == null) continue;
 
-                var durationMonths = payment.Package.DurationInDays / 30.0;
-                if (durationMonths == 0) continue; // Tránh chia cho 0
+                var durationDays = payment.Package.DurationInDays ?? 0;
+                if (durationDays == 0) continue;
 
-                var revenuePerMonth = payment.Amount / (decimal)durationMonths;
-
+                // ✅ Tính doanh thu PER DAY
+                var revenuePerDay = payment.Amount / durationDays;
                 var paymentDate = payment.CreatedAt.Date;
-                var subscriptionEnd = paymentDate.AddDays((double)payment.Package.DurationInDays);
+                var subscriptionEnd = paymentDate.AddDays(durationDays);
 
-                // ✅ Kiểm tra xem subscription có overlap với tháng này không
-                // Subscription phải bắt đầu trước hoặc trong tháng này
-                // VÀ kết thúc sau hoặc trong tháng này
-                if (paymentDate < endOfMonth && subscriptionEnd >= startOfMonth)
+                // ✅ Tính overlap với tháng này
+                var overlapStart = paymentDate > startOfMonth ? paymentDate : startOfMonth;
+                var overlapEnd = subscriptionEnd < endOfMonth ? subscriptionEnd : endOfMonth;
+
+                if (overlapStart < overlapEnd)
                 {
-                    totalRevenue += revenuePerMonth;
+                    var overlapDays = (overlapEnd - overlapStart).Days;
+                    totalRevenue += revenuePerDay * overlapDays;
                 }
             }
 
@@ -111,14 +113,15 @@ namespace RepositoryLayer.Statistic
                 var startOfMonth = new DateTime(targetDate.Year, targetDate.Month, 1);
                 var endOfMonth = startOfMonth.AddMonths(1);
 
-                // Free users: Users không có subscription active trong tháng đó
-                var allUsersInMonth = await _context.Users
+                // ✅ Tổng số users có tài khoản tại thời điểm cuối tháng
+                var allUsersAtEndOfMonth = await _context.Users
                     .Where(u => u.RoleId == 4 && 
                                 u.Accounts.Any(a => a.CreateAt < endOfMonth))
                     .Select(u => u.UserId)
                     .ToListAsync();
 
-                var proUsersInMonth = await _context.Subscriptions
+                // ✅ Users có subscription Pro active trong tháng này
+                var proUserIdsInMonth = await _context.Subscriptions
                     .Where(s => s.Status == "Active" &&
                                 s.StartTime < endOfMonth &&
                                 s.EndTime >= startOfMonth)
@@ -126,13 +129,14 @@ namespace RepositoryLayer.Statistic
                     .Distinct()
                     .ToListAsync();
 
-                var freeUsers = allUsersInMonth.Count - proUsersInMonth.Count;
+                // ✅ Free users = Tất cả users - Users có Pro
+                var freeUsersCount = allUsersAtEndOfMonth.Count - proUserIdsInMonth.Count;
 
                 result.Add(new UserGrowthDTO
                 {
                     Month = targetDate.Month,
-                    FreeUsers = freeUsers > 0 ? freeUsers : 0,
-                    ProUsers = proUsersInMonth.Count
+                    FreeUsers = freeUsersCount > 0 ? freeUsersCount : 0,
+                    ProUsers = proUserIdsInMonth.Count
                 });
             }
 
@@ -144,24 +148,35 @@ namespace RepositoryLayer.Statistic
         {
             var now = DateTime.UtcNow;
             
-            // Tổng số users
+            // Tổng số users (RoleId = 4)
             var totalUsers = await _context.Users.Where(u => u.RoleId == 4).CountAsync();
 
-            // Users có subscription active
-            var activeSubscriptions = await _context.Subscriptions
+            // ✅ Lấy danh sách user có subscription active (DISTINCT userId)
+            var proUserIds = await _context.Subscriptions
+                .Where(s => s.Status == "Active" && s.EndTime >= now)
+                .Select(s => s.UserId)
+                .Distinct()
+                .ToListAsync();
+
+            // ✅ Free users = Tổng users - Số users có Pro
+            var freeUsersCount = totalUsers - proUserIds.Count;
+
+            // ✅ Lấy chi tiết từng gói Pro
+            var activeSubscriptionsByPackage = await _context.Subscriptions
                 .Where(s => s.Status == "Active" && s.EndTime >= now)
                 .Include(s => s.Package)
+                .ToListAsync();
+
+            var packageGroups = activeSubscriptionsByPackage
                 .GroupBy(s => s.Package.PackageName)
                 .Select(g => new
                 {
                     PackageName = g.Key,
                     UserCount = g.Select(s => s.UserId).Distinct().Count()
                 })
-                .ToListAsync();
+                .ToList();
 
-            var proUsersCount = activeSubscriptions.Sum(x => x.UserCount);
-            var freeUsersCount = totalUsers - proUsersCount;
-
+            // ✅ Tạo result
             var result = new List<PlanDistributionDTO>
             {
                 new PlanDistributionDTO
@@ -172,13 +187,13 @@ namespace RepositoryLayer.Statistic
                 }
             };
 
-            foreach (var sub in activeSubscriptions)
+            foreach (var pkg in packageGroups)
             {
                 result.Add(new PlanDistributionDTO
                 {
-                    PlanName = sub.PackageName,
-                    UserCount = sub.UserCount,
-                    Percentage = totalUsers > 0 ? Math.Round((decimal)sub.UserCount * 100 / totalUsers, 1) : 0
+                    PlanName = pkg.PackageName,
+                    UserCount = pkg.UserCount,
+                    Percentage = totalUsers > 0 ? Math.Round((decimal)pkg.UserCount * 100 / totalUsers, 1) : 0
                 });
             }
 
@@ -254,18 +269,19 @@ namespace RepositoryLayer.Statistic
             {
                 if (payment.Package == null) continue;
 
-                var durationDays = payment.Package.DurationInDays;
-                if (durationDays == 0) continue; // Tránh chia cho 0
+                var durationDays = payment.Package.DurationInDays ?? 0;
+                if (durationDays == 0) continue;
 
+                // ✅ Tính doanh thu PER DAY
                 var revenuePerDay = payment.Amount / durationDays;
 
                 var paymentDate = payment.CreatedAt.Date;
-                var subscriptionEnd = paymentDate.AddDays((double)durationDays);
+                var subscriptionEnd = paymentDate.AddDays(durationDays);
 
                 // ✅ Kiểm tra xem subscription có cover ngày này không
                 if (date >= paymentDate && date < subscriptionEnd)
                 {
-                    totalRevenue += (decimal)revenuePerDay;
+                    totalRevenue += revenuePerDay;
                 }
             }
 

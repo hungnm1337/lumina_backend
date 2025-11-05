@@ -42,12 +42,40 @@ namespace lumina.Controllers
 
             var now = DateTime.UtcNow;
             var firstOfMonth = new DateTime(now.Year, now.Month, 1);
-            var monthlyRevenue = await _systemContext.Payments
-                .Where(p => p.Status == "Success" && p.CreatedAt >= firstOfMonth)
-                .SumAsync(p => (decimal?)p.Amount) ?? 0;
+            var endOfMonth = firstOfMonth.AddMonths(1);
+
+            // ✅ Tính doanh thu PHÂN BỔ cho tháng này
+            var allPayments = await _systemContext.Payments
+                .Where(p => p.Status == "Success" && p.PackageId != null)
+                .Include(p => p.Package)
+                .ToListAsync();
+
+            decimal monthlyRevenue = 0;
+
+            foreach (var payment in allPayments)
+            {
+                if (payment.Package == null) continue;
+
+                var durationDays = payment.Package.DurationInDays ?? 0;
+                if (durationDays == 0) continue;
+
+                var revenuePerDay = payment.Amount / durationDays;
+                var paymentDate = payment.CreatedAt.Date;
+                var subscriptionEnd = paymentDate.AddDays(durationDays);
+
+                // Tính overlap với tháng này
+                var overlapStart = paymentDate > firstOfMonth ? paymentDate : firstOfMonth;
+                var overlapEnd = subscriptionEnd < endOfMonth ? subscriptionEnd : endOfMonth;
+
+                if (overlapStart < overlapEnd)
+                {
+                    var overlapDays = (overlapEnd - overlapStart).Days;
+                    monthlyRevenue += revenuePerDay * overlapDays;
+                }
+            }
 
             var proUserCount = await _systemContext.Subscriptions
-                .Where(s => s.Status == "Active")
+                .Where(s => s.Status == "Active" && s.EndTime >= now)
                 .Select(s => s.UserId)
                 .Distinct()
                 .CountAsync();
@@ -57,7 +85,7 @@ namespace lumina.Controllers
             return Ok(new
             {
                 totalUsers,
-                monthlyRevenue,
+                monthlyRevenue = Math.Round(monthlyRevenue, 2),
                 registeredToday,
                 proUserCount,
                 proPercent
@@ -65,7 +93,7 @@ namespace lumina.Controllers
         }
 
         /// <summary>
-        /// ✅ API cũ - Thống kê packages đầy đủ
+        /// ✅ API cũ - Thống kê packages đầy đủ (ĐÃ SỬA - Group theo DurationInDays)
         /// </summary>
         [HttpGet("statistic-packages")]
         [Authorize(Roles = "Admin")]
@@ -73,72 +101,120 @@ namespace lumina.Controllers
         {
             var now = DateTime.UtcNow;
             var firstOfMonth = new DateTime(now.Year, now.Month, 1);
-            var last30Days = now.AddDays(-30);
+            var endOfMonth = firstOfMonth.AddMonths(1);
 
-            var proPackageIds = new int[] { 1, 2, 3 };
+            // ✅ Lấy 3 gói Pro theo DurationInDays
+            var targetDurations = new int[] { 30, 90, 365 };
             var proPackages = await _systemContext.Packages
-                .Where(p => proPackageIds.Contains(p.PackageId) && p.IsActive == true)
+                .Where(p => p.DurationInDays != null && targetDurations.Contains(p.DurationInDays.Value) && p.IsActive == true)
                 .ToListAsync();
 
-            var usersByPackage = await _systemContext.Subscriptions
-                .Where(s => s.Status == "Active"
-                            && proPackageIds.Contains(s.PackageId)
-                            && now >= s.StartTime && now <= s.EndTime)
-                .GroupBy(s => s.PackageId)
+            // ✅ Đếm users theo DurationInDays (subscription active hiện tại)
+            var activeSubscriptions = await _systemContext.Subscriptions
+                .Where(s => s.Status == "Active" && s.EndTime >= now)
+                .Include(s => s.Package)
+                .ToListAsync();
+
+            var usersByDuration = activeSubscriptions
+                .Where(s => s.Package.DurationInDays != null && targetDurations.Contains(s.Package.DurationInDays.Value))
+                .GroupBy(s => s.Package.DurationInDays.Value)
                 .Select(g => new
                 {
-                    PackageId = g.Key,
+                    DurationInDays = g.Key,
                     UserCount = g.Select(x => x.UserId).Distinct().Count()
-                }).ToListAsync();
+                })
+                .ToList();
 
-            int totalProUsers = usersByPackage.Sum(x => x.UserCount);
+            int totalProUsers = activeSubscriptions
+                .Select(s => s.UserId)
+                .Distinct()
+                .Count();
 
-            var revenueByPackage = await _systemContext.Payments
-                .Where(p => p.Status == "Success"
-                            && proPackageIds.Contains(p.PackageId)
-                            && p.CreatedAt >= last30Days)
-                .GroupBy(p => p.PackageId)
-                .Select(g => new
+            // ✅ Tính doanh thu PHÂN BỔ cho tháng này theo DurationInDays
+            var allPayments = await _systemContext.Payments
+                .Where(p => p.Status == "Success" && p.PackageId != null)
+                .Include(p => p.Package)
+                .ToListAsync();
+
+            var revenueByDuration = new Dictionary<int, decimal>();
+
+            foreach (var payment in allPayments)
+            {
+                if (payment.Package == null) continue;
+
+                var durationDays = payment.Package.DurationInDays ?? 0; // ✅ Handle nullable
+                if (!targetDurations.Contains(durationDays)) continue;
+
+                var revenuePerDay = payment.Amount / durationDays;
+                var paymentDate = payment.CreatedAt.Date;
+                var subscriptionEnd = paymentDate.AddDays(durationDays);
+
+                // Tính overlap với tháng này
+                var overlapStart = paymentDate > firstOfMonth ? paymentDate : firstOfMonth;
+                var overlapEnd = subscriptionEnd < endOfMonth ? subscriptionEnd : endOfMonth;
+
+                if (overlapStart < overlapEnd)
                 {
-                    PackageId = g.Key,
-                    Revenue = g.Sum(x => x.Amount)
-                }).ToListAsync();
+                    var overlapDays = (overlapEnd - overlapStart).Days;
+                    var allocatedRevenue = revenuePerDay * overlapDays;
 
-            decimal totalRevenue = revenueByPackage.Sum(x => x.Revenue);
+                    if (!revenueByDuration.ContainsKey(durationDays))
+                        revenueByDuration[durationDays] = 0;
 
+                    revenueByDuration[durationDays] += allocatedRevenue;
+                }
+            }
+
+            decimal totalRevenue = revenueByDuration.Values.Sum();
+
+            // ✅ New Users trong tháng này
             var newUsers = await _systemContext.Users
                 .Where(u => u.RoleId == 4 &&
-                            u.Accounts.Any(a => a.CreateAt >= firstOfMonth))
+                            u.Accounts.Any(a => a.CreateAt >= firstOfMonth && a.CreateAt < endOfMonth))
                 .CountAsync();
 
+            // ✅ Upgraded Pro trong tháng này
             var upgradedPro = await _systemContext.Subscriptions
                 .Where(s => s.Status == "Active"
-                            && s.StartTime >= firstOfMonth)
+                            && s.StartTime >= firstOfMonth
+                            && s.StartTime < endOfMonth)
                 .Select(s => s.UserId)
                 .Distinct()
                 .CountAsync();
 
-            var monthlyRevenue = await _systemContext.Payments
+            // ✅ Tổng tiền thanh toán trong tháng (không phải phân bổ)
+            var monthlyPaymentTotal = await _systemContext.Payments
                 .Where(p => p.Status == "Success"
-                            && p.CreatedAt >= firstOfMonth)
+                            && p.CreatedAt >= firstOfMonth
+                            && p.CreatedAt < endOfMonth)
                 .SumAsync(p => (decimal?)p.Amount) ?? 0m;
 
-            var packageStats = proPackages.Select(pkg =>
+            // ✅ Tạo stats cho từng gói (group theo DurationInDays)
+            var packageStats = targetDurations.Select(duration =>
             {
-                var userCount = usersByPackage.FirstOrDefault(x => x.PackageId == pkg.PackageId)?.UserCount ?? 0;
-                var revenue = revenueByPackage.FirstOrDefault(x => x.PackageId == pkg.PackageId)?.Revenue ?? 0m;
+                var pkg = proPackages.FirstOrDefault(p => p.DurationInDays == duration);
+                var userCount = usersByDuration.FirstOrDefault(x => x.DurationInDays == duration)?.UserCount ?? 0;
+                var revenue = revenueByDuration.ContainsKey(duration) ? revenueByDuration[duration] : 0m;
                 var userPercent = totalProUsers > 0 ? Math.Round((double)userCount * 100 / totalProUsers, 1) : 0;
                 var revenuePercent = totalRevenue > 0 ? Math.Round((double)revenue * 100 / (double)totalRevenue, 1) : 0;
 
+                // Tên gói theo duration
+                string packageName = duration switch
+                {
+                    30 => "Pro 1 tháng",
+                    90 => "Pro 3 tháng",
+                    365 => "Pro 12 tháng",
+                    _ => $"Pro {duration} ngày"
+                };
+
                 return new
                 {
-                    PackageId = pkg.PackageId,
-                    PackageName = pkg.PackageName,
-                    Price = pkg.Price,
-                    DurationInDays = pkg.DurationInDays,
+                    DurationInDays = duration,
+                    PackageName = packageName,
+                    Price = pkg?.Price ?? 0,
                     UserCount = userCount,
                     UserPercent = userPercent,
-                    Revenue = revenue,
+                    Revenue = Math.Round(revenue, 2),
                     RevenuePercent = revenuePercent
                 };
             }).ToList();
@@ -146,10 +222,11 @@ namespace lumina.Controllers
             return Ok(new
             {
                 TotalProUsers = totalProUsers,
-                TotalRevenue = totalRevenue,
+                TotalRevenue = Math.Round(totalRevenue, 2),
                 NewUsers = newUsers,
                 UpgradedPro = upgradedPro,
-                MonthlyRevenue = monthlyRevenue,
+                MonthlyRevenue = Math.Round(totalRevenue, 2), // Doanh thu phân bổ tháng này
+                MonthlyPaymentTotal = Math.Round(monthlyPaymentTotal, 2), // Tổng tiền thu trong tháng
                 PackageStats = packageStats
             });
         }
