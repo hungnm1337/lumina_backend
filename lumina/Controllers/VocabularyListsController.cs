@@ -10,7 +10,7 @@ namespace lumina.Controllers
 {
     [ApiController]
     [Route("api/vocabulary-lists")]
-    [Authorize(Roles = "Staff,Manager")]
+    [Authorize]
     public class VocabularyListsController : ControllerBase
     {
         private readonly IVocabularyListService _vocabularyListService;
@@ -53,6 +53,7 @@ namespace lumina.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Staff,Manager")]
         public async Task<IActionResult> GetLists([FromQuery] string? searchTerm)
         {
             try
@@ -104,6 +105,50 @@ namespace lumina.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "An error occurred while fetching vocabulary lists.");
+                return StatusCode(500, new ErrorResponse("An internal server error occurred."));
+            }
+        }
+
+        // GET api/vocabulary-lists/my - Lấy danh sách folder của chính người dùng (mọi role)
+        [HttpGet("my")]
+        public async Task<IActionResult> GetMyLists([FromQuery] string? searchTerm)
+        {
+            try
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+                if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var currentUserId))
+                {
+                    return Unauthorized(new ErrorResponse("Invalid token - User ID could not be determined."));
+                }
+
+                var lists = await _vocabularyListService.GetListsByUserAsync(currentUserId, searchTerm);
+                return Ok(lists);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while fetching user's vocabulary lists.");
+                return StatusCode(500, new ErrorResponse("An internal server error occurred."));
+            }
+        }
+
+        // GET api/vocabulary-lists/my-and-staff - Lấy danh sách folder của user hiện tại + folder của staff
+        [HttpGet("my-and-staff")]
+        public async Task<IActionResult> GetMyAndStaffLists([FromQuery] string? searchTerm)
+        {
+            try
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+                if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var currentUserId))
+                {
+                    return Unauthorized(new ErrorResponse("Invalid token - User ID could not be determined."));
+                }
+
+                var lists = await _vocabularyListService.GetMyAndStaffListsAsync(currentUserId, searchTerm);
+                return Ok(lists);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while fetching user's and staff's vocabulary lists.");
                 return StatusCode(500, new ErrorResponse("An internal server error occurred."));
             }
         }

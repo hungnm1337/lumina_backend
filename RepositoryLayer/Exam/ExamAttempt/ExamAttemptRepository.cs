@@ -25,18 +25,29 @@ namespace RepositoryLayer.Exam.ExamAttempt
 
         public async Task<ExamAttemptRequestDTO> EndAnExam(ExamAttemptRequestDTO model)
         {
+            Console.WriteLine($"[ExamAttemptRepository] EndAnExam called with AttemptID: {model.AttemptID}");
+            Console.WriteLine($"[ExamAttemptRepository] Request data: UserID={model.UserID}, ExamID={model.ExamID}, Score={model.Score}, Status={model.Status}");
+            
             var attempt = await _context.ExamAttempts.FindAsync(model.AttemptID);
 
             if (attempt == null)
             {
+                Console.WriteLine($"[ExamAttemptRepository] ❌ Exam attempt with ID {model.AttemptID} NOT FOUND!");
                 throw new KeyNotFoundException($"Exam attempt with ID {model.AttemptID} not found.");
             }
 
+            Console.WriteLine($"[ExamAttemptRepository] Found attempt: Status={attempt.Status}, EndTime={attempt.EndTime}, Score={attempt.Score}");
+            
             attempt.EndTime = model.EndTime;
             attempt.Score = model.Score;
             attempt.Status = ExamAttemptStatus.Completed;
 
+            Console.WriteLine($"[ExamAttemptRepository] Updating attempt: EndTime={attempt.EndTime}, Score={attempt.Score}, Status={attempt.Status}");
+
             await _context.SaveChangesAsync();
+            
+            Console.WriteLine($"[ExamAttemptRepository] ✅ Exam attempt {model.AttemptID} ended successfully!");
+            
             return new ExamAttemptRequestDTO()
             {
                 AttemptID = attempt.AttemptID,
@@ -153,14 +164,12 @@ namespace RepositoryLayer.Exam.ExamAttempt
             var readingAnswers = await _context.UserAnswerMultipleChoices
                 .AsNoTracking()
                 .Where(answer => answer.AttemptID == attemptId)
-                // Remove 'async' from the lambda. This is now just a projection.
                 .Select(answer => new ReadingAnswerResponseDTO()
                 {
                     AttemptID = answer.AttemptID,
                     Question = new DataLayer.DTOs.Exam.QuestionDTO()
                     {
-                        // EF Core will translate this nested Select into part of the main query
-                        // Remove 'await' and use '.ToList()'
+                       
                         Options = answer.Question.Options
                             .Select(option => new DataLayer.DTOs.Exam.OptionDTO()
                             {
@@ -169,7 +178,7 @@ namespace RepositoryLayer.Exam.ExamAttempt
                                 IsCorrect = option.IsCorrect,
                                 QuestionId = option.QuestionId
                             })
-                            .ToList(), // Use .ToList(), not .ToListAsync()
+                            .ToList(), 
                         PromptId = answer.Question.PromptId,
                         QuestionId = answer.Question.QuestionId,
                         Prompt = answer.Question.Prompt != null ? new DataLayer.DTOs.Exam.PromptDTO()
@@ -298,6 +307,14 @@ namespace RepositoryLayer.Exam.ExamAttempt
                                    answer.ContentScore) / 7
                 })
                 .ToListAsync();
+            
+            // 🔍 DEBUG LOG
+            Console.WriteLine($"[ExamAttemptRepository] GetSpeakingAnswerByAttemptId({attemptId}): Found {speakingAnswers.Count} answers");
+            foreach (var answer in speakingAnswers)
+            {
+                Console.WriteLine($"  - Question {answer.Question.QuestionNumber}: P={answer.PronunciationScore}, A={answer.AccuracyScore}, F={answer.FluencyScore}, C={answer.CompletenessScore}, G={answer.GrammarScore}, V={answer.VocabularyScore}, Ct={answer.ContentScore}, Overall={answer.OverallScore}");
+            }
+            
             return speakingAnswers;
         }
 

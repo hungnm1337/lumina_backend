@@ -110,4 +110,32 @@ public class VocabularyListRepository : IVocabularyListRepository
             })
             .ToListAsync();
     }
+
+    public async Task<IEnumerable<VocabularyListDTO>> GetMyAndStaffListsAsync(int userId, string? searchTerm)
+    {
+        var query = _context.VocabularyLists
+            .Where(vl => vl.IsDeleted != true && 
+                        (vl.MakeBy == userId || _context.Users.Any(u => u.UserId == vl.MakeBy && u.RoleId == 3))) // Folder của user hiện tại hoặc của staff
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            query = query.Where(vl => vl.Name.Contains(searchTerm));
+        }
+
+        return await query
+            .OrderByDescending(vl => vl.CreateAt)
+            .Select(vl => new VocabularyListDTO
+            {
+                VocabularyListId = vl.VocabularyListId,
+                Name = vl.Name,
+                IsPublic = vl.IsPublic,
+                MakeByName = vl.MakeByNavigation.FullName,
+                CreateAt = vl.CreateAt,
+                VocabularyCount = vl.Vocabularies.Count(v => v.IsDeleted != true),
+                Status = vl.Status,
+                RejectionReason = vl.RejectionReason
+            })
+            .ToListAsync();
+    }
 }

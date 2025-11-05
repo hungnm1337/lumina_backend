@@ -1,6 +1,6 @@
 ﻿using DataLayer.DTOs.Article;
 using DataLayer.DTOs.Auth;
-using Microsoft.AspNetCore.Authorization; // Vẫn giữ using này để dễ dàng bật lại
+using Microsoft.AspNetCore.Authorization; 
 using Microsoft.AspNetCore.Mvc;
 using RepositoryLayer.UnitOfWork;
 using ServiceLayer.Article;

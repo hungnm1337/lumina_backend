@@ -62,6 +62,11 @@ namespace ServiceLayer.Vocabulary
             return await _unitOfWork.VocabularyLists.GetPublishedAsync(searchTerm);
         }
 
+        public async Task<IEnumerable<VocabularyListDTO>> GetMyAndStaffListsAsync(int userId, string? searchTerm)
+        {
+            return await _unitOfWork.VocabularyLists.GetMyAndStaffListsAsync(userId, searchTerm);
+        }
+
         public async Task<bool> RequestApprovalAsync(int listId, int staffUserId)
         {
             var vocabularyList = await _unitOfWork.VocabularyLists.FindByIdAsync(listId);
