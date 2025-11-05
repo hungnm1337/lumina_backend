@@ -55,17 +55,42 @@ namespace ServiceLayer.Exam.ExamAttempt
             if (attempt.Status == "Completed")
                 return new ExamAttemptSummaryDTO { Success = false };
 
-            // Get all user answers for this attempt
+            // ✅ FIX Bug #13: Get all user answers for this attempt (Reading/Listening/Writing)
             var userAnswers = await _unitOfWork.UserAnswers
                 .GetAllAsync(ua => ua.AttemptID == attemptId);
 
-            var totalScore = userAnswers.Sum(ua => ua.Score ?? 0);
+            // ✅ FIX Bug #13: Get Speaking answers separately
+            var speakingAnswers = await _unitOfWork.UserAnswersSpeaking
+                .GetAllAsync(sa => sa.AttemptID == attemptId);
+
+            // ✅ FIX Bug #13: Calculate scores from both sources
+            var regularScore = userAnswers.Sum(ua => ua.Score ?? 0);
+            var speakingScore = 0m;
+
+            // Calculate speaking score based on questions
+            foreach (var sa in speakingAnswers)
+            {
+                var question = await _unitOfWork.QuestionsGeneric.GetAsync(q => q.QuestionId == sa.QuestionId);
+                if (question != null && question.ScoreWeight > 0)
+                {
+                    // Speaking uses overallScore (0-100) → convert to scoreWeight scale
+                    // This calculation should match frontend: speaking.component.ts line ~250
+                    var overallScore = CalculateSpeakingOverallScore(sa);
+                    var scoreRatio = (decimal)overallScore / 100m;
+                    var earnedScore = question.ScoreWeight * scoreRatio;
+                    speakingScore += Math.Round(earnedScore, 2);
+                }
+            }
+
+            var totalScore = (decimal)regularScore + speakingScore;
             var correctCount = userAnswers.Count(ua => ua.IsCorrect);
-            var totalQuestions = userAnswers.Count();
+            var totalQuestions = userAnswers.Count() + speakingAnswers.Count();
+
+            Console.WriteLine($"[ExamAttempt] Finalize attemptId={attemptId}: regularScore={regularScore}, speakingScore={speakingScore}, total={totalScore}");
 
             // Update attempt
             attempt.EndTime = DateTime.UtcNow;
-            attempt.Score = totalScore;
+            attempt.Score = (int)Math.Round(totalScore);
             attempt.Status = "Completed";
 
             _unitOfWork.ExamAttemptsGeneric.Update(attempt);
@@ -115,6 +140,33 @@ namespace ServiceLayer.Exam.ExamAttempt
                 Duration = duration,
                 Answers = answerDetails
             };
+        }
+
+        // ✅ FIX Bug #13: Helper method to calculate overall score from Speaking answer
+        private double CalculateSpeakingOverallScore(DataLayer.Models.UserAnswerSpeaking sa)
+        {
+            // Calculate weighted average similar to SpeakingScoringService
+            var weights = new Dictionary<string, double>
+            {
+                ["pronunciation"] = 0.20,
+                ["accuracy"] = 0.15,
+                ["fluency"] = 0.15,
+                ["grammar"] = 0.25,
+                ["vocabulary"] = 0.15,
+                ["content"] = 0.10
+            };
+
+            double total = 0;
+            double totalWeight = 0;
+
+            if (sa.PronunciationScore.HasValue) { total += (double)sa.PronunciationScore.Value * weights["pronunciation"]; totalWeight += weights["pronunciation"]; }
+            if (sa.AccuracyScore.HasValue) { total += (double)sa.AccuracyScore.Value * weights["accuracy"]; totalWeight += weights["accuracy"]; }
+            if (sa.FluencyScore.HasValue) { total += (double)sa.FluencyScore.Value * weights["fluency"]; totalWeight += weights["fluency"]; }
+            if (sa.GrammarScore.HasValue) { total += (double)sa.GrammarScore.Value * weights["grammar"]; totalWeight += weights["grammar"]; }
+            if (sa.VocabularyScore.HasValue) { total += (double)sa.VocabularyScore.Value * weights["vocabulary"]; totalWeight += weights["vocabulary"]; }
+            if (sa.ContentScore.HasValue) { total += (double)sa.ContentScore.Value * weights["content"]; totalWeight += weights["content"]; }
+
+            return totalWeight > 0 ? total / totalWeight : 0;
         }
 
         public async Task<DataLayer.DTOs.UserAnswer.SaveProgressResponseDTO> SaveProgressAsync(SaveProgressRequestDTO request)

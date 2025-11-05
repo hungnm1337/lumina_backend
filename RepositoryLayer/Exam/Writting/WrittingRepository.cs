@@ -29,7 +29,6 @@ namespace RepositoryLayer.Exam.Writting
 
                 if (existingAnswer != null)
                 {
-                    // Update existing answer
                     existingAnswer.UserAnswerContent = writingAnswerRequestDTO.UserAnswerContent;
                     existingAnswer.FeedbackFromAI = writingAnswerRequestDTO.FeedbackFromAI;
                     _context.UserAnswerWritings.Update(existingAnswer);
