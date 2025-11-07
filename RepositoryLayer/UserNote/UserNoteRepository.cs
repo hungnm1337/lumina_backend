@@ -47,40 +47,112 @@ namespace RepositoryLayer.UserNote
 
 
         public async Task<UserNoteResponseDTO> GetUserNoteByID(int userNoteId)
+        {
+            try
             {
+                var userNote = await _context.UserNotes
+                    .Include(x => x.User)
+                    .Include(x => x.Article)
+                    .Include(x => x.Section)
+                    .Where(un => un.NoteId == userNoteId)
+                    .Select(un => new UserNoteResponseDTO()
+                    {
+                        NoteId = un.NoteId,
+                        User = un.User.FullName,
+                        UserId = un.UserId,
+                        ArticleId = un.ArticleId,
+                        SectionId = un.SectionId,
+                        Article = un.Article.Title,
+                        Section = un.Section.SectionTitle,
+                        NoteContent = un.NoteContent,
+                        CreateAt = un.CreateAt,
+                        UpdateAt = un.UpdateAt
+                    })
+                    .FirstOrDefaultAsync();
 
-            return await _context.UserNotes
-                .Where(un => un.NoteId == userNoteId)
-                .Select(un => new UserNoteResponseDTO()
+                if (userNote == null)
                 {
-                    NoteId = un.NoteId,
-                    UserId = un.UserId,
-                    ArticleId = un.ArticleId,
-                    SectionId = un.SectionId,
-                    NoteContent = un.NoteContent,
-                    CreateAt = un.CreateAt,
-                    UpdateAt = un.UpdateAt
-                })
-                .FirstOrDefaultAsync();
+                    throw new KeyNotFoundException($"UserNote with ID {userNoteId} not found");
+                }
+
+                return userNote;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error retrieving user note: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<UserNoteResponseDTO> GetUserNoteByUserIDAndArticleId(int userId, int articleId)
+        {
+            try
+            {
+                var userNote = await _context.UserNotes
+                    .Include(x => x.User)
+                    .Include(x => x.Article)
+                    .Include(x => x.Section)
+                    .Where(un => un.UserId == userId && un.ArticleId == articleId)
+                    .Select(un => new UserNoteResponseDTO()
+                    {
+                        NoteId = un.NoteId,
+                        User = un.User.FullName,
+                        UserId = un.UserId,
+                        ArticleId = un.ArticleId,
+                        SectionId = un.SectionId,
+                        Article = un.Article.Title,
+                        Section = un.Section.SectionTitle,
+                        NoteContent = un.NoteContent,
+                        CreateAt = un.CreateAt,
+                        UpdateAt = un.UpdateAt
+                    })
+                    .FirstOrDefaultAsync();
+
+                if (userNote == null)
+                {
+                    throw new KeyNotFoundException($"UserNote with ID {userId} not found");
+                }
+
+                return userNote;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error retrieving user note: {ex.Message}", ex);
+            }
         }
 
         public async Task<IEnumerable<UserNoteResponseDTO>> GetAllUserNotesByUserId(int userId)
         {
-            return await _context.UserNotes
-                .AsNoTracking()
-                .Where(un => un.UserId == userId)
-                .Select(un => new UserNoteResponseDTO()
-                {
-                    NoteId = un.NoteId,
-                    UserId = un.UserId,
-                    ArticleId = un.ArticleId,
-                    SectionId = un.SectionId,
-                    NoteContent = un.NoteContent,
-                    CreateAt = un.CreateAt,
-                    UpdateAt = un.UpdateAt
-                })
-                .ToListAsync();
+            try
+            {
+                var notes = await _context.UserNotes
+                    .Include(x => x.User)
+                    .Include(x => x.Article)
+                    .Include(x => x.Section)
+                    .AsNoTracking()
+                    .Where(un => un.UserId == userId)
+                    .Select(un => new UserNoteResponseDTO()
+                    {
+                        NoteId = un.NoteId,
+                        UserId = un.UserId,
+                        ArticleId = un.ArticleId,
+                        SectionId = un.SectionId,
+                        User = un.User.FullName,
+                        Article = un.Article.Title,
+                        Section = un.Section.SectionTitle,
+                        NoteContent = un.NoteContent,
+                        CreateAt = un.CreateAt,
+                        UpdateAt = un.UpdateAt
+                    })
+                    .ToListAsync();
+
+                return notes;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error retrieving user notes: {ex.Message}", ex);
+            }
         }
+
 
         public async Task<bool> UpdateUserNote(UserNoteRequestDTO userNoteRequestDTO)
         {
