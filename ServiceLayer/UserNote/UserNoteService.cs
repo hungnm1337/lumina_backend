@@ -27,6 +27,11 @@ namespace ServiceLayer.UserNote
             return await _userNoteRepository.GetUserNoteByID(userNoteId);
         }
 
+        public async Task<UserNoteResponseDTO> GetUserNoteByUserIDAndArticleId(int userId, int articleId)
+        {
+            return await _userNoteRepository.GetUserNoteByUserIDAndArticleId( userId,  articleId);
+        }
+
         public async Task<bool> UpsertUserNote(UserNoteRequestDTO userNoteRequestDTO)
         {
             if(await _userNoteRepository.CheckUserNoteExist(

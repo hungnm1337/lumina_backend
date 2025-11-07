@@ -15,5 +15,6 @@ namespace ServiceLayer.UserNote
 
         public Task<UserNoteResponseDTO> GetUserNoteByID(int userNoteId);
 
+        public Task<UserNoteResponseDTO> GetUserNoteByUserIDAndArticleId(int userId, int articleId);
     }
 }
