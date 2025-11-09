@@ -92,9 +92,7 @@ namespace lumina.Controllers
             });
         }
 
-        /// <summary>
-        /// ✅ API cũ - Thống kê packages đầy đủ (ĐÃ SỬA - Group theo DurationInDays)
-        /// </summary>
+        
         [HttpGet("statistic-packages")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetFullDashboardStats()
@@ -231,9 +229,7 @@ namespace lumina.Controllers
             });
         }
 
-        /// <summary>
-        /// ✅ API cũ - Tổng kết Pro của user
-        /// </summary>
+       
         [HttpGet("user-pro-summary/{userId}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetUserProSummary(int userId)
@@ -314,9 +310,7 @@ namespace lumina.Controllers
             });
         }
 
-        /// <summary>
-        /// ✅ API cũ - Dashboard cho Staff
-        /// </summary>
+      
         [HttpGet("staff-dashboard")]
         [Authorize(Roles = "Staff")]
         public async Task<IActionResult> GetStaffDashboardStats()
