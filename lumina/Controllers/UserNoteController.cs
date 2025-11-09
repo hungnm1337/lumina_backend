@@ -58,6 +58,27 @@ namespace lumina.Controllers
             }
         }
 
+        [HttpGet("user/{userId}/article/{articleId}")]
+        public async Task<IActionResult> GetUserNoteByUserIDAndArticleId(int userId, int articleId)
+        {
+            try
+            {
+                var userNote = await _userNoteService.GetUserNoteByUserIDAndArticleId(userId, articleId);
+                if (userNote != null)
+                {
+                    return Ok(userNote);
+                }
+                else
+                {
+                    return NotFound(new { Message = "User note not found." });
+                }
+            }
+            catch
+            {
+                return StatusCode(500, new { Message = "An error occurred while retrieving the user note." });
+            }
+        }
+
         [HttpGet("user/{userId}/notes")]
         public async Task<IActionResult> GetAllUserNotesByUserId(int userId)
         {

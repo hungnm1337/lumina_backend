@@ -56,10 +56,13 @@ public class VocabularyRepository : IVocabularyRepository
 
     public async Task<Dictionary<int, int>> GetCountsByListAsync()
     {
-        return await _context.Vocabularies
+        var vocabularies = await _context.Vocabularies
             .Where(v => v.IsDeleted != true)
+            .ToListAsync();
+        
+        return vocabularies
             .GroupBy(v => v.VocabularyListId)
-            .ToDictionaryAsync(g => g.Key, g => g.Count());
+            .ToDictionary(g => g.Key, g => g.Count());
     }
 
     public async Task<List<Vocabulary>> SearchAsync(string searchTerm, int? listId = null)
@@ -96,6 +99,11 @@ public class VocabularyRepository : IVocabularyRepository
 
     public async Task<List<Vocabulary>> GetByTypeAsync(string typeOfWord)
     {
+        if (string.IsNullOrWhiteSpace(typeOfWord))
+        {
+            return new List<Vocabulary>();
+        }
+        
         return await _context.Vocabularies
             .Where(v => v.IsDeleted != true && v.TypeOfWord.ToLower() == typeOfWord.ToLower())
             .OrderBy(v => v.Word)
@@ -104,6 +112,11 @@ public class VocabularyRepository : IVocabularyRepository
 
     public async Task<List<Vocabulary>> GetByCategoryAsync(string category)
     {
+        if (string.IsNullOrWhiteSpace(category))
+        {
+            return new List<Vocabulary>();
+        }
+        
         return await _context.Vocabularies
             .Where(v => v.IsDeleted != true && v.Category != null && v.Category.ToLower() == category.ToLower())
             .OrderBy(v => v.Word)

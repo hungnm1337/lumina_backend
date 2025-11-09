@@ -2,7 +2,7 @@ using DataLayer.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RepositoryLayer.UnitOfWork;
-using ServiceLayer.TextToSpeech; // Thêm using
+using ServiceLayer.TextToSpeech; 
 using System.Security.Claims;
 using DataLayer.DTOs.Auth;
 
@@ -13,12 +13,12 @@ namespace lumina.Controllers;
 public class VocabulariesController : ControllerBase
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ITextToSpeechService _ttsService; // Thêm service
+    private readonly ITextToSpeechService _ttsService; 
 
     public VocabulariesController(IUnitOfWork unitOfWork, ITextToSpeechService ttsService)
     {
         _unitOfWork = unitOfWork;
-        _ttsService = ttsService; // Inject service
+        _ttsService = ttsService; 
     }
 
   
@@ -41,10 +41,9 @@ public class VocabulariesController : ControllerBase
                 return Unauthorized(new ErrorResponse("User not found."));
             }
 
-            // Nếu là Staff (RoleID = 3), chỉ lấy vocabulary từ lists của chính họ
             if (user.RoleId == 3)
             {
-                // Kiểm tra nếu listId được cung cấp, đảm bảo nó thuộc về user hiện tại
+             
                 if (listId.HasValue)
                 {
                     var vocabularyList = await _unitOfWork.VocabularyLists.FindByIdAsync(listId.Value);
@@ -55,14 +54,14 @@ public class VocabulariesController : ControllerBase
                 }
                 else
                 {
-                    // Nếu không có listId, lấy tất cả vocabulary từ lists của user
+                  
                     var userLists = await _unitOfWork.VocabularyLists.GetByUserAsync(currentUserId, null);
                     var userListIds = userLists.Select(l => l.VocabularyListId).ToList();
                     if (!userListIds.Any())
                     {
                         return Ok(new List<object>());
                     }
-                    // TODO: Implement filtering by user's list IDs
+              
                 }
             }
 

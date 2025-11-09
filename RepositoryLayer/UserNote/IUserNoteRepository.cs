@@ -16,6 +16,8 @@ namespace RepositoryLayer.UserNote
 
         public Task<UserNoteResponseDTO> GetUserNoteByID(int userNoteId);
 
+        public Task<UserNoteResponseDTO> GetUserNoteByUserIDAndArticleId(int userId, int articleId);
+
         public Task<bool> CheckUserNoteExist(int userId, int articleId, int sectionId);
     }
 }
