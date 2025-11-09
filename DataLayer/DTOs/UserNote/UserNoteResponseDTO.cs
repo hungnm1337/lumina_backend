@@ -10,9 +10,15 @@ namespace DataLayer.DTOs.UserNote
     {
         public int NoteId { get; set; }
 
+        public string User { get; set; }
+
         public int UserId { get; set; }
 
+        public string Article { get; set; }
+
         public int ArticleId { get; set; }
+
+        public string Section { get; set; }
 
         public int SectionId { get; set; }
 

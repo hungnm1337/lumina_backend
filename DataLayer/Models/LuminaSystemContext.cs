@@ -77,11 +77,16 @@ public partial class LuminaSystemContext : DbContext
     public virtual DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        var builder = new ConfigurationBuilder();
-        builder.SetBasePath(Directory.GetCurrentDirectory());
-        builder.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
-        var configuration = builder.Build();
-        optionsBuilder.UseSqlServer(configuration.GetConnectionString("DefaultConnection"));
+        // Only configure SQL Server if no options have been provided
+        // This allows tests to use InMemory database
+        if (!optionsBuilder.IsConfigured)
+        {
+            var builder = new ConfigurationBuilder();
+            builder.SetBasePath(Directory.GetCurrentDirectory());
+            builder.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+            var configuration = builder.Build();
+            optionsBuilder.UseSqlServer(configuration.GetConnectionString("DefaultConnection"));
+        }
     }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
