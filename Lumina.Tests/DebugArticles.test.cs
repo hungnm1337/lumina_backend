@@ -115,10 +115,203 @@ namespace Lumina.Tests
             Assert.True(properties.Any(p => p.Name == "TotalArticlesInDB"));
             Assert.True(properties.Any(p => p.Name == "UserArticlesCount"));
             
+            // Force enumeration of UserArticles and QueryResult to cover Select statements (lines 136-143 and 145-152)
+            var userArticlesProperty = properties.FirstOrDefault(p => p.Name == "UserArticles");
+            if (userArticlesProperty != null)
+            {
+                var userArticlesValue = userArticlesProperty.GetValue(okResult.Value);
+                if (userArticlesValue is System.Collections.IEnumerable userArticlesEnumerable)
+                {
+                    foreach (var item in userArticlesEnumerable)
+                    {
+                        // Enumerate to trigger Select execution
+                    }
+                }
+            }
+            
+            var queryResultProperty = properties.FirstOrDefault(p => p.Name == "QueryResult");
+            if (queryResultProperty != null)
+            {
+                var queryResultValue = queryResultProperty.GetValue(okResult.Value);
+                if (queryResultValue is System.Collections.IEnumerable queryResultEnumerable)
+                {
+                    foreach (var item in queryResultEnumerable)
+                    {
+                        // Enumerate to trigger Select execution
+                    }
+                }
+            }
+            
             _mockArticleRepository.Verify(r => r.GetAllWithCategoryAndUserAsync(), Times.Once);
             _mockArticleService.Verify(s => s.QueryAsync(It.Is<ArticleQueryParams>(q =>
                 q.CreatedBy == userId
             )), Times.Once);
+        }
+
+        [Fact]
+        public async Task DebugArticles_WithMultipleUserArticles_ShouldEnumerateSelectStatements()
+        {
+            // Arrange - This test ensures the Select statements in lines 136-143 and 145-152 are executed
+            var userId = 1;
+            var user = new User
+            {
+                UserId = userId,
+                RoleId = 3,
+                Email = "staff@example.com",
+                FullName = "Staff User"
+            };
+
+            var allArticles = new List<Article>
+            {
+                new Article
+                {
+                    ArticleId = 1,
+                    Title = "Article 1",
+                    CreatedBy = userId,
+                    Status = "Published",
+                    IsPublished = true
+                },
+                new Article
+                {
+                    ArticleId = 2,
+                    Title = "Article 2",
+                    CreatedBy = userId,
+                    Status = "Draft",
+                    IsPublished = false
+                },
+                new Article
+                {
+                    ArticleId = 3,
+                    Title = "Article 3",
+                    CreatedBy = 2,
+                    Status = "Published",
+                    IsPublished = true
+                }
+            };
+
+            var queryResult = new PagedResponse<ArticleResponseDTO>
+            {
+                Items = new List<ArticleResponseDTO>
+                {
+                    new ArticleResponseDTO
+                    {
+                        ArticleId = 1,
+                        Title = "Article 1",
+                        AuthorName = "Staff User",
+                        Status = "Published",
+                        IsPublished = true
+                    },
+                    new ArticleResponseDTO
+                    {
+                        ArticleId = 2,
+                        Title = "Article 2",
+                        AuthorName = "Staff User",
+                        Status = "Draft",
+                        IsPublished = false
+                    }
+                },
+                Total = 2,
+                Page = 1,
+                PageSize = 1000
+            };
+
+            SetupUserClaims(userId);
+            _mockUserRepository.Setup(r => r.GetUserByIdAsync(userId)).ReturnsAsync(user);
+            _mockArticleRepository.Setup(r => r.GetAllWithCategoryAndUserAsync()).ReturnsAsync(allArticles);
+            _mockArticleService.Setup(s => s.QueryAsync(It.Is<ArticleQueryParams>(q =>
+                q.CreatedBy == userId &&
+                q.Page == 1 &&
+                q.PageSize == 1000
+            ))).ReturnsAsync(queryResult);
+
+            // Act
+            var result = await _controller.DebugArticles();
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal(StatusCodes.Status200OK, okResult.StatusCode);
+            Assert.NotNull(okResult.Value);
+            
+            // Access UserArticles property to ensure Select statement (lines 136-143) is executed
+            var resultType = okResult.Value.GetType();
+            var userArticlesProperty = resultType.GetProperty("UserArticles");
+            Assert.NotNull(userArticlesProperty);
+            var userArticlesValue = userArticlesProperty.GetValue(okResult.Value);
+            Assert.NotNull(userArticlesValue);
+            
+            // Enumerate UserArticles to ensure Select is executed
+            if (userArticlesValue is System.Collections.IEnumerable userArticlesEnumerable)
+            {
+                var userArticlesList = userArticlesEnumerable.Cast<object>().ToList();
+                Assert.Equal(2, userArticlesList.Count); // Should have 2 articles created by userId
+                
+                // Access properties of each item to ensure Select projection is executed
+                foreach (var item in userArticlesList)
+                {
+                    var itemType = item.GetType();
+                    var articleIdProperty = itemType.GetProperty("ArticleId");
+                    var titleProperty = itemType.GetProperty("Title");
+                    var createdByProperty = itemType.GetProperty("CreatedBy");
+                    var statusProperty = itemType.GetProperty("Status");
+                    var isPublishedProperty = itemType.GetProperty("IsPublished");
+                    
+                    Assert.NotNull(articleIdProperty);
+                    Assert.NotNull(titleProperty);
+                    Assert.NotNull(createdByProperty);
+                    Assert.NotNull(statusProperty);
+                    Assert.NotNull(isPublishedProperty);
+                    
+                    // Access properties to ensure they are evaluated
+                    var articleId = articleIdProperty.GetValue(item);
+                    var title = titleProperty.GetValue(item);
+                    var createdBy = createdByProperty.GetValue(item);
+                    var status = statusProperty.GetValue(item);
+                    var isPublished = isPublishedProperty.GetValue(item);
+                    
+                    Assert.NotNull(articleId);
+                    Assert.NotNull(title);
+                }
+            }
+            
+            // Access QueryResult property to ensure Select statement (lines 145-152) is executed
+            var queryResultProperty = resultType.GetProperty("QueryResult");
+            Assert.NotNull(queryResultProperty);
+            var queryResultValue = queryResultProperty.GetValue(okResult.Value);
+            Assert.NotNull(queryResultValue);
+            
+            // Enumerate QueryResult to ensure Select is executed
+            if (queryResultValue is System.Collections.IEnumerable queryResultEnumerable)
+            {
+                var queryResultList = queryResultEnumerable.Cast<object>().ToList();
+                Assert.Equal(2, queryResultList.Count);
+                
+                // Access properties of each item to ensure Select projection is executed
+                foreach (var item in queryResultList)
+                {
+                    var itemType = item.GetType();
+                    var articleIdProperty = itemType.GetProperty("ArticleId");
+                    var titleProperty = itemType.GetProperty("Title");
+                    var authorNameProperty = itemType.GetProperty("AuthorName");
+                    var statusProperty = itemType.GetProperty("Status");
+                    var isPublishedProperty = itemType.GetProperty("IsPublished");
+                    
+                    Assert.NotNull(articleIdProperty);
+                    Assert.NotNull(titleProperty);
+                    Assert.NotNull(authorNameProperty);
+                    Assert.NotNull(statusProperty);
+                    Assert.NotNull(isPublishedProperty);
+                    
+                    // Access properties to ensure they are evaluated
+                    var articleId = articleIdProperty.GetValue(item);
+                    var title = titleProperty.GetValue(item);
+                    var authorName = authorNameProperty.GetValue(item);
+                    var status = statusProperty.GetValue(item);
+                    var isPublished = isPublishedProperty.GetValue(item);
+                    
+                    Assert.NotNull(articleId);
+                    Assert.NotNull(title);
+                }
+            }
         }
 
         #endregion
