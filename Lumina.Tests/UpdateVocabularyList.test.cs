@@ -1,6 +1,7 @@
 using DataLayer.Models;
 using Lumina.Tests.Helpers;
 using Microsoft.EntityFrameworkCore;
+using System;
 
 namespace Lumina.Tests
 {
@@ -129,6 +130,70 @@ namespace Lumina.Tests
             Assert.Equal(true, result.IsPublic);
             Assert.Equal("Published", result.Status);
             Assert.Equal("New rejection reason", result.RejectionReason);
+        }
+
+        [Fact]
+        public async Task UpdateAsync_WithUpdatedBy_ShouldSetAndGetUpdatedBy()
+        {
+            // Arrange
+            await InMemoryDbContextHelper.SeedVocabularyListDataAsync(_context);
+            var list = await _context.VocabularyLists.FindAsync(1);
+            Assert.NotNull(list);
+            
+            var updaterUser = await _context.Users.FindAsync(2);
+            Assert.NotNull(updaterUser);
+            
+            list.Name = "Updated Name";
+            list.UpdatedBy = updaterUser.UserId;
+            list.UpdateAt = DateTime.UtcNow;
+            list.UpdatedByNavigation = updaterUser; // Access UpdatedByNavigation property for coverage
+
+            // Act
+            var result = await _repository.UpdateAsync(list);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("Updated Name", result.Name);
+            // Access UpdatedBy property to ensure coverage
+            var updatedBy = result.UpdatedBy;
+            Assert.Equal(updaterUser.UserId, updatedBy);
+            
+            // Access UpdatedByNavigation property after update to ensure coverage
+            var updatedList = await _context.VocabularyLists
+                .Include(v => v.UpdatedByNavigation)
+                .FirstOrDefaultAsync(v => v.VocabularyListId == 1);
+            Assert.NotNull(updatedList);
+            // Access UpdatedByNavigation property to ensure coverage
+            var updatedByNav = updatedList.UpdatedByNavigation;
+            if (updatedByNav != null)
+            {
+                Assert.Equal(updaterUser.UserId, updatedByNav.UserId);
+            }
+        }
+
+        [Fact]
+        public async Task UpdateAsync_WithUpdatedByNull_ShouldAllowNull()
+        {
+            // Arrange
+            await InMemoryDbContextHelper.SeedVocabularyListDataAsync(_context);
+            var list = await _context.VocabularyLists.FindAsync(1);
+            Assert.NotNull(list);
+            
+            list.Name = "Updated Name";
+            list.UpdatedBy = null;
+            list.UpdateAt = null;
+            list.UpdatedByNavigation = null; // Access UpdatedByNavigation property with null for coverage
+
+            // Act
+            var result = await _repository.UpdateAsync(list);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("Updated Name", result.Name);
+            // Access UpdatedBy property to ensure coverage
+            Assert.Null(result.UpdatedBy);
+            // Access UpdatedByNavigation property to ensure coverage
+            Assert.Null(result.UpdatedByNavigation); // May be null if not loaded by EF Core
         }
 
         public void Dispose()
