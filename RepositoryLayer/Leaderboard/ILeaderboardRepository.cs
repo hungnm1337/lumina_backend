@@ -20,5 +20,14 @@ namespace RepositoryLayer.Leaderboard
         Task<bool> ExistsDateOverlapAsync(DateTime? start, DateTime? end, int? excludeId = null);
         Task<List<LeaderboardRankDTO>> GetSeasonRankingAsync(int leaderboardId, int top = 100);
         Task<int> RecalculateSeasonScoresAsync(int leaderboardId);
+        
+        // Season-specific methods
+        Task<int> ResetSeasonScoresAsync(int leaderboardId, bool archiveScores = true);
+        Task<UserSeasonStatsDTO?> GetUserSeasonStatsAsync(int userId, int leaderboardId);
+        Task<TOEICScoreCalculationDTO?> GetUserTOEICCalculationAsync(int userId, int leaderboardId);
+        Task<int> GetUserRankInSeasonAsync(int userId, int leaderboardId);
+        Task<bool> IsSeasonActiveAsync(int leaderboardId);
+        Task AutoActivateSeasonAsync(); // Tự động kích hoạt season khi đến ngày bắt đầu
+        Task AutoEndSeasonAsync(); // Tự động kết thúc season khi hết hạn
     }
 }

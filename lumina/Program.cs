@@ -39,6 +39,8 @@ using ServiceLayer.Exam.Listening;
 using ServiceLayer.Exam.Reading;
 using RepositoryLayer.Exam.ExamAttempt;
 using RepositoryLayer.Exam.Writting;
+using RepositoryLayer.Statistic;
+using ServiceLayer.Statistic;
 using ServiceLayer.UserNoteAI;
 
 namespace lumina
@@ -125,6 +127,9 @@ namespace lumina
             builder.Services.AddScoped<IWritingService, WritingService>();
             builder.Services.AddScoped<IAIChatService, AIChatService>();
             builder.Services.AddScoped<IAIExamMapper, AIExamMapper>();
+
+            builder.Services.AddScoped<IStatisticRepository, StatisticRepository>();
+            builder.Services.AddScoped<IStatisticService, StatisticService>();
 
             builder.Services.AddHttpClient<IExamGenerationAIService, ExamGenerationAIService>("GeminiAI", c =>
             {
