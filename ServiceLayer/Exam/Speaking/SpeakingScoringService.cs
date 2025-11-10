@@ -83,46 +83,33 @@ namespace ServiceLayer.Exam.Speaking
                 throw new Exception($"Question with ID {questionId} or its sample answer not found.");
             }
             
-            // Lấy PartCode để xác định loại câu hỏi thực sự
             string partCode = question.Part?.PartCode ?? "";
             Console.WriteLine($"[Speaking] QuestionId={questionId}, PartCode={partCode}, QuestionType={question.QuestionType}");
 
-            // Prefer analyzing from Cloudinary MP3 transformation (Python also expects MP3)
-            // Build a deterministic MP3 URL using Cloudinary cloud name and public id
             var cloudName = _configuration["CloudinarySettings:CloudName"];
-            var publicId = uploadResult.PublicId; // e.g., lumina/audio/file_uuid
+            var publicId = uploadResult.PublicId; 
             // Force 16kHz sample rate for better ASR
             var transformedMp3Url = $"https://res.cloudinary.com/{cloudName}/video/upload/f_mp3,ar_16000/{publicId}.mp3";
             Console.WriteLine($"[Speaking] MP3 URL for Azure: {transformedMp3Url}");
 
-            // Wait briefly for Cloudinary to finish the MP3 transform
             await EnsureCloudinaryAssetReady(transformedMp3Url);
 
-            // Use en-GB for better Vietnamese-accented English recognition
             Console.WriteLine($"[Speaking] Using language model: en-GB");
 
 
             var azureResult = await RetryAzureRecognitionAsync(transformedMp3Url, question.SampleAnswer, maxRetries: 3);
 
-            // ✅ DEBUG: Log Azure result details
-            Console.WriteLine($"[Speaking] ========== AZURE RECOGNITION RESULT ==========");
-            Console.WriteLine($"[Speaking] Transcript: '{azureResult.Transcript}'");
-            Console.WriteLine($"[Speaking] ErrorMessage: '{azureResult.ErrorMessage}'");
-            Console.WriteLine($"[Speaking] PronunciationScore: {azureResult.PronunciationScore}");
-            Console.WriteLine($"[Speaking] AccuracyScore: {azureResult.AccuracyScore}");
-            Console.WriteLine($"[Speaking] FluencyScore: {azureResult.FluencyScore}");
-            Console.WriteLine($"[Speaking] CompletenessScore: {azureResult.CompletenessScore}");
+          
 
-            // 🔧 TEMPORARY WORKAROUND: Mock transcript khi Azure disabled
             if (string.IsNullOrWhiteSpace(azureResult.Transcript) || azureResult.Transcript == ".")
             {
                 Console.WriteLine($"[Speaking] ⚠️ Azure failed (possibly subscription disabled), using MOCK transcript");
                 azureResult.Transcript = question.SampleAnswer ?? "This is a mock transcript for testing purposes.";
                 // Mock scores tạm để test UI
-                azureResult.PronunciationScore = 75.0;
-                azureResult.AccuracyScore = 80.0;
-                azureResult.FluencyScore = 70.0;
-                azureResult.CompletenessScore = 85.0;
+                azureResult.PronunciationScore = 0;
+                azureResult.AccuracyScore = 0;
+                azureResult.FluencyScore = 0;
+                azureResult.CompletenessScore =0;
             }
 
             Console.WriteLine($"[Speaking] Transcript result: {azureResult.Transcript}");
@@ -209,9 +196,9 @@ namespace ServiceLayer.Exam.Speaking
         {
             
             // IIG Scoring Architecture:
-            // - Part 1: Chỉ Pronunciation + Intonation (Phần 3.1)
-            // - Part 2: + Grammar + Vocabulary + Cohesion (Phần 3.2)
-            // - Part 3-4: + Relevance + Completeness (Phần 3.3, 3.4)
+            // - Part 1: Chỉ Pronunciation + Intonation 
+            // - Part 2: + Grammar + Vocabulary + Cohesion 
+            // - Part 3-4: + Relevance + Completeness 
             // - Part 5: TẤT CẢ + Argumentation (Phần 3.5, thang 0-5 - cao hơn 67%)
             
             float pronWeight, accWeight, fluWeight, gramWeight, vocabWeight, contentWeight;
@@ -297,7 +284,6 @@ namespace ServiceLayer.Exam.Speaking
                 double originalScore = totalScore;
                 totalScore *= 1.67; // Scale lên thang 0-5 (thay vì 0-3)
                 totalScore = Math.Min(100, totalScore); // Cap tại 100
-                Console.WriteLine($"[Scoring] ⭐ Part 5 Scale Boost: {originalScore:F1} → {totalScore:F1} (×1.67 due to 0-5 scale)");
             }
 
             
