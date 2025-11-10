@@ -17,5 +17,12 @@ namespace ServiceLayer.Leaderboard
         Task<bool> SetCurrentAsync(int leaderboardId);
         Task<List<LeaderboardRankDTO>> GetSeasonRankingAsync(int leaderboardId, int top = 100);
         Task<int> RecalculateSeasonScoresAsync(int leaderboardId);
+        
+        // Season-specific methods
+        Task<int> ResetSeasonAsync(int leaderboardId, bool archiveScores = true);
+        Task<UserSeasonStatsDTO?> GetUserStatsAsync(int userId, int? leaderboardId = null);
+        Task<TOEICScoreCalculationDTO?> GetUserTOEICCalculationAsync(int userId, int? leaderboardId = null);
+        Task<int> GetUserRankAsync(int userId, int? leaderboardId = null);
+        Task AutoManageSeasonsAsync(); // Tự động kích hoạt và kết thúc seasons
     }
 }
