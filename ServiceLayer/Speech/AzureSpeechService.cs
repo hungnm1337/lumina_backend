@@ -16,8 +16,9 @@ namespace ServiceLayer.Speech
     public class AzureSpeechService : IAzureSpeechService
     {
         private readonly SpeechConfig _speechConfig;
+        private readonly IHttpClientFactory _httpClientFactory;
 
-        public AzureSpeechService(IOptions<AzureSpeechSettings> config)
+        public AzureSpeechService(IOptions<AzureSpeechSettings> config, IHttpClientFactory httpClientFactory)
         {
             _speechConfig = SpeechConfig.FromSubscription(config.Value.SubscriptionKey, config.Value.Region);
             _speechConfig.SpeechRecognitionLanguage = "en-US";
@@ -26,6 +27,7 @@ namespace ServiceLayer.Speech
             // Make endpointing less aggressive to avoid chopping short phrases into fragments
             _speechConfig.SetProperty("SpeechServiceConnection_InitialSilenceTimeoutMs", "1500");
             _speechConfig.SetProperty("SpeechServiceConnection_EndSilenceTimeoutMs", "3000");
+            _httpClientFactory = httpClientFactory;
         }
 
         public async Task<SpeechAnalysisDTO> AnalyzePronunciationAsync(IFormFile audioFile, string referenceText)
@@ -95,34 +97,97 @@ namespace ServiceLayer.Speech
             }
         }
 
+        /// <summary>
+        /// ✅ FIX Bug #3: Optimized two-pass recognition - download audio only ONCE
+        /// Pass 1: Continuous recognition to get full transcript
+        /// Pass 2: Pronunciation assessment using the transcript from Pass 1
+        /// </summary>
         public async Task<SpeechAnalysisDTO> AnalyzePronunciationFromUrlAsync(string audioUrl, string referenceText, string language = null)
         {
-            using var http = new HttpClient();
+            // ✅ FIX Bug #3: Use IHttpClientFactory instead of creating new HttpClient
+            var http = _httpClientFactory.CreateClient();
             using var response = await http.GetAsync(audioUrl, HttpCompletionOption.ResponseHeadersRead);
             if (!response.IsSuccessStatusCode)
             {
                 return new SpeechAnalysisDTO { ErrorMessage = $"Failed to fetch audio from URL. Status: {response.StatusCode}" };
             }
 
-            // Download to memory to get a seekable stream for NAudio
+            // ✅ FIX Bug #3: Download audio ONCE and reuse for both passes
+            Console.WriteLine($"[AzureSpeech] Downloading audio from URL: {audioUrl}");
             var mp3Bytes = await response.Content.ReadAsByteArrayAsync();
-            using var networkStream = new System.IO.MemoryStream(mp3Bytes, writable: false);
-            // Decode MP3 to 16kHz mono PCM using NAudio, then send PCM to Azure
-            using var mp3Reader = new Mp3FileReader(networkStream);
+            Console.WriteLine($"[AzureSpeech] Audio downloaded: {mp3Bytes.Length} bytes");
+
+            var effectiveLanguage = string.IsNullOrWhiteSpace(language) ? "en-US (default)" : language;
+            Console.WriteLine($"[AzureSpeech] Using language: {effectiveLanguage}");
+
+            // ===== PASS 1: Continuous Recognition to get FULL transcript =====
+            string finalTranscript;
+            using (var networkStream = new System.IO.MemoryStream(mp3Bytes, writable: false))
+            {
+                finalTranscript = await PerformContinuousRecognition(networkStream, language);
+            }
+
+            // If no transcript, return error
+            if (string.IsNullOrWhiteSpace(finalTranscript))
+            {
+                return new SpeechAnalysisDTO { ErrorMessage = "No speech recognized" };
+            }
+
+            Console.WriteLine($"[AzureSpeech] Pass 1 completed. Transcript: {finalTranscript}");
+
+            // ===== PASS 2: Pronunciation Assessment with full transcript as reference =====
+            Console.WriteLine($"[AzureSpeech] Pass 2 - Starting pronunciation assessment");
+
+            // ✅ FIX Bug #3: Reuse mp3Bytes instead of re-downloading
+            using (var networkStream = new System.IO.MemoryStream(mp3Bytes, writable: false))
+            {
+                var scores = await PerformPronunciationAssessment(networkStream, finalTranscript, language);
+
+                if (scores != null)
+                {
+                    Console.WriteLine($"[AzureSpeech] Pass 2 completed. Scores: P={scores.PronunciationScore:F1}, A={scores.AccuracyScore:F1}, F={scores.FluencyScore:F1}, C={scores.CompletenessScore:F1}");
+                    return new SpeechAnalysisDTO
+                    {
+                        Transcript = finalTranscript,
+                        PronunciationScore = scores.PronunciationScore,
+                        AccuracyScore = scores.AccuracyScore,
+                        FluencyScore = scores.FluencyScore,
+                        CompletenessScore = scores.CompletenessScore
+                    };
+                }
+                else
+                {
+                    // Fallback if pronunciation assessment fails
+                    Console.WriteLine($"[AzureSpeech] Pass 2 failed. Using default scores.");
+                    return new SpeechAnalysisDTO
+                    {
+                        Transcript = finalTranscript,
+                        PronunciationScore = 70,
+                        AccuracyScore = 70,
+                        FluencyScore = 70,
+                        CompletenessScore = 70
+                    };
+                }
+            }
+        }
+
+        /// <summary>
+        /// Helper method: Pass 1 - Continuous recognition to get full transcript
+        /// </summary>
+        private async Task<string> PerformContinuousRecognition(System.IO.MemoryStream mp3Stream, string language = null)
+        {
+            using var mp3Reader = new Mp3FileReader(mp3Stream);
             var pcm16kMonoFormat = new WaveFormat(16000, 16, 1);
             using var resampler = new MediaFoundationResampler(mp3Reader, pcm16kMonoFormat) { ResamplerQuality = 60 };
 
-            // Azure expects PCM (RIFF/WAV) content; use WAV container in the push stream
             var wavFormat = AudioStreamFormat.GetWaveFormatPCM((uint)pcm16kMonoFormat.SampleRate, (byte)pcm16kMonoFormat.BitsPerSample, (byte)pcm16kMonoFormat.Channels);
             using var audioInputStream = AudioInputStream.CreatePushStream(wavFormat);
             using var audioConfig = AudioConfig.FromStreamInput(audioInputStream);
-            var effectiveLanguage = string.IsNullOrWhiteSpace(language) ? "en-US (default)" : language;
-            Console.WriteLine($"[AzureSpeech] AnalyzePronunciation using language: {effectiveLanguage}");
-            Console.WriteLine($"[AzureSpeech] Reference text from DB: {referenceText}");
             using var recognizer = string.IsNullOrWhiteSpace(language)
                 ? new SpeechRecognizer(_speechConfig, audioConfig)
                 : new SpeechRecognizer(_speechConfig, language, audioConfig);
 
+            // Write audio data to stream
             byte[] buffer = new byte[8192];
             int bytesRead;
             while ((bytesRead = resampler.Read(buffer, 0, buffer.Length)) > 0)
@@ -131,10 +196,10 @@ namespace ServiceLayer.Speech
             }
             audioInputStream.Close();
 
-            // ===== PASS 1: Continuous Recognition to get FULL transcript =====
+            // Start continuous recognition
             var tcs = new TaskCompletionSource<string>();
             var fullTranscript = new System.Text.StringBuilder();
-            
+
             recognizer.Recognized += (s, e) =>
             {
                 if (e.Result.Reason == ResultReason.RecognizedSpeech)
@@ -147,9 +212,7 @@ namespace ServiceLayer.Speech
 
             recognizer.SessionStopped += (s, e) =>
             {
-                var transcript = fullTranscript.ToString().Trim();
-                Console.WriteLine($"[AzureSpeech] Pass 1 - Full transcript: {transcript}");
-                tcs.TrySetResult(transcript);
+                tcs.TrySetResult(fullTranscript.ToString().Trim());
             };
 
             recognizer.Canceled += (s, e) =>
@@ -158,120 +221,86 @@ namespace ServiceLayer.Speech
                 if (e.Reason == CancellationReason.Error)
                 {
                     Console.WriteLine($"[AzureSpeech] Pass 1 - Error: {e.ErrorDetails}");
-                    tcs.TrySetResult(string.Empty);
                 }
-                else
-                {
-                    tcs.TrySetResult(fullTranscript.ToString().Trim());
-                }
+                tcs.TrySetResult(fullTranscript.ToString().Trim());
             };
 
             await recognizer.StartContinuousRecognitionAsync();
             await Task.Delay(100); // Small delay to ensure recognition starts
-            
+
             // Wait up to 30 seconds for recognition to complete
             var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(TimeSpan.FromSeconds(30)));
             await recognizer.StopContinuousRecognitionAsync();
 
-            string finalTranscript;
             if (completedTask == tcs.Task)
             {
-                finalTranscript = await tcs.Task;
+                return await tcs.Task;
             }
             else
             {
                 Console.WriteLine($"[AzureSpeech] Pass 1 - Timeout. Using partial transcript.");
-                finalTranscript = fullTranscript.ToString().Trim();
+                return fullTranscript.ToString().Trim();
             }
+        }
 
-            // If no transcript, return error
-            if (string.IsNullOrWhiteSpace(finalTranscript))
+        /// <summary>
+        /// Helper method: Pass 2 - Pronunciation assessment with reference text
+        /// </summary>
+        private async Task<PronunciationAssessmentResult> PerformPronunciationAssessment(System.IO.MemoryStream mp3Stream, string referenceText, string language = null)
+        {
+            try
             {
-                return new SpeechAnalysisDTO { ErrorMessage = "No speech recognized" };
-            }
+                using var mp3Reader = new Mp3FileReader(mp3Stream);
+                var pcm16kMonoFormat = new WaveFormat(16000, 16, 1);
+                using var resampler = new MediaFoundationResampler(mp3Reader, pcm16kMonoFormat) { ResamplerQuality = 60 };
 
-            // ===== PASS 2: Pronunciation Assessment with full transcript as reference =====
-            Console.WriteLine($"[AzureSpeech] Pass 2 - Starting pronunciation assessment with transcript as reference");
-            
-            // Re-download and process audio for Pass 2
-            using var http2 = new HttpClient();
-            using var response2 = await http2.GetAsync(audioUrl, HttpCompletionOption.ResponseHeadersRead);
-            if (!response2.IsSuccessStatusCode)
-            {
-                // If can't re-download, return transcript with default scores
-                Console.WriteLine($"[AzureSpeech] Pass 2 - Failed to re-download audio. Using default pronunciation scores.");
-                return new SpeechAnalysisDTO
+                var wavFormat = AudioStreamFormat.GetWaveFormatPCM((uint)pcm16kMonoFormat.SampleRate, (byte)pcm16kMonoFormat.BitsPerSample, (byte)pcm16kMonoFormat.Channels);
+                using var audioInputStream = AudioInputStream.CreatePushStream(wavFormat);
+                using var audioConfig = AudioConfig.FromStreamInput(audioInputStream);
+                using var recognizer = string.IsNullOrWhiteSpace(language)
+                    ? new SpeechRecognizer(_speechConfig, audioConfig)
+                    : new SpeechRecognizer(_speechConfig, language, audioConfig);
+
+                // Configure Pronunciation Assessment
+                var pronunciationConfig = new PronunciationAssessmentConfig(
+                    referenceText: referenceText,
+                    gradingSystem: GradingSystem.HundredMark,
+                    granularity: Granularity.Phoneme,
+                    enableMiscue: false);
+                pronunciationConfig.ApplyTo(recognizer);
+
+                // Write audio data
+                byte[] buffer = new byte[8192];
+                int bytesRead;
+                while ((bytesRead = resampler.Read(buffer, 0, buffer.Length)) > 0)
                 {
-                    Transcript = finalTranscript,
-                    PronunciationScore = 70,
-                    AccuracyScore = 70,
-                    FluencyScore = 70,
-                    CompletenessScore = 70
-                };
-            }
+                    audioInputStream.Write(buffer, bytesRead);
+                }
+                audioInputStream.Close();
 
-            var mp3Bytes2 = await response2.Content.ReadAsByteArrayAsync();
-            using var networkStream2 = new System.IO.MemoryStream(mp3Bytes2, writable: false);
-            using var mp3Reader2 = new Mp3FileReader(networkStream2);
-            var pcm16kMonoFormat2 = new WaveFormat(16000, 16, 1);
-            using var resampler2 = new MediaFoundationResampler(mp3Reader2, pcm16kMonoFormat2) { ResamplerQuality = 60 };
+                var result = await recognizer.RecognizeOnceAsync();
 
-            var wavFormat2 = AudioStreamFormat.GetWaveFormatPCM((uint)pcm16kMonoFormat2.SampleRate, (byte)pcm16kMonoFormat2.BitsPerSample, (byte)pcm16kMonoFormat2.Channels);
-            using var audioInputStream2 = AudioInputStream.CreatePushStream(wavFormat2);
-            using var audioConfig2 = AudioConfig.FromStreamInput(audioInputStream2);
-            using var recognizer2 = string.IsNullOrWhiteSpace(language)
-                ? new SpeechRecognizer(_speechConfig, audioConfig2)
-                : new SpeechRecognizer(_speechConfig, language, audioConfig2);
-
-            // Configure Pronunciation Assessment with the ACTUAL transcript as reference
-            var pronunciationConfig = new PronunciationAssessmentConfig(
-                referenceText: finalTranscript,
-                gradingSystem: GradingSystem.HundredMark,
-                granularity: Granularity.Phoneme,
-                enableMiscue: false);
-            pronunciationConfig.ApplyTo(recognizer2);
-
-            byte[] buffer2 = new byte[8192];
-            int bytesRead2;
-            while ((bytesRead2 = resampler2.Read(buffer2, 0, buffer2.Length)) > 0)
-            {
-                audioInputStream2.Write(buffer2, bytesRead2);
-            }
-            audioInputStream2.Close();
-
-            var pronunciationResult = await recognizer2.RecognizeOnceAsync();
-            
-            if (pronunciationResult.Reason == ResultReason.RecognizedSpeech)
-            {
-                var pronAssessment = PronunciationAssessmentResult.FromResult(pronunciationResult);
-                Console.WriteLine($"[AzureSpeech] Pass 2 - Pronunciation scores: P={pronAssessment.PronunciationScore:F1}, A={pronAssessment.AccuracyScore:F1}, F={pronAssessment.FluencyScore:F1}, C={pronAssessment.CompletenessScore:F1}");
-                
-                return new SpeechAnalysisDTO
+                if (result.Reason == ResultReason.RecognizedSpeech)
                 {
-                    Transcript = finalTranscript,
-                    PronunciationScore = pronAssessment.PronunciationScore,
-                    AccuracyScore = pronAssessment.AccuracyScore,
-                    FluencyScore = pronAssessment.FluencyScore,
-                    CompletenessScore = pronAssessment.CompletenessScore
-                };
-            }
-            else
-            {
-                Console.WriteLine($"[AzureSpeech] Pass 2 - Pronunciation assessment failed. Using default scores.");
-                return new SpeechAnalysisDTO
+                    return PronunciationAssessmentResult.FromResult(result);
+                }
+                else
                 {
-                    Transcript = finalTranscript,
-                    PronunciationScore = 70,
-                    AccuracyScore = 70,
-                    FluencyScore = 70,
-                    CompletenessScore = 70
-                };
+                    Console.WriteLine($"[AzureSpeech] Pass 2 - Recognition failed: {result.Reason}");
+                    return null;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[AzureSpeech] Pass 2 - Exception: {ex.Message}");
+                return null;
             }
         }
 
         public async Task<string> RecognizeFromUrlAsync(string audioUrl, string language = null)
         {
-            using var http = new HttpClient();
+            // ✅ FIX Bug #3: Use IHttpClientFactory
+            var http = _httpClientFactory.CreateClient();
             using var response = await http.GetAsync(audioUrl, HttpCompletionOption.ResponseHeadersRead);
             if (!response.IsSuccessStatusCode)
             {
