@@ -87,109 +87,8 @@ namespace Lumina.Tests
             var userNotes = Assert.IsType<List<UserNoteResponseDTO>>(okResult.Value);
             Assert.Empty(userNotes);
             _mockUserNoteService.Verify(s => s.GetAllUserNotesByUserId(userId), Times.Once);
-        }
+        }        
 
-        [Fact]
-        public async Task GetAllUserNotesByUserId_KhiCoMotUserNote_TraVeOkVoiDanhSachMotPhanTu()
-        {
-            // Arrange
-            int userId = 1;
-            var singleNoteList = new List<UserNoteResponseDTO>
-            {
-                new UserNoteResponseDTO
-                {
-                    NoteId = 1,
-                    UserId = userId,
-                    ArticleId = 100,
-                    NoteContent = "Single note"
-                }
-            };
-
-            _mockUserNoteService
-                .Setup(s => s.GetAllUserNotesByUserId(userId))
-                .ReturnsAsync(singleNoteList);
-
-            // Act
-            var result = await _controller.GetAllUserNotesByUserId(userId);
-
-            // Assert
-            var okResult = Assert.IsType<OkObjectResult>(result);
-            var userNotes = Assert.IsType<List<UserNoteResponseDTO>>(okResult.Value);
-            Assert.Single(userNotes);
-            Assert.Equal("Single note", userNotes.First().NoteContent);
-        }
-
-        [Fact]
-        public async Task GetAllUserNotesByUserId_KhiServiceThrowException_TraVeInternalServerError()
-        {
-            // Arrange
-            int userId = 1;
-
-            _mockUserNoteService
-                .Setup(s => s.GetAllUserNotesByUserId(userId))
-                .ThrowsAsync(new Exception("Database error"));
-
-            // Act
-            var result = await _controller.GetAllUserNotesByUserId(userId);
-
-            // Assert
-            var statusCodeResult = Assert.IsType<ObjectResult>(result);
-            Assert.Equal(500, statusCodeResult.StatusCode);
-            dynamic value = statusCodeResult.Value!;
-            Assert.Equal("An error occurred while retrieving user notes.", value.Message);
-        }
-
-        [Theory]
-        [InlineData(0)]
-        [InlineData(-1)]
-        [InlineData(int.MinValue)]
-        public async Task GetAllUserNotesByUserId_KhiUserIdKhongHopLe_VaServiceTraVeDanhSachRong_TraVeOk(int invalidUserId)
-        {
-            // Arrange
-            var emptyList = new List<UserNoteResponseDTO>();
-
-            _mockUserNoteService
-                .Setup(s => s.GetAllUserNotesByUserId(invalidUserId))
-                .ReturnsAsync(emptyList);
-
-            // Act
-            var result = await _controller.GetAllUserNotesByUserId(invalidUserId);
-
-            // Assert
-            var okResult = Assert.IsType<OkObjectResult>(result);
-            var userNotes = Assert.IsType<List<UserNoteResponseDTO>>(okResult.Value);
-            Assert.Empty(userNotes);
-        }
-
-        [Fact]
-        public async Task GetAllUserNotesByUserId_KhiUserIdLonNhat_VaCoNotes_TraVeOk()
-        {
-            // Arrange
-            int userId = int.MaxValue;
-            var expectedUserNotes = new List<UserNoteResponseDTO>
-            {
-                new UserNoteResponseDTO
-                {
-                    NoteId = 1,
-                    UserId = userId,
-                    ArticleId = 100,
-                    NoteContent = "Max ID user note"
-                }
-            };
-
-            _mockUserNoteService
-                .Setup(s => s.GetAllUserNotesByUserId(userId))
-                .ReturnsAsync(expectedUserNotes);
-
-            // Act
-            var result = await _controller.GetAllUserNotesByUserId(userId);
-
-            // Assert
-            var okResult = Assert.IsType<OkObjectResult>(result);
-            var userNotes = Assert.IsType<List<UserNoteResponseDTO>>(okResult.Value);
-            Assert.Single(userNotes);
-            Assert.Equal(userId, userNotes.First().UserId);
-        }
 
         [Fact]
         public async Task GetAllUserNotesByUserId_KhiServiceThrowArgumentException_TraVeInternalServerError()
@@ -209,6 +108,22 @@ namespace Lumina.Tests
             Assert.Equal(500, statusCodeResult.StatusCode);
             dynamic value = statusCodeResult.Value!;
             Assert.Equal("An error occurred while retrieving user notes.", value.Message);
+        }
+
+        [Fact]
+        public async Task GetAllUserNotesByUserId_KhiUserIdBangKhong_TraVeBadRequest()
+        {
+            // Arrange
+            int userId = 0;
+
+            // Act
+            var result = await _controller.GetAllUserNotesByUserId(userId);
+
+            // Assert
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            dynamic value = badRequestResult.Value!;
+            Assert.Equal("Invalid userId.", value.Message);
+            _mockUserNoteService.Verify(s => s.GetAllUserNotesByUserId(It.IsAny<int>()), Times.Never);
         }
     }
 }

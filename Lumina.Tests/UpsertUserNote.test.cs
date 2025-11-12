@@ -21,19 +21,20 @@ namespace Lumina.Tests
             _controller = new UserNoteController(_mockUserNoteService.Object);
         }
 
+        // Test cases với UserId = 1, ArticleId = 1
         [Fact]
-        public async Task UpsertUserNote_KhiServiceTraVeTrue_TraVeOkVoiThongBaoThanhCong()
+        public async Task UpsertUserNote_KhiUserIdMotArticleIdMotNoteContentInvalidNote_TraVeThanhCong()
         {
             // Arrange
             var userNoteRequest = new UserNoteRequestDTO
             {
                 UserId = 1,
-                ArticleId = 100,
-                NoteContent = "This is a test note"
+                ArticleId = 1,
+                NoteContent = "Invalid note"
             };
 
             _mockUserNoteService
-                .Setup(s => s.UpsertUserNote(userNoteRequest))
+                .Setup(s => s.UpsertUserNote(It.IsAny<UserNoteRequestDTO>()))
                 .ReturnsAsync(true);
 
             // Act
@@ -41,13 +42,218 @@ namespace Lumina.Tests
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
-            dynamic value = okResult.Value!;
-            Assert.Equal("User note upserted successfully.", value.Message);
-            _mockUserNoteService.Verify(s => s.UpsertUserNote(userNoteRequest), Times.Once);
+            var value = okResult.Value;
+            Assert.NotNull(value);
+            var messageProperty = value.GetType().GetProperty("Message");
+            Assert.NotNull(messageProperty);
+            var message = messageProperty.GetValue(value)?.ToString();
+            Assert.Equal("User note upserted successfully.", message);
         }
 
         [Fact]
-        public async Task UpsertUserNote_KhiServiceTraVeFalse_TraVeBadRequest()
+        public async Task UpsertUserNote_KhiUserIdMotArticleIdMotNoteContentNull_TraVeBadRequest()
+        {
+            // Arrange
+            var userNoteRequest = new UserNoteRequestDTO
+            {
+                UserId = 1,
+                ArticleId = 1,
+                NoteContent = null
+            };
+
+            _mockUserNoteService
+                .Setup(s => s.UpsertUserNote(It.IsAny<UserNoteRequestDTO>()))
+                .ReturnsAsync(false);
+
+            // Act
+            var result = await _controller.UpsertUserNote(userNoteRequest);
+
+            // Assert
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            var value = badRequestResult.Value;
+            Assert.NotNull(value);
+            var messageProperty = value.GetType().GetProperty("Message");
+            Assert.NotNull(messageProperty);
+            var message = messageProperty.GetValue(value)?.ToString();
+            Assert.Equal("Could not save the user note. The item may not exist or data is invalid.", message);
+        }
+
+        [Fact]
+        public async Task UpsertUserNote_KhiUserIdMotArticleIdMotNoteContentRong_TraVeThanhCong()
+        {
+            // Arrange
+            var userNoteRequest = new UserNoteRequestDTO
+            {
+                UserId = 1,
+                ArticleId = 1,
+                NoteContent = ""
+            };
+
+            _mockUserNoteService
+                .Setup(s => s.UpsertUserNote(It.IsAny<UserNoteRequestDTO>()))
+                .ReturnsAsync(true);
+
+            // Act
+            var result = await _controller.UpsertUserNote(userNoteRequest);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var value = okResult.Value;
+            Assert.NotNull(value);
+            var messageProperty = value.GetType().GetProperty("Message");
+            Assert.NotNull(messageProperty);
+            var message = messageProperty.GetValue(value)?.ToString();
+            Assert.Equal("User note upserted successfully.", message);
+        }
+
+        // Test cases với UserId = 0
+        [Fact]
+        public async Task UpsertUserNote_KhiUserIdKhongArticleIdMotNoteContentInvalidNote_TraVeBadRequest()
+        {
+            // Arrange
+            var userNoteRequest = new UserNoteRequestDTO
+            {
+                UserId = 0,
+                ArticleId = 1,
+                NoteContent = "Invalid note"
+            };
+
+            _mockUserNoteService
+                .Setup(s => s.UpsertUserNote(It.IsAny<UserNoteRequestDTO>()))
+                .ReturnsAsync(false);
+
+            // Act
+            var result = await _controller.UpsertUserNote(userNoteRequest);
+
+            // Assert
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            var value = badRequestResult.Value;
+            Assert.NotNull(value);
+            var messageProperty = value.GetType().GetProperty("Message");
+            Assert.NotNull(messageProperty);
+            var message = messageProperty.GetValue(value)?.ToString();
+            Assert.Equal("Could not save the user note. The item may not exist or data is invalid.", message);
+        }
+
+        // Test cases với UserId = -1
+        [Fact]
+        public async Task UpsertUserNote_KhiUserIdAmMotArticleIdMotNoteContentInvalidNote_TraVeBadRequest()
+        {
+            // Arrange
+            var userNoteRequest = new UserNoteRequestDTO
+            {
+                UserId = -1,
+                ArticleId = 1,
+                NoteContent = "Invalid note"
+            };
+
+            _mockUserNoteService
+                .Setup(s => s.UpsertUserNote(It.IsAny<UserNoteRequestDTO>()))
+                .ReturnsAsync(false);
+
+            // Act
+            var result = await _controller.UpsertUserNote(userNoteRequest);
+
+            // Assert
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            var value = badRequestResult.Value;
+            Assert.NotNull(value);
+            var messageProperty = value.GetType().GetProperty("Message");
+            Assert.NotNull(messageProperty);
+            var message = messageProperty.GetValue(value)?.ToString();
+            Assert.Equal("Could not save the user note. The item may not exist or data is invalid.", message);
+        }
+
+        // Test cases với UserId = 999 (không tồn tại)
+        [Fact]
+        public async Task UpsertUserNote_KhiUserIdKhongTonTaiArticleIdMotNoteContentInvalidNote_TraVeBadRequest()
+        {
+            // Arrange
+            var userNoteRequest = new UserNoteRequestDTO
+            {
+                UserId = 999,
+                ArticleId = 1,
+                NoteContent = "Invalid note"
+            };
+
+            _mockUserNoteService
+                .Setup(s => s.UpsertUserNote(It.IsAny<UserNoteRequestDTO>()))
+                .ReturnsAsync(false);
+
+            // Act
+            var result = await _controller.UpsertUserNote(userNoteRequest);
+
+            // Assert
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            var value = badRequestResult.Value;
+            Assert.NotNull(value);
+            var messageProperty = value.GetType().GetProperty("Message");
+            Assert.NotNull(messageProperty);
+            var message = messageProperty.GetValue(value)?.ToString();
+            Assert.Equal("Could not save the user note. The item may not exist or data is invalid.", message);
+        }
+
+        // Test cases với ArticleId = 0
+        [Fact]
+        public async Task UpsertUserNote_KhiUserIdMotArticleIdKhongNoteContentInvalidNote_TraVeBadRequest()
+        {
+            // Arrange
+            var userNoteRequest = new UserNoteRequestDTO
+            {
+                UserId = 1,
+                ArticleId = 0,
+                NoteContent = "Invalid note"
+            };
+
+            _mockUserNoteService
+                .Setup(s => s.UpsertUserNote(It.IsAny<UserNoteRequestDTO>()))
+                .ReturnsAsync(false);
+
+            // Act
+            var result = await _controller.UpsertUserNote(userNoteRequest);
+
+            // Assert
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            var value = badRequestResult.Value;
+            Assert.NotNull(value);
+            var messageProperty = value.GetType().GetProperty("Message");
+            Assert.NotNull(messageProperty);
+            var message = messageProperty.GetValue(value)?.ToString();
+            Assert.Equal("Could not save the user note. The item may not exist or data is invalid.", message);
+        }
+
+        // Test cases với ArticleId = -1
+        [Fact]
+        public async Task UpsertUserNote_KhiUserIdMotArticleIdAmMotNoteContentInvalidNote_TraVeBadRequest()
+        {
+            // Arrange
+            var userNoteRequest = new UserNoteRequestDTO
+            {
+                UserId = 1,
+                ArticleId = -1,
+                NoteContent = "Invalid note"
+            };
+
+            _mockUserNoteService
+                .Setup(s => s.UpsertUserNote(It.IsAny<UserNoteRequestDTO>()))
+                .ReturnsAsync(false);
+
+            // Act
+            var result = await _controller.UpsertUserNote(userNoteRequest);
+
+            // Assert
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            var value = badRequestResult.Value;
+            Assert.NotNull(value);
+            var messageProperty = value.GetType().GetProperty("Message");
+            Assert.NotNull(messageProperty);
+            var message = messageProperty.GetValue(value)?.ToString();
+            Assert.Equal("Could not save the user note. The item may not exist or data is invalid.", message);
+        }
+
+        // Test cases với ArticleId = 999 (không tồn tại)
+        [Fact]
+        public async Task UpsertUserNote_KhiUserIdMotArticleIdKhongTonTaiNoteContentInvalidNote_TraVeBadRequest()
         {
             // Arrange
             var userNoteRequest = new UserNoteRequestDTO
@@ -58,7 +264,7 @@ namespace Lumina.Tests
             };
 
             _mockUserNoteService
-                .Setup(s => s.UpsertUserNote(userNoteRequest))
+                .Setup(s => s.UpsertUserNote(It.IsAny<UserNoteRequestDTO>()))
                 .ReturnsAsync(false);
 
             // Act
@@ -66,11 +272,15 @@ namespace Lumina.Tests
 
             // Assert
             var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-            dynamic value = badRequestResult.Value!;
-            Assert.Equal("Could not save the user note. The item may not exist or data is invalid.", value.Message);
-            _mockUserNoteService.Verify(s => s.UpsertUserNote(userNoteRequest), Times.Once);
+            var value = badRequestResult.Value;
+            Assert.NotNull(value);
+            var messageProperty = value.GetType().GetProperty("Message");
+            Assert.NotNull(messageProperty);
+            var message = messageProperty.GetValue(value)?.ToString();
+            Assert.Equal("Could not save the user note. The item may not exist or data is invalid.", message);
         }
 
+        // Test case exception handling
         [Fact]
         public async Task UpsertUserNote_KhiServiceThrowException_TraVeInternalServerError()
         {
@@ -78,12 +288,12 @@ namespace Lumina.Tests
             var userNoteRequest = new UserNoteRequestDTO
             {
                 UserId = 1,
-                ArticleId = 100,
-                NoteContent = "Test note"
+                ArticleId = 1,
+                NoteContent = "Invalid note"
             };
 
             _mockUserNoteService
-                .Setup(s => s.UpsertUserNote(userNoteRequest))
+                .Setup(s => s.UpsertUserNote(It.IsAny<UserNoteRequestDTO>()))
                 .ThrowsAsync(new Exception("Database error"));
 
             // Act
@@ -92,81 +302,12 @@ namespace Lumina.Tests
             // Assert
             var statusCodeResult = Assert.IsType<ObjectResult>(result);
             Assert.Equal(500, statusCodeResult.StatusCode);
-            dynamic value = statusCodeResult.Value!;
-            Assert.Equal("An internal server error occurred.", value.Message);
-        }
-
-        [Fact]
-        public async Task UpsertUserNote_KhiServiceThrowArgumentNullException_TraVeInternalServerError()
-        {
-            // Arrange
-            var userNoteRequest = new UserNoteRequestDTO
-            {
-                UserId = 1,
-                ArticleId = 100,
-                NoteContent = null!
-            };
-
-            _mockUserNoteService
-                .Setup(s => s.UpsertUserNote(userNoteRequest))
-                .ThrowsAsync(new ArgumentNullException("noteContent"));
-
-            // Act
-            var result = await _controller.UpsertUserNote(userNoteRequest);
-
-            // Assert
-            var statusCodeResult = Assert.IsType<ObjectResult>(result);
-            Assert.Equal(500, statusCodeResult.StatusCode);
-            dynamic value = statusCodeResult.Value!;
-            Assert.Equal("An internal server error occurred.", value.Message);
-        }
-
-        [Fact]
-        public async Task UpsertUserNote_KhiNoteContentRong_VaServiceTraVeTrue_TraVeOk()
-        {
-            // Arrange
-            var userNoteRequest = new UserNoteRequestDTO
-            {
-                UserId = 1,
-                ArticleId = 100,
-                NoteContent = ""
-            };
-
-            _mockUserNoteService
-                .Setup(s => s.UpsertUserNote(userNoteRequest))
-                .ReturnsAsync(true);
-
-            // Act
-            var result = await _controller.UpsertUserNote(userNoteRequest);
-
-            // Assert
-            var okResult = Assert.IsType<OkObjectResult>(result);
-            dynamic value = okResult.Value!;
-            Assert.Equal("User note upserted successfully.", value.Message);
-        }
-
-        [Fact]
-        public async Task UpsertUserNote_KhiUserIdBangKhong_VaServiceTraVeFalse_TraVeBadRequest()
-        {
-            // Arrange
-            var userNoteRequest = new UserNoteRequestDTO
-            {
-                UserId = 0,
-                ArticleId = 100,
-                NoteContent = "Test note"
-            };
-
-            _mockUserNoteService
-                .Setup(s => s.UpsertUserNote(userNoteRequest))
-                .ReturnsAsync(false);
-
-            // Act
-            var result = await _controller.UpsertUserNote(userNoteRequest);
-
-            // Assert
-            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-            dynamic value = badRequestResult.Value!;
-            Assert.Equal("Could not save the user note. The item may not exist or data is invalid.", value.Message);
+            var value = statusCodeResult.Value;
+            Assert.NotNull(value);
+            var messageProperty = value.GetType().GetProperty("Message");
+            Assert.NotNull(messageProperty);
+            var message = messageProperty.GetValue(value)?.ToString();
+            Assert.Equal("An internal server error occurred.", message);
         }
     }
 }

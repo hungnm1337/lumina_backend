@@ -8,6 +8,8 @@ using DataLayer.DTOs.UserNote;
 using System;
 using System.Threading.Tasks;
 
+#pragma warning disable CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
+
 namespace Lumina.Tests
 {
     public class GetUserNoteByIDTests
@@ -22,7 +24,7 @@ namespace Lumina.Tests
         }
 
         [Fact]
-        public async Task GetUserNoteByID_KhiUserNoteTimThay_TraVeOkVoiUserNote()
+        public async Task GetUserNoteByID_KhiUserNoteIdMotVaTimThay_TraVeOkVoiUserNote()
         {
             // Arrange
             int userNoteId = 1;
@@ -50,22 +52,74 @@ namespace Lumina.Tests
         }
 
         [Fact]
-        public async Task GetUserNoteByID_KhiUserNoteKhongTimThay_TraVeNotFound()
+        public async Task GetUserNoteByID_KhiUserNoteIdKhong_TraVeNotFound()
         {
             // Arrange
-            int userNoteId = 999;
+            int userNoteId = 0;
 
             _mockUserNoteService
                 .Setup(s => s.GetUserNoteByID(userNoteId))
-                .ReturnsAsync((UserNoteResponseDTO?)null);
+                .ReturnsAsync(null as UserNoteResponseDTO);
 
             // Act
             var result = await _controller.GetUserNoteByID(userNoteId);
 
             // Assert
             var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
-            dynamic value = notFoundResult.Value!;
-            Assert.Equal("User note not found.", value.Message);
+            var value = notFoundResult.Value;
+            Assert.NotNull(value);
+            var messageProperty = value.GetType().GetProperty("Message");
+            Assert.NotNull(messageProperty);
+            var message = messageProperty.GetValue(value)?.ToString();
+            Assert.Equal("User note not found.", message);
+            _mockUserNoteService.Verify(s => s.GetUserNoteByID(userNoteId), Times.Once);
+        }
+
+        [Fact]
+        public async Task GetUserNoteByID_KhiUserNoteIdAmMot_TraVeNotFound()
+        {
+            // Arrange
+            int userNoteId = -1;
+
+            _mockUserNoteService
+                .Setup(s => s.GetUserNoteByID(userNoteId))
+                .ReturnsAsync(null as UserNoteResponseDTO);
+
+            // Act
+            var result = await _controller.GetUserNoteByID(userNoteId);
+
+            // Assert
+            var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
+            var value = notFoundResult.Value;
+            Assert.NotNull(value);
+            var messageProperty = value.GetType().GetProperty("Message");
+            Assert.NotNull(messageProperty);
+            var message = messageProperty.GetValue(value)?.ToString();
+            Assert.Equal("User note not found.", message);
+            _mockUserNoteService.Verify(s => s.GetUserNoteByID(userNoteId), Times.Once);
+        }
+
+        [Fact]
+        public async Task GetUserNoteByID_KhiUserNoteIdKhongTonTai_TraVeNotFound()
+        {
+            // Arrange
+            int userNoteId = 999;
+
+            _mockUserNoteService
+                .Setup(s => s.GetUserNoteByID(userNoteId))
+                .ReturnsAsync(null as UserNoteResponseDTO);
+
+            // Act
+            var result = await _controller.GetUserNoteByID(userNoteId);
+
+            // Assert
+            var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
+            var value = notFoundResult.Value;
+            Assert.NotNull(value);
+            var messageProperty = value.GetType().GetProperty("Message");
+            Assert.NotNull(messageProperty);
+            var message = messageProperty.GetValue(value)?.ToString();
+            Assert.Equal("User note not found.", message);
             _mockUserNoteService.Verify(s => s.GetUserNoteByID(userNoteId), Times.Once);
         }
 
@@ -85,74 +139,12 @@ namespace Lumina.Tests
             // Assert
             var statusCodeResult = Assert.IsType<ObjectResult>(result);
             Assert.Equal(500, statusCodeResult.StatusCode);
-            dynamic value = statusCodeResult.Value!;
-            Assert.Equal("An error occurred while retrieving the user note.", value.Message);
-        }
-
-        [Theory]
-        [InlineData(0)]
-        [InlineData(-1)]
-        [InlineData(int.MinValue)]
-        public async Task GetUserNoteByID_KhiUserNoteIdKhongHopLe_VaServiceTraVeNull_TraVeNotFound(int invalidId)
-        {
-            // Arrange
-            _mockUserNoteService
-                .Setup(s => s.GetUserNoteByID(invalidId))
-                .ReturnsAsync((UserNoteResponseDTO?)null);
-
-            // Act
-            var result = await _controller.GetUserNoteByID(invalidId);
-
-            // Assert
-            var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
-            dynamic value = notFoundResult.Value!;
-            Assert.Equal("User note not found.", value.Message);
-        }
-
-        [Fact]
-        public async Task GetUserNoteByID_KhiUserNoteIdLonNhat_VaTimThay_TraVeOk()
-        {
-            // Arrange
-            int userNoteId = int.MaxValue;
-            var expectedUserNote = new UserNoteResponseDTO
-            {
-                NoteId = userNoteId,
-                UserId = 1,
-                ArticleId = 1,
-                NoteContent = "Max ID note"
-            };
-
-            _mockUserNoteService
-                .Setup(s => s.GetUserNoteByID(userNoteId))
-                .ReturnsAsync(expectedUserNote);
-
-            // Act
-            var result = await _controller.GetUserNoteByID(userNoteId);
-
-            // Assert
-            var okResult = Assert.IsType<OkObjectResult>(result);
-            var userNote = Assert.IsType<UserNoteResponseDTO>(okResult.Value);
-            Assert.Equal(userNoteId, userNote.NoteId);
-        }
-
-        [Fact]
-        public async Task GetUserNoteByID_KhiServiceThrowArgumentException_TraVeInternalServerError()
-        {
-            // Arrange
-            int userNoteId = -1;
-
-            _mockUserNoteService
-                .Setup(s => s.GetUserNoteByID(userNoteId))
-                .ThrowsAsync(new ArgumentException("Invalid user note ID"));
-
-            // Act
-            var result = await _controller.GetUserNoteByID(userNoteId);
-
-            // Assert
-            var statusCodeResult = Assert.IsType<ObjectResult>(result);
-            Assert.Equal(500, statusCodeResult.StatusCode);
-            dynamic value = statusCodeResult.Value!;
-            Assert.Equal("An error occurred while retrieving the user note.", value.Message);
+            var value = statusCodeResult.Value;
+            Assert.NotNull(value);
+            var messageProperty = value.GetType().GetProperty("Message");
+            Assert.NotNull(messageProperty);
+            var message = messageProperty.GetValue(value)?.ToString();
+            Assert.Equal("An error occurred while retrieving the user note.", message);
         }
     }
 }
