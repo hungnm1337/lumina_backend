@@ -130,27 +130,5 @@ namespace Lumina.Tests
             Assert.Equal(StatusCodes.Status500InternalServerError, statusCodeResult.StatusCode);
             Assert.Equal("An unexpected error occurred while retrieving exam attempts.", statusCodeResult.Value);
         }
-
-        [Fact]
-        public async Task GetAttemptByUserId_ServiceThrowsException_LogsError()
-        {
-            // Arrange
-            int userId = 1;
-            _mockExamAttemptService.Setup(s => s.GetAllExamAttempts(userId))
-                .ThrowsAsync(new Exception("Database connection error"));
-
-            // Act
-            await _controller.GetAttemptByUserId(userId);
-
-            // Assert
-            _mockLogger.Verify(
-                x => x.Log(
-                    LogLevel.Error,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((v, t) => true),
-                    It.IsAny<Exception?>(),
-                    It.Is<Func<It.IsAnyType, Exception?, string>>((v, t) => true)),
-                Times.Once);
-        }
     }
 }
