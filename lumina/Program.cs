@@ -71,6 +71,8 @@ namespace lumina
 
             builder.Services.AddScoped<IAzureSpeechService, AzureSpeechService>();
 
+            // ✅ FIX Bug #2: Register ScoringWeightService for consistent scoring
+            builder.Services.AddScoped<IScoringWeightService, ScoringWeightService>();
             builder.Services.AddScoped<ISpeakingScoringService, SpeakingScoringService>();
             builder.Services.AddScoped<IListeningService, ListeningService>();
             builder.Services.AddScoped<IReadingService, ReadingService>();

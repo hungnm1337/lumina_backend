@@ -28,20 +28,20 @@ namespace Lumina.Tests
             // Arrange
             var request = new LoginRequestDTO
             {
-                Username = "testuser",
-                Password = "password123"
+                Username = "hoangthuy123",
+                Password = "@HoangThuy123"
             };
 
             var expectedResponse = new LoginResponse
             {
-                Token = "test-token",
+                Token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0IiwiZW1haWwiOiJ0aGFuZ3ZjaGUxNzkwMDNAZnB0LmVkdS52biIsInVuaXF1ZV9uYW1lIjoiVHJ1bmcgVsSDbiBUdXnhur9uIiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbmFtZWlkZW50aWZpZXIiOiI0IiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvZW1haWxhZGRyZXNzIjoidGhhbmd2Y2hlMTc5MDAzQGZwdC5lZHUudm4iLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiVHJ1bmcgVsSDbiBUdXnhur9uIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjoiVXNlciIsIm5iZiI6MTc2MjgxODIzMiwiZXhwIjoxNzYyODIxODMyLCJpc3MiOiJMdW1pbmEiLCJhdWQiOiJMdW1pbmFGcm9udGVuZCJ9.IsN1aRYt8hiV_9dhwvseGCfabjMueatuUjibOqjDvdQ",
                 ExpiresIn = 3600,
                 User = new AuthUserResponse
                 {
                     Id = "1",
-                    Username = "testuser",
-                    Email = "test@example.com",
-                    Name = "Test User"
+                    Username = "hoangthuy123",
+                    Email = "hoangthuy123@gmail.com",
+                    Name = "Hoang Thuy"
                 }
             };
 
@@ -67,13 +67,13 @@ namespace Lumina.Tests
             // Arrange
             var request = new LoginRequestDTO
             {
-                Username = "testuser",
-                Password = "password123"
+                Username = "hoangthuy123",
+                Password = "@HoangThuy123"
             };
 
             var expectedResponse = new LoginResponse
             {
-                Token = "test-token",
+                Token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0IiwiZW1haWwiOiJ0aGFuZ3ZjaGUxNzkwMDNAZnB0LmVkdS52biIsInVuaXF1ZV9uYW1lIjoiVHJ1bmcgVsSDbiBUdXnhur9uIiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbmFtZWlkZW50aWZpZXIiOiI0IiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvZW1haWxhZGRyZXNzIjoidGhhbmd2Y2hlMTc5MDAzQGZwdC5lZHUudm4iLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiVHJ1bmcgVsSDbiBUdXnhur9uIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjoiVXNlciIsIm5iZiI6MTc2MjgxODIzMiwiZXhwIjoxNzYyODIxODMyLCJpc3MiOiJMdW1pbmEiLCJhdWQiOiJMdW1pbmFGcm9udGVuZCJ9.IsN1aRYt8hiV_9dhwvseGCfabjMueatuUjibOqjDvdQ",
                 ExpiresIn = 3600,
                 User = new AuthUserResponse()
             };
@@ -100,8 +100,8 @@ namespace Lumina.Tests
             // Arrange
             var request = new LoginRequestDTO
             {
-                Username = "testuser",
-                Password = "password123"
+                Username = "",
+                Password = "@HoangThuy456"
             };
 
             _controller.ModelState.AddModelError("Username", "Username is required");

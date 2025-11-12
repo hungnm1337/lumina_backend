@@ -41,6 +41,10 @@ namespace DataLayer.Models
         [Column(TypeName = "decimal(5,2)")]
         public decimal? ContentScore { get; set; }
 
+
+        [Column(TypeName = "decimal(5,2)")]
+        public decimal? OverallScore { get; set; }
+
         [MaxLength(500)]
         public string AudioUrl { get; set; }
 
