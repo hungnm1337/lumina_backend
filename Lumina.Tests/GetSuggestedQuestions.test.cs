@@ -110,8 +110,13 @@ namespace Lumina.Tests
 
             // Assert
             var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-            dynamic value = badRequestResult.Value!;
-            Assert.Equal("Lesson content cannot be empty.", value.Message);
+            var value = badRequestResult.Value;
+            Assert.NotNull(value);
+            
+            var messageProperty = value.GetType().GetProperty("Message");
+            Assert.NotNull(messageProperty);
+            var message = messageProperty.GetValue(value)?.ToString();
+            Assert.Equal("Lesson content cannot be empty.", message);
         }
 
         [Theory]
@@ -133,8 +138,13 @@ namespace Lumina.Tests
 
             // Assert
             var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-            dynamic value = badRequestResult.Value!;
-            Assert.Equal("Lesson content cannot be empty.", value.Message);
+            var value = badRequestResult.Value;
+            Assert.NotNull(value);
+            
+            var messageProperty = value.GetType().GetProperty("Message");
+            Assert.NotNull(messageProperty);
+            var message = messageProperty.GetValue(value)?.ToString();
+            Assert.Equal("Lesson content cannot be empty.", message);
         }
 
         [Fact]
@@ -201,9 +211,15 @@ namespace Lumina.Tests
             // Assert
             var statusCodeResult = Assert.IsType<ObjectResult>(result);
             Assert.Equal(500, statusCodeResult.StatusCode);
-            dynamic value = statusCodeResult.Value!;
-            Assert.Equal("An unexpected error occurred while generating suggested questions.", 
-                value.Message);
+            
+            var value = statusCodeResult.Value;
+            Assert.NotNull(value);
+            
+            var messageProperty = value.GetType().GetProperty("Message");
+            Assert.NotNull(messageProperty);
+            var message = messageProperty.GetValue(value)?.ToString();
+            Assert.Equal("An unexpected error occurred while generating suggested questions.", message);
+            
             _mockLogger.Verify(x => x.Log(
                 LogLevel.Error,
                 It.IsAny<EventId>(),

@@ -59,10 +59,25 @@ namespace Lumina.Tests
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
-            dynamic value = okResult.Value!;
-            Assert.Equal("TOEIC is a standardized test of English proficiency.", value.Answer);
-            Assert.Equal(2, ((List<string>)value.SuggestedQuestions).Count);
-            Assert.True(value.Success);
+            var value = okResult.Value;
+            Assert.NotNull(value);
+            
+            var answerProperty = value.GetType().GetProperty("Answer");
+            var suggestedQuestionsProperty = value.GetType().GetProperty("SuggestedQuestions");
+            var successProperty = value.GetType().GetProperty("Success");
+            
+            Assert.NotNull(answerProperty);
+            Assert.NotNull(suggestedQuestionsProperty);
+            Assert.NotNull(successProperty);
+            
+            var answer = answerProperty.GetValue(value)?.ToString();
+            var suggestedQuestions = suggestedQuestionsProperty.GetValue(value) as List<string>;
+            var success = (bool?)successProperty.GetValue(value);
+            
+            Assert.Equal("TOEIC is a standardized test of English proficiency.", answer);
+            Assert.NotNull(suggestedQuestions);
+            Assert.Equal(2, suggestedQuestions.Count);
+            Assert.True(success);
         }
 
         [Fact]
@@ -95,10 +110,25 @@ namespace Lumina.Tests
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
-            dynamic value = okResult.Value!;
-            Assert.Equal("TOEIC is a test.", value.Answer);
-            Assert.Single((List<string>)value.SuggestedQuestions);
-            Assert.True(value.Success);
+            var value = okResult.Value;
+            Assert.NotNull(value);
+            
+            var answerProperty = value.GetType().GetProperty("Answer");
+            var suggestedQuestionsProperty = value.GetType().GetProperty("SuggestedQuestions");
+            var successProperty = value.GetType().GetProperty("Success");
+            
+            Assert.NotNull(answerProperty);
+            Assert.NotNull(suggestedQuestionsProperty);
+            Assert.NotNull(successProperty);
+            
+            var answer = answerProperty.GetValue(value)?.ToString();
+            var suggestedQuestions = suggestedQuestionsProperty.GetValue(value) as List<string>;
+            var success = (bool?)successProperty.GetValue(value);
+            
+            Assert.Equal("TOEIC is a test.", answer);
+            Assert.NotNull(suggestedQuestions);
+            Assert.Single(suggestedQuestions);
+            Assert.True(success);
         }
 
         [Fact]
@@ -167,8 +197,15 @@ namespace Lumina.Tests
             // Assert
             var statusCodeResult = Assert.IsType<ObjectResult>(result);
             Assert.Equal(500, statusCodeResult.StatusCode);
-            dynamic value = statusCodeResult.Value!;
-            Assert.Equal("An unexpected error occurred.", value.Message);
+            
+            var value = statusCodeResult.Value;
+            Assert.NotNull(value);
+            
+            var messageProperty = value.GetType().GetProperty("Message");
+            Assert.NotNull(messageProperty);
+            var message = messageProperty.GetValue(value)?.ToString();
+            Assert.Equal("An unexpected error occurred.", message);
+            
             _mockLogger.Verify(x => x.Log(
                 LogLevel.Error,
                 It.IsAny<EventId>(),
@@ -205,8 +242,13 @@ namespace Lumina.Tests
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
-            dynamic value = okResult.Value!;
-            Assert.True(value.Success);
+            var value = okResult.Value;
+            Assert.NotNull(value);
+            
+            var successProperty = value.GetType().GetProperty("Success");
+            Assert.NotNull(successProperty);
+            var success = (bool?)successProperty.GetValue(value);
+            Assert.True(success);
         }
     }
 }
