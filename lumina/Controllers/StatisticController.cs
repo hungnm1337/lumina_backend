@@ -23,8 +23,6 @@ namespace lumina.Controllers
             _statisticService = statisticService;
         }
 
-        // ==================== CÁC API CŨ (GỌI TRỰC TIẾP) ====================
-
         /// <summary>
         /// ✅ API cũ - Thống kê dashboard cơ bản (không authorize)
         /// </summary>
@@ -462,8 +460,6 @@ namespace lumina.Controllers
                 return dateTime.ToString("dd/MM/yyyy");
         }
 
-        // ==================== CÁC API MỚI (QUA 3 LAYER) ====================
-
         /// <summary>
         /// ✅ Lấy 4 key metrics cho dashboard (Doanh thu, User mới, Chuyển đổi Pro, Tỷ lệ giữ chân)
         /// </summary>
@@ -492,7 +488,7 @@ namespace lumina.Controllers
         }
 
         /// <summary>
-        /// ✅ Lấy dữ liệu biểu đồ doanh thu theo tháng (12 tháng)
+        /// Lấy dữ liệu biểu đồ doanh thu theo tháng (12 tháng)
         /// </summary>
         [HttpGet("revenue-chart")]
         [Authorize(Roles = "Admin")]
@@ -521,7 +517,7 @@ namespace lumina.Controllers
         }
 
         /// <summary>
-        /// ✅ Lấy dữ liệu biểu đồ tăng trưởng người dùng (Free vs Pro)
+        /// Lấy dữ liệu biểu đồ tăng trưởng người dùng (Free vs Pro)
         /// </summary>
         [HttpGet("user-growth-chart")]
         [Authorize(Roles = "Admin")]
@@ -548,7 +544,7 @@ namespace lumina.Controllers
         }
 
         /// <summary>
-        /// ✅ Lấy dữ liệu phân bổ gói dịch vụ (Free, Pro 1M, Pro 6M, Pro 12M)
+        /// Lấy dữ liệu phân bổ gói dịch vụ (Free, Pro 1M, Pro 6M, Pro 12M)
         /// </summary>
         [HttpGet("plan-distribution")]
         [Authorize(Roles = "Admin")]
@@ -575,7 +571,7 @@ namespace lumina.Controllers
         }
 
         /// <summary>
-        /// ✅ Lấy dữ liệu phân tích theo ngày (bảng chi tiết)
+        /// Lấy dữ liệu phân tích theo ngày (bảng chi tiết)
         /// </summary>
         [HttpGet("daily-analytics")]
         [Authorize(Roles = "Admin")]

@@ -8,11 +8,6 @@ using System.Threading.Tasks;
 
 namespace DataLayer.DTOs.Questions
 {
-   /* public class CreatePromptWithQuestionsDTO
-    {
-        public AddPromptDTO Prompt { get; set; }
-        public List<QuestionWithOptionsDTO> Questions { get; set; }
-    }*/
 
     public class CreatePromptWithQuestionsDTO
     {
@@ -54,18 +49,4 @@ namespace DataLayer.DTOs.Questions
         public int PromptId { get; set; }
     }
 
-    public class AddPromptDTO
-    {
-
-        public int? PassageId { get; set; }
-
-        public string Skill { get; set; } = null!;
-
-        public string? ContentText { get; set; }
-
-        public string? ReferenceImageUrl { get; set; }
-
-        public string? ReferenceAudioUrl { get; set; }
-
-    }
 }

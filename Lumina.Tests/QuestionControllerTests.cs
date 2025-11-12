@@ -33,12 +33,14 @@ namespace Lumina.Tests
         [Fact]
         public async Task CreatePromptWithQuestions_ValidDto_ReturnsOkWithPromptId()
         {
-            // Arrange
+            // Arrange - ✅ BỔ SUNG ĐẦY ĐỦ TẤT CẢ PROPERTIES
             var dto = new CreatePromptWithQuestionsDTO
             {
                 Title = "Test Prompt",
                 ContentText = "Test Content",
                 Skill = "Reading",
+                ReferenceImageUrl = "https://example.com/image.jpg", // ✅ THÊM
+                ReferenceAudioUrl = "https://example.com/audio.mp3", // ✅ THÊM
                 Questions = new List<QuestionWithOptionsDTO>
                 {
                     new QuestionWithOptionsDTO
@@ -49,6 +51,7 @@ namespace Lumina.Tests
                             QuestionType = "Multiple Choice",
                             StemText = "Question 1",
                             ScoreWeight = 1,
+                            QuestionExplain = "Explanation for Q1", // ✅ THÊM
                             Time = 30,
                             QuestionNumber = 1,
                             PromptId = 1
@@ -56,7 +59,9 @@ namespace Lumina.Tests
                         Options = new List<OptionDTO>
                         {
                             new OptionDTO { Content = "A", IsCorrect = true },
-                            new OptionDTO { Content = "B", IsCorrect = false }
+                            new OptionDTO { Content = "B", IsCorrect = false },
+                            new OptionDTO { Content = "C", IsCorrect = false },
+                            new OptionDTO { Content = "D", IsCorrect = false }
                         }
                     }
                 }
@@ -73,6 +78,15 @@ namespace Lumina.Tests
             var response = okResult.Value;
             var promptIdProperty = response.GetType().GetProperty("PromptId");
             Assert.Equal(1, promptIdProperty.GetValue(response));
+            
+            
+            _mockQuestionService.Verify(s => s.CreatePromptWithQuestionsAsync(
+                It.Is<CreatePromptWithQuestionsDTO>(d => 
+                    d.ReferenceImageUrl == "https://example.com/image.jpg" &&
+                    d.ReferenceAudioUrl == "https://example.com/audio.mp3" &&
+                    d.Questions[0].Options.Count == 4
+                )
+            ), Times.Once);
         }
 
         [Fact]
@@ -92,12 +106,14 @@ namespace Lumina.Tests
         [Fact]
         public async Task CreatePromptWithQuestions_MaxQuestionsExceeded_ReturnsBadRequest()
         {
-            // Arrange
+            // Arrange - ✅ BỔ SUNG ĐẦY ĐỦ PROPERTIES
             var dto = new CreatePromptWithQuestionsDTO
             {
                 Title = "Test",
                 ContentText = "Content",
                 Skill = "Reading",
+                ReferenceImageUrl = null, 
+                ReferenceAudioUrl = null, 
                 Questions = new List<QuestionWithOptionsDTO>()
             };
 
@@ -123,6 +139,8 @@ namespace Lumina.Tests
                 Title = "Test",
                 ContentText = "Content",
                 Skill = "Reading",
+                ReferenceImageUrl = null,
+                ReferenceAudioUrl = null,
                 Questions = new List<QuestionWithOptionsDTO>()
             };
 
@@ -148,6 +166,8 @@ namespace Lumina.Tests
                 Title = "Test",
                 ContentText = "Content",
                 Skill = "Reading",
+                ReferenceImageUrl = null,
+                ReferenceAudioUrl = null,
                 Questions = new List<QuestionWithOptionsDTO>()
             };
 
@@ -247,11 +267,47 @@ namespace Lumina.Tests
         [Fact]
         public async Task GetPaged_ValidParameters_ReturnsOkWithData()
         {
-            // Arrange - Test cả có filter và không có filter
+            // Arrange - ✅ BỔ SUNG ĐẦY ĐỦ PROPERTIES cho PromptDto
             var prompts = new List<PromptDto>
             {
-                new PromptDto { PromptId = 1, Title = "Prompt 1", ContentText = "Content 1", Skill = "Reading", PartId = 1 },
-                new PromptDto { PromptId = 2, Title = "Prompt 2", ContentText = "Content 2", Skill = "Listening", PartId = 2 }
+                new PromptDto 
+                { 
+                    PromptId = 1, 
+                    Title = "Prompt 1", 
+                    ContentText = "Content 1", 
+                    Skill = "Reading", 
+                    PartId = 1,
+                    ReferenceImageUrl = "image1.jpg", // ✅ THÊM
+                    ReferenceAudioUrl = "audio1.mp3", // ✅ THÊM
+                    Questions = new List<QuestionDto> // ✅ THÊM
+                    {
+                        new QuestionDto
+                        {
+                            QuestionId = 1,
+                            StemText = "Question 1",
+                            QuestionExplain = "Explanation",
+                            ScoreWeight = 1,
+                            Time = 30,
+                            PartId = 1,
+                            Options = new List<OptionDto>
+                            {
+                                new OptionDto { OptionId = 1, Content = "A", IsCorrect = true },
+                                new OptionDto { OptionId = 2, Content = "B", IsCorrect = false }
+                            }
+                        }
+                    }
+                },
+                new PromptDto 
+                { 
+                    PromptId = 2, 
+                    Title = "Prompt 2", 
+                    ContentText = "Content 2", 
+                    Skill = "Listening", 
+                    PartId = 2,
+                    ReferenceImageUrl = null, // ✅ Test null
+                    ReferenceAudioUrl = "audio2.mp3",
+                    Questions = new List<QuestionDto>()
+                }
             };
 
             _mockQuestionService.Setup(s => s.GetPromptsPagedAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int?>()))
@@ -269,12 +325,17 @@ namespace Lumina.Tests
             Assert.NotNull(itemsProperty);
             Assert.NotNull(totalPagesProperty);
             Assert.Equal(1, totalPagesProperty.GetValue(response));
+            
+            // ✅ VERIFY Questions được map
+            var items = itemsProperty.GetValue(response) as List<PromptDto>;
+            Assert.Equal(1, items[0].Questions.Count);
+            Assert.Equal(2, items[0].Questions[0].Options.Count);
         }
 
         [Fact]
         public async Task GetPaged_BoundaryValues_ReturnsOkWithData()
         {
-            // Arrange - Test pageNumber = 0, empty list
+            // Arrange - Test empty list with all nullable fields
             var prompts = new List<PromptDto>();
             _mockQuestionService.Setup(s => s.GetPromptsPagedAsync(0, 10, null))
                 .ReturnsAsync((prompts, 0));
@@ -465,7 +526,7 @@ namespace Lumina.Tests
         [Fact]
         public async Task Update_ValidDto_ReturnsOkWithSuccessMessage()
         {
-            // Arrange
+            // Arrange - ✅ BỔ SUNG ĐẦY ĐỦ PROPERTIES
             var dto = new QuestionCrudDto
             {
                 QuestionId = 1,
@@ -476,9 +537,20 @@ namespace Lumina.Tests
                 QuestionExplain = "Explanation",
                 ScoreWeight = 1,
                 Time = 30,
-                Options = new List<OptionDto>
+                Options = new List<OptionDto> // ✅ OptionDto instead of OptionCrudDto
                 {
-                    new OptionDto { Content = "A", IsCorrect = true }
+                    new OptionDto 
+                    { 
+                        OptionId = 1, // ✅ THÊM
+                        Content = "A", 
+                        IsCorrect = true 
+                    },
+                    new OptionDto 
+                    { 
+                        OptionId = 2, // ✅ THÊM
+                        Content = "B", 
+                        IsCorrect = false 
+                    }
                 }
             };
 
@@ -493,6 +565,15 @@ namespace Lumina.Tests
             var response = okResult.Value;
             var messageProperty = response.GetType().GetProperty("message");
             Assert.Equal("Đã cập nhật!", messageProperty.GetValue(response));
+            
+            // ✅ VERIFY Options có OptionId
+            _mockQuestionService.Verify(s => s.UpdateQuestionAsync(
+                It.Is<QuestionCrudDto>(d => 
+                    d.Options != null && 
+                    d.Options.Count == 2 &&
+                    d.Options[0].OptionId == 1
+                )
+            ), Times.Once);
         }
 
         [Fact]
