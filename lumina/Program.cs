@@ -42,6 +42,7 @@ using RepositoryLayer.Exam.Writting;
 using RepositoryLayer.Statistic;
 using ServiceLayer.Statistic;
 using ServiceLayer.UserNoteAI;
+using ServiceLayer.Analytics;
 
 namespace lumina
 {
@@ -132,6 +133,7 @@ namespace lumina
 
             builder.Services.AddScoped<IStatisticRepository, StatisticRepository>();
             builder.Services.AddScoped<IStatisticService, StatisticService>();
+            builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
 
             builder.Services.AddHttpClient<IExamGenerationAIService, ExamGenerationAIService>("GeminiAI", c =>
             {

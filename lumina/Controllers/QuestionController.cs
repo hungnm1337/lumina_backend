@@ -1,5 +1,4 @@
 ﻿using CloudinaryDotNet.Actions;
-using DataLayer.DTOs.Passage;
 using DataLayer.DTOs.Prompt;
 using DataLayer.DTOs.Questions;
 using Microsoft.AspNetCore.Authorization;

@@ -1,5 +1,4 @@
-﻿using DataLayer.DTOs.Passage;
-using DataLayer.DTOs.Prompt;
+﻿using DataLayer.DTOs.Prompt;
 using DataLayer.DTOs.Questions;
 using DataLayer.Models;
 using RepositoryLayer.Generic;
