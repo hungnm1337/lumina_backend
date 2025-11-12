@@ -84,6 +84,10 @@ namespace lumina.Controllers
         {
             try
             {
+                if(userId <= 0)
+                {
+                    return BadRequest(new { Message = "Invalid user ID." });
+                }   
                 var userNotes = await _userNoteService.GetAllUserNotesByUserId(userId);
                 return Ok(userNotes);
             }
