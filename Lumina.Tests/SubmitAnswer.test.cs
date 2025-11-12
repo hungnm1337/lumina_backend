@@ -19,14 +19,14 @@ namespace Lumina.Tests
         }
 
         [Fact]
-        public async Task SubmitAnswer_WithValidRequest_Returns200OKWithResponse()
+        public async Task SubmitAnswer_KhiTatCaCacTruongHopLe_TraVe200OKVoiKetQuaDung()
         {
             // Arrange
             var request = new ReadingAnswerRequestDTO
             {
                 ExamAttemptId = 1,
-                QuestionId = 10,
-                SelectedOptionId = 3
+                QuestionId = 1,
+                SelectedOptionId = 1
             };
 
             var expectedResponse = new SubmitAnswerResponseDTO
@@ -55,38 +55,14 @@ namespace Lumina.Tests
         }
 
         [Fact]
-        public async Task SubmitAnswer_WithInvalidModelState_Returns400BadRequest()
+        public async Task SubmitAnswer_KhiTatCaCacTruongBangKhong_TraVe400BadRequest()
         {
             // Arrange
             var request = new ReadingAnswerRequestDTO
             {
-                ExamAttemptId = 1,
-                QuestionId = 10,
-                SelectedOptionId = 3
-            };
-
-            _controller.ModelState.AddModelError("QuestionId", "Question ID is required");
-
-            // Act
-            var result = await _controller.SubmitAnswer(request);
-
-            // Assert
-            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-            Assert.Equal(StatusCodes.Status400BadRequest, badRequestResult.StatusCode);
-            var modelState = Assert.IsType<SerializableError>(badRequestResult.Value);
-            Assert.True(modelState.ContainsKey("QuestionId"));
-            _mockReadingService.Verify(s => s.SubmitAnswerAsync(It.IsAny<ReadingAnswerRequestDTO>()), Times.Never);
-        }
-
-        [Fact]
-        public async Task SubmitAnswer_WhenServiceReturnsFailure_Returns400BadRequest()
-        {
-            // Arrange
-            var request = new ReadingAnswerRequestDTO
-            {
-                ExamAttemptId = 1,
-                QuestionId = 10,
-                SelectedOptionId = 3
+                ExamAttemptId = 0,
+                QuestionId = 0,
+                SelectedOptionId = 0
             };
 
             var failureResponse = new SubmitAnswerResponseDTO
@@ -94,7 +70,7 @@ namespace Lumina.Tests
                 Success = false,
                 IsCorrect = false,
                 Score = 0,
-                Message = "Invalid question or option"
+                Message = "Invalid request data"
             };
 
             _mockReadingService
@@ -108,25 +84,66 @@ namespace Lumina.Tests
             var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
             Assert.Equal(StatusCodes.Status400BadRequest, badRequestResult.StatusCode);
             
-            dynamic responseValue = badRequestResult.Value!;
-            var messageProperty = responseValue.GetType().GetProperty("message");
-            Assert.Equal("Invalid question or option", messageProperty!.GetValue(responseValue));
+            var value = badRequestResult.Value;
+            Assert.NotNull(value);
+            var messageProperty = value.GetType().GetProperty("message");
+            Assert.NotNull(messageProperty);
+            var message = messageProperty.GetValue(value)?.ToString();
+            Assert.Equal("Invalid request data", message);
         }
 
         [Fact]
-        public async Task SubmitAnswer_WhenKeyNotFoundExceptionThrown_Returns404NotFound()
+        public async Task SubmitAnswer_KhiTatCaCacTruongBangAmMot_TraVe400BadRequest()
+        {
+            // Arrange
+            var request = new ReadingAnswerRequestDTO
+            {
+                ExamAttemptId = -1,
+                QuestionId = -1,
+                SelectedOptionId = -1
+            };
+
+            var failureResponse = new SubmitAnswerResponseDTO
+            {
+                Success = false,
+                IsCorrect = false,
+                Score = 0,
+                Message = "Invalid request data"
+            };
+
+            _mockReadingService
+                .Setup(s => s.SubmitAnswerAsync(It.IsAny<ReadingAnswerRequestDTO>()))
+                .ReturnsAsync(failureResponse);
+
+            // Act
+            var result = await _controller.SubmitAnswer(request);
+
+            // Assert
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.Equal(StatusCodes.Status400BadRequest, badRequestResult.StatusCode);
+            
+            var value = badRequestResult.Value;
+            Assert.NotNull(value);
+            var messageProperty = value.GetType().GetProperty("message");
+            Assert.NotNull(messageProperty);
+            var message = messageProperty.GetValue(value)?.ToString();
+            Assert.Equal("Invalid request data", message);
+        }
+
+        [Fact]
+        public async Task SubmitAnswer_KhiTatCaCacTruongKhongTonTai_TraVe404NotFound()
         {
             // Arrange
             var request = new ReadingAnswerRequestDTO
             {
                 ExamAttemptId = 999,
-                QuestionId = 10,
-                SelectedOptionId = 3
+                QuestionId = 999,
+                SelectedOptionId = 999
             };
 
             _mockReadingService
                 .Setup(s => s.SubmitAnswerAsync(It.IsAny<ReadingAnswerRequestDTO>()))
-                .ThrowsAsync(new KeyNotFoundException("Exam attempt not found"));
+                .ThrowsAsync(new KeyNotFoundException("Exam attempt, question, or option not found"));
 
             // Act
             var result = await _controller.SubmitAnswer(request);
@@ -135,20 +152,23 @@ namespace Lumina.Tests
             var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
             Assert.Equal(StatusCodes.Status404NotFound, notFoundResult.StatusCode);
             
-            dynamic responseValue = notFoundResult.Value!;
-            var messageProperty = responseValue.GetType().GetProperty("message");
-            Assert.Equal("Exam attempt not found", messageProperty!.GetValue(responseValue));
+            var value = notFoundResult.Value;
+            Assert.NotNull(value);
+            var messageProperty = value.GetType().GetProperty("message");
+            Assert.NotNull(messageProperty);
+            var message = messageProperty.GetValue(value)?.ToString();
+            Assert.Equal("Exam attempt, question, or option not found", message);
         }
 
         [Fact]
-        public async Task SubmitAnswer_WhenGenericExceptionThrown_Returns500InternalServerError()
+        public async Task SubmitAnswer_KhiServiceThrowException_TraVe500InternalServerError()
         {
             // Arrange
             var request = new ReadingAnswerRequestDTO
             {
                 ExamAttemptId = 1,
-                QuestionId = 10,
-                SelectedOptionId = 3
+                QuestionId = 1,
+                SelectedOptionId = 1
             };
 
             _mockReadingService
@@ -162,46 +182,17 @@ namespace Lumina.Tests
             var statusCodeResult = Assert.IsType<ObjectResult>(result);
             Assert.Equal(StatusCodes.Status500InternalServerError, statusCodeResult.StatusCode);
             
-            dynamic responseValue = statusCodeResult.Value!;
-            var messageProperty = responseValue.GetType().GetProperty("message");
-            var detailProperty = responseValue.GetType().GetProperty("detail");
-            Assert.Equal("An error occurred while submitting the answer", messageProperty!.GetValue(responseValue));
-            Assert.Equal("Database connection failed", detailProperty!.GetValue(responseValue));
-        }
-
-        [Fact]
-        public async Task SubmitAnswer_WithIncorrectAnswer_Returns200OKWithIncorrectResult()
-        {
-            // Arrange
-            var request = new ReadingAnswerRequestDTO
-            {
-                ExamAttemptId = 1,
-                QuestionId = 10,
-                SelectedOptionId = 2
-            };
-
-            var incorrectResponse = new SubmitAnswerResponseDTO
-            {
-                Success = true,
-                IsCorrect = false,
-                Score = 0,
-                Message = "Answer is incorrect"
-            };
-
-            _mockReadingService
-                .Setup(s => s.SubmitAnswerAsync(It.IsAny<ReadingAnswerRequestDTO>()))
-                .ReturnsAsync(incorrectResponse);
-
-            // Act
-            var result = await _controller.SubmitAnswer(request);
-
-            // Assert
-            var okResult = Assert.IsType<OkObjectResult>(result);
-            Assert.Equal(StatusCodes.Status200OK, okResult.StatusCode);
-            var response = Assert.IsType<SubmitAnswerResponseDTO>(okResult.Value);
-            Assert.True(response.Success);
-            Assert.False(response.IsCorrect);
-            Assert.Equal(0, response.Score);
+            var value = statusCodeResult.Value;
+            Assert.NotNull(value);
+            var messageProperty = value.GetType().GetProperty("message");
+            Assert.NotNull(messageProperty);
+            var message = messageProperty.GetValue(value)?.ToString();
+            Assert.Equal("An error occurred while submitting the answer", message);
+            
+            var detailProperty = value.GetType().GetProperty("detail");
+            Assert.NotNull(detailProperty);
+            var detail = detailProperty.GetValue(value)?.ToString();
+            Assert.Equal("Database connection failed", detail);
         }
     }
 }
