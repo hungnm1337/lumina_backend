@@ -503,5 +503,552 @@ namespace Lumina.Tests
         }
 
         #endregion
+
+        #region UpdateProfile Tests (9 test cases)
+
+        [Fact]
+        public async Task UpdateProfile_ValidRequestWithAllFields_ReturnsOkWithUpdatedProfile()
+        {
+            // Arrange
+            var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, "1") };
+            var identity = new ClaimsIdentity(claims);
+            var principal = new ClaimsPrincipal(identity);
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = principal }
+            };
+
+            var request = new UpdateUserProfileDTO
+            {
+                FullName = "Updated User",
+                Phone = "0123456789",
+                Bio = "Updated bio",
+                AvatarUrl = "https://avatar.jpg"
+            };
+
+            var updatedProfile = new UserDto
+            {
+                UserId = 1,
+                FullName = "Updated User",
+                Email = "user@test.com",
+                Phone = "0123456789",
+                Bio = "Updated bio",
+                AvatarUrl = "https://avatar.jpg",
+                RoleId = 2,
+                RoleName = "User"
+            };
+
+            _mockUserService.Setup(s => s.UpdateCurrentUserProfileAsync(1, request))
+                .ReturnsAsync(updatedProfile);
+
+            // Act
+            var result = await _controller.UpdateProfile(request);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var returnedProfile = Assert.IsType<UserDto>(okResult.Value);
+            Assert.Equal(1, returnedProfile.UserId);
+            Assert.Equal("Updated User", returnedProfile.FullName);
+            Assert.Equal("0123456789", returnedProfile.Phone);
+            Assert.Equal("Updated bio", returnedProfile.Bio);
+            Assert.Equal("https://avatar.jpg", returnedProfile.AvatarUrl);
+        }
+
+        [Fact]
+        public async Task UpdateProfile_ValidRequestMinimalFields_ReturnsOkWithUpdatedProfile()
+        {
+            // Arrange
+            var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, "1") };
+            var identity = new ClaimsIdentity(claims);
+            var principal = new ClaimsPrincipal(identity);
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = principal }
+            };
+
+            var request = new UpdateUserProfileDTO
+            {
+                FullName = "New Name",
+                Phone = null,
+                Bio = null,
+                AvatarUrl = null
+            };
+
+            var updatedProfile = new UserDto
+            {
+                UserId = 1,
+                FullName = "New Name",
+                Email = "user@test.com",
+                RoleId = 2,
+                RoleName = "User"
+            };
+
+            _mockUserService.Setup(s => s.UpdateCurrentUserProfileAsync(1, request))
+                .ReturnsAsync(updatedProfile);
+
+            // Act
+            var result = await _controller.UpdateProfile(request);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var returnedProfile = Assert.IsType<UserDto>(okResult.Value);
+            Assert.Equal("New Name", returnedProfile.FullName);
+        }
+
+        [Fact]
+        public async Task UpdateProfile_InvalidToken_ReturnsUnauthorized()
+        {
+            // Arrange
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal() }
+            };
+
+            var request = new UpdateUserProfileDTO
+            {
+                FullName = "Updated User",
+                Phone = "0123456789",
+                Bio = "Updated bio",
+                AvatarUrl = "https://avatar.jpg"
+            };
+
+            // Act
+            var result = await _controller.UpdateProfile(request);
+
+            // Assert
+            var unauthorizedResult = Assert.IsType<UnauthorizedObjectResult>(result);
+            var response = unauthorizedResult.Value;
+            var messageProperty = response.GetType().GetProperty("message");
+            Assert.Equal("Invalid token", messageProperty.GetValue(response));
+        }
+
+        [Fact]
+        public async Task UpdateProfile_InvalidUserIdFormatInToken_ReturnsUnauthorized()
+        {
+            // Arrange
+            var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, "invalid_id") };
+            var identity = new ClaimsIdentity(claims);
+            var principal = new ClaimsPrincipal(identity);
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = principal }
+            };
+
+            var request = new UpdateUserProfileDTO
+            {
+                FullName = "Updated User",
+                Phone = "0123456789",
+                Bio = "Updated bio",
+                AvatarUrl = "https://avatar.jpg"
+            };
+
+            // Act
+            var result = await _controller.UpdateProfile(request);
+
+            // Assert
+            Assert.IsType<UnauthorizedObjectResult>(result);
+        }
+
+        [Fact]
+        public async Task UpdateProfile_ProfileNotFound_ReturnsNotFound()
+        {
+            // Arrange
+            var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, "1") };
+            var identity = new ClaimsIdentity(claims);
+            var principal = new ClaimsPrincipal(identity);
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = principal }
+            };
+
+            var request = new UpdateUserProfileDTO
+            {
+                FullName = "Updated User",
+                Phone = "0123456789",
+                Bio = "Updated bio",
+                AvatarUrl = "https://avatar.jpg"
+            };
+
+            _mockUserService.Setup(s => s.UpdateCurrentUserProfileAsync(1, request))
+                .ReturnsAsync((UserDto?)null);
+
+            // Act
+            var result = await _controller.UpdateProfile(request);
+
+            // Assert
+            var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
+            var response = notFoundResult.Value;
+            var messageProperty = response.GetType().GetProperty("message");
+            Assert.Equal("Profile not found", messageProperty.GetValue(response));
+        }
+
+        [Fact]
+        public async Task UpdateProfile_ServiceThrowsArgumentException_ReturnsBadRequest()
+        {
+            // Arrange
+            var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, "1") };
+            var identity = new ClaimsIdentity(claims);
+            var principal = new ClaimsPrincipal(identity);
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = principal }
+            };
+
+            var request = new UpdateUserProfileDTO
+            {
+                FullName = "Updated User",
+                Phone = "0123456789",
+                Bio = "Updated bio",
+                AvatarUrl = "https://avatar.jpg"
+            };
+
+            _mockUserService.Setup(s => s.UpdateCurrentUserProfileAsync(1, request))
+                .ThrowsAsync(new ArgumentException("Phone number format is invalid"));
+
+            // Act
+            var result = await _controller.UpdateProfile(request);
+
+            // Assert
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            var response = badRequestResult.Value;
+            var messageProperty = response.GetType().GetProperty("message");
+            Assert.Equal("Phone number format is invalid", messageProperty.GetValue(response));
+        }
+
+        [Fact]
+        public async Task UpdateProfile_FullNameExceedsMaxLength_ReturnsBadRequest()
+        {
+            // Arrange
+            var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, "1") };
+            var identity = new ClaimsIdentity(claims);
+            var principal = new ClaimsPrincipal(identity);
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = principal }
+            };
+
+            var request = new UpdateUserProfileDTO
+            {
+                FullName = new string('A', 51), // Exceeds max length of 50
+                Phone = "0123456789",
+                Bio = "Updated bio",
+                AvatarUrl = "https://avatar.jpg"
+            };
+
+            _controller.ModelState.AddModelError("FullName", "Full name must be between 1 and 50 characters");
+
+            // Act
+            var result = await _controller.UpdateProfile(request);
+
+            // Assert
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.NotNull(badRequestResult.Value);
+        }
+
+        [Fact]
+        public async Task UpdateProfile_RequestBodyNull_InvalidOperationCaught()
+        {
+            // Arrange
+            var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, "1") };
+            var identity = new ClaimsIdentity(claims);
+            var principal = new ClaimsPrincipal(identity);
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = principal }
+            };
+
+            // Act
+            var result = await _controller.UpdateProfile(null!);
+
+            // Assert
+            // The controller should have already been called, even with null
+            Assert.NotNull(result);
+        }
+
+        [Fact]
+        public async Task UpdateProfile_ServiceThrowsUnexpectedException_ThrowsException()
+        {
+            // Arrange
+            var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, "1") };
+            var identity = new ClaimsIdentity(claims);
+            var principal = new ClaimsPrincipal(identity);
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = principal }
+            };
+
+            var request = new UpdateUserProfileDTO
+            {
+                FullName = "Updated User",
+                Phone = "0123456789",
+                Bio = "Updated bio",
+                AvatarUrl = "https://avatar.jpg"
+            };
+
+            _mockUserService.Setup(s => s.UpdateCurrentUserProfileAsync(1, request))
+                .ThrowsAsync(new Exception("Database error"));
+
+            // Act & Assert
+            await Assert.ThrowsAsync<Exception>(() => _controller.UpdateProfile(request));
+        }
+
+        #endregion
+
+        #region ChangePassword Tests (9 test cases)
+
+        [Fact]
+        public async Task ChangePassword_ValidCredentials_ReturnsNoContent()
+        {
+            // Arrange
+            var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, "1") };
+            var identity = new ClaimsIdentity(claims);
+            var principal = new ClaimsPrincipal(identity);
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = principal }
+            };
+
+            var request = new ChangePasswordDTO
+            {
+                CurrentPassword = "OldPassword123",
+                NewPassword = "NewPassword123"
+            };
+
+            _mockUserService.Setup(s => s.ChangePasswordAsync(1, request))
+                .ReturnsAsync(true);
+
+            // Act
+            var result = await _controller.ChangePassword(request);
+
+            // Assert
+            Assert.IsType<NoContentResult>(result);
+            _mockUserService.Verify(s => s.ChangePasswordAsync(1, request), Times.Once);
+        }
+
+        [Fact]
+        public async Task ChangePassword_InvalidToken_ReturnsUnauthorized()
+        {
+            // Arrange
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal() }
+            };
+
+            var request = new ChangePasswordDTO
+            {
+                CurrentPassword = "OldPassword123",
+                NewPassword = "NewPassword123"
+            };
+
+            // Act
+            var result = await _controller.ChangePassword(request);
+
+            // Assert
+            var unauthorizedResult = Assert.IsType<UnauthorizedObjectResult>(result);
+            var response = unauthorizedResult.Value;
+            var messageProperty = response.GetType().GetProperty("message");
+            Assert.Equal("Invalid token", messageProperty.GetValue(response));
+        }
+
+        [Fact]
+        public async Task ChangePassword_InvalidUserIdFormatInToken_ReturnsUnauthorized()
+        {
+            // Arrange
+            var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, "not_a_number") };
+            var identity = new ClaimsIdentity(claims);
+            var principal = new ClaimsPrincipal(identity);
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = principal }
+            };
+
+            var request = new ChangePasswordDTO
+            {
+                CurrentPassword = "OldPassword123",
+                NewPassword = "NewPassword123"
+            };
+
+            // Act
+            var result = await _controller.ChangePassword(request);
+
+            // Assert
+            Assert.IsType<UnauthorizedObjectResult>(result);
+        }
+
+        [Fact]
+        public async Task ChangePassword_IncorrectCurrentPassword_ReturnsBadRequest()
+        {
+            // Arrange
+            var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, "1") };
+            var identity = new ClaimsIdentity(claims);
+            var principal = new ClaimsPrincipal(identity);
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = principal }
+            };
+
+            var request = new ChangePasswordDTO
+            {
+                CurrentPassword = "WrongPassword",
+                NewPassword = "NewPassword123"
+            };
+
+            _mockUserService.Setup(s => s.ChangePasswordAsync(1, request))
+                .ThrowsAsync(new ArgumentException("Current password is incorrect"));
+
+            // Act
+            var result = await _controller.ChangePassword(request);
+
+            // Assert
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            var response = badRequestResult.Value;
+            var messageProperty = response.GetType().GetProperty("message");
+            Assert.Equal("Current password is incorrect", messageProperty.GetValue(response));
+        }
+
+        [Fact]
+        public async Task ChangePassword_NewPasswordSameAsCurrentPassword_ReturnsBadRequest()
+        {
+            // Arrange
+            var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, "1") };
+            var identity = new ClaimsIdentity(claims);
+            var principal = new ClaimsPrincipal(identity);
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = principal }
+            };
+
+            var request = new ChangePasswordDTO
+            {
+                CurrentPassword = "SamePassword123",
+                NewPassword = "SamePassword123"
+            };
+
+            _mockUserService.Setup(s => s.ChangePasswordAsync(1, request))
+                .ThrowsAsync(new ArgumentException("New password cannot be the same as current password"));
+
+            // Act
+            var result = await _controller.ChangePassword(request);
+
+            // Assert
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            var response = badRequestResult.Value;
+            var messageProperty = response.GetType().GetProperty("message");
+            Assert.Equal("New password cannot be the same as current password", messageProperty.GetValue(response));
+        }
+
+        [Fact]
+        public async Task ChangePassword_NewPasswordTooWeak_ReturnsBadRequest()
+        {
+            // Arrange
+            var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, "1") };
+            var identity = new ClaimsIdentity(claims);
+            var principal = new ClaimsPrincipal(identity);
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = principal }
+            };
+
+            var request = new ChangePasswordDTO
+            {
+                CurrentPassword = "OldPassword123",
+                NewPassword = "weak"
+            };
+
+            _mockUserService.Setup(s => s.ChangePasswordAsync(1, request))
+                .ThrowsAsync(new ArgumentException("Password must be at least 8 characters long"));
+
+            // Act
+            var result = await _controller.ChangePassword(request);
+
+            // Assert
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            var response = badRequestResult.Value;
+            var messageProperty = response.GetType().GetProperty("message");
+            Assert.Equal("Password must be at least 8 characters long", messageProperty.GetValue(response));
+        }
+
+        [Fact]
+        public async Task ChangePassword_CurrentPasswordEmpty_ReturnsBadRequestFromModelValidation()
+        {
+            // Arrange
+            var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, "1") };
+            var identity = new ClaimsIdentity(claims);
+            var principal = new ClaimsPrincipal(identity);
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = principal }
+            };
+
+            var request = new ChangePasswordDTO
+            {
+                CurrentPassword = string.Empty,
+                NewPassword = "NewPassword123"
+            };
+
+            _controller.ModelState.AddModelError("CurrentPassword", "Current password is required");
+
+            // Act
+            var result = await _controller.ChangePassword(request);
+
+            // Assert
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.NotNull(badRequestResult.Value);
+        }
+
+        [Fact]
+        public async Task ChangePassword_NewPasswordEmpty_ReturnsBadRequestFromModelValidation()
+        {
+            // Arrange
+            var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, "1") };
+            var identity = new ClaimsIdentity(claims);
+            var principal = new ClaimsPrincipal(identity);
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = principal }
+            };
+
+            var request = new ChangePasswordDTO
+            {
+                CurrentPassword = "OldPassword123",
+                NewPassword = string.Empty
+            };
+
+            _controller.ModelState.AddModelError("NewPassword", "New password is required");
+
+            // Act
+            var result = await _controller.ChangePassword(request);
+
+            // Assert
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.NotNull(badRequestResult.Value);
+        }
+
+        [Fact]
+        public async Task ChangePassword_ServiceThrowsUnexpectedException_ThrowsException()
+        {
+            // Arrange
+            var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, "1") };
+            var identity = new ClaimsIdentity(claims);
+            var principal = new ClaimsPrincipal(identity);
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = principal }
+            };
+
+            var request = new ChangePasswordDTO
+            {
+                CurrentPassword = "OldPassword123",
+                NewPassword = "NewPassword123"
+            };
+
+            _mockUserService.Setup(s => s.ChangePasswordAsync(1, request))
+                .ThrowsAsync(new Exception("Database error"));
+
+            // Act & Assert
+            await Assert.ThrowsAsync<Exception>(() => _controller.ChangePassword(request));
+        }
+
+        #endregion
     }
 }

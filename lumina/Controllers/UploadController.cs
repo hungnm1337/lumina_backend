@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using ServiceLayer.Speech;
 using ServiceLayer.TextToSpeech;
 using ServiceLayer.UploadFile;
-using static lumina.Controllers.AITestController;
 using Microsoft.Extensions.Configuration;
 
 namespace lumina.Controllers

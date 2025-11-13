@@ -21,10 +21,10 @@ namespace DataLayer.DTOs.Questions
         public List<OptionDto>? Options { get; set; }
     }
 
-    public class OptionCrudDto
+/*    public class OptionCrudDto
     {
         public string Content { get; set; }
         public bool IsCorrect { get; set; }
-    }
+    }*/
 
 }

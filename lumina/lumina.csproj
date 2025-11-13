@@ -42,8 +42,4 @@
     <ProjectReference Include="..\ServiceLayer\ServiceLayer.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="coverage\" />
-  </ItemGroup>
-
 </Project>
