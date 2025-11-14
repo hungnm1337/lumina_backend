@@ -17,7 +17,10 @@ public class PackageRepository : IPackageRepository
 
     public async Task<List<Package>> GetActivePackagesAsync()
     {
-        return await _context.Packages.Where(p => p.IsActive == true).ToListAsync();
+        return await _context.Packages
+            .Where(p => p.IsActive.HasValue && p.IsActive.Value == true)
+            .OrderBy(p => p.PackageId)
+            .ToListAsync();
     }
 
     public async Task<Package?> GetByIdAsync(int id)
