@@ -15,6 +15,14 @@ namespace lumina.Controllers
             _packageService = packageService;
         }
 
+        [HttpGet("active")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetActivePackages()
+        {
+            var list = await _packageService.GetActivePackagesAsync();
+            return Ok(list);
+        }
+
         [HttpGet("active-pro")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetActiveProPackages()
