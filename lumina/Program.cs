@@ -67,8 +67,19 @@ namespace lumina
             builder.Services.Configure<AzureSpeechSettings>(builder.Configuration.GetSection("AzureSpeechSettings"));
             builder.Services.Configure<AzureSpeechSettings>(
     builder.Configuration.GetSection("AzureSpeech"));
-            builder.Services.Configure<GeminiOptions>(
-    builder.Configuration.GetSection("GeminiAI"));
+            builder.Services.Configure<OpenAIOptions>(
+    builder.Configuration.GetSection("OpenAI"));
+
+            // ========================================
+            // ✅ TĂNG TIMEOUT CHO OPENAI HTTPCLIENT
+            // ========================================
+            builder.Services.AddHttpClient<IExamGenerationAIService, ExamGenerationAIService>("OpenAI", c =>
+            {
+                c.Timeout = TimeSpan.FromMinutes(10); // ✅ Tăng từ 3 phút lên 10 phút
+                
+                // ✅ (Optional) Tăng thêm buffer size nếu response lớn
+                c.MaxResponseContentBufferSize = 10 * 1024 * 1024; // 10 MB
+            });
 
             builder.Services.AddScoped<IAzureSpeechService, AzureSpeechService>();
 
@@ -135,7 +146,7 @@ namespace lumina
             builder.Services.AddScoped<IStatisticService, StatisticService>();
             builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
 
-            builder.Services.AddHttpClient<IExamGenerationAIService, ExamGenerationAIService>("GeminiAI", c =>
+            builder.Services.AddHttpClient<IExamGenerationAIService, ExamGenerationAIService>("OpenAI", c =>
             {
                 c.Timeout = TimeSpan.FromMinutes(180);
             });
@@ -181,7 +192,12 @@ namespace lumina
             builder.Services.AddAuthorization();
 
 
-            builder.Services.AddControllers();
+            builder.Services.AddControllers()
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+                    options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+                });
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             
