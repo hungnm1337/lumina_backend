@@ -8,19 +8,48 @@ namespace ServiceLayer.AI.Prompt
 {
     public static class PromptFactory
     {
-        // --- CreateParsingPrompt ---
-        // (Giữ nguyên, vì nó chỉ phân tích yêu cầu ban đầu, không liên quan trực tiếp đến DTO output)
-        private static int ExtractQuantity(string text)
+        //  CẤU HÌNH TẬP TRUNG
+        private static readonly Dictionary<int, PartConfiguration> PartConfigs = new()
         {
-            var match = Regex.Match(text, @"\b(\d+)\b");
-            return match.Success && int.TryParse(match.Value, out int q) ? q : 1;
+            // LISTENING
+            { 1, new PartConfiguration { QuestionsPerPrompt = 1, DefaultPromptCount = 6 } },
+            { 2, new PartConfiguration { QuestionsPerPrompt = 1, DefaultPromptCount = 25 } },
+            { 3, new PartConfiguration { QuestionsPerPrompt = 3, DefaultPromptCount = 5 } },
+            { 4, new PartConfiguration { QuestionsPerPrompt = 3, DefaultPromptCount = 5 } },
+            
+            // READING
+            { 5, new PartConfiguration { QuestionsPerPrompt = 1, DefaultPromptCount = 30 } },
+            { 6, new PartConfiguration { QuestionsPerPrompt = 4, DefaultPromptCount = 4 } },
+            { 7, new PartConfiguration { QuestionsPerPrompt = 3, DefaultPromptCount = 5 } },
+            
+            // SPEAKING
+            { 8, new PartConfiguration { QuestionsPerPrompt = 1, DefaultPromptCount = 2 } },
+            { 9, new PartConfiguration { QuestionsPerPrompt = 1, DefaultPromptCount = 2 } },
+            { 10, new PartConfiguration { QuestionsPerPrompt = 3, DefaultPromptCount = 1 } },
+            { 11, new PartConfiguration { QuestionsPerPrompt = 3, DefaultPromptCount = 1 } },
+            { 12, new PartConfiguration { QuestionsPerPrompt = 1, DefaultPromptCount = 1 } },
+            
+            // WRITING
+            { 13, new PartConfiguration { QuestionsPerPrompt = 1, DefaultPromptCount = 5 } },
+            { 14, new PartConfiguration { QuestionsPerPrompt = 1, DefaultPromptCount = 2 } },
+            { 15, new PartConfiguration { QuestionsPerPrompt = 1, DefaultPromptCount = 1 } }
+        };
+
+        //  CLASS CONFIGURATION
+        public class PartConfiguration
+        {
+            public int QuestionsPerPrompt { get; set; }
+            public int DefaultPromptCount { get; set; }
         }
 
-        private static string ExtractTopic(string text)
+        // Lấy config theo partNumber
+        public static PartConfiguration GetPartConfiguration(int partNumber)
         {
-            var match = Regex.Match(text, @"(chủ đề|về)\s+([^\d]+)$", RegexOptions.IgnoreCase);
-            return match.Success ? match.Groups[2].Value.Trim() : null;
+            return PartConfigs.TryGetValue(partNumber, out var config)
+                ? config
+                : new PartConfiguration { QuestionsPerPrompt = 1, DefaultPromptCount = 1 };
         }
+        
         public static string CreateParsingPrompt(string userRequest)
         {
             // Không cần xử lý Regex trước ở đây nữa. Gemini sẽ làm việc này.
@@ -31,15 +60,15 @@ namespace ServiceLayer.AI.Prompt
         {
             { 1, 6 },   // Listening Part 1: 6 prompts (ảnh)
             { 2, 25 },  // Listening Part 2: 25 prompts (câu hỏi)
-            { 3, 5 },  // Listening Part 3: 13 prompts (hội thoại)
-            { 4, 5 },  // Listening Part 4: 10 prompts (bài nói)
+            { 3, 5 },  // Listening Part 3: 5 prompts (mỗi prompt 3 câu hỏi)
+            { 4, 5 },  // Listening Part 4: 5 prompts (mỗi prompt 3 câu hỏi)
             { 5, 30 },  // Reading Part 5: 30 prompts (câu hỏi)
             { 6, 4 },   // Reading Part 6: 4 prompts (đoạn văn)
             { 7, 5 },  // Reading Part 7: Tổng cộng ~15 cụm (10 single, 2 double, 3 triple)
             { 8, 2 },   // Speaking Q1-2: 2 prompts (đoạn văn đọc)
-            { 9, 1 },   // Speaking Q3: 1 prompt (ảnh)
-            { 10, 1 },  // Speaking Q4-6: 1 prompt (tình huống)
-            { 11, 1 },  // Speaking Q7-10: 1 prompt (thông tin)
+            { 9, 2 },   // Speaking Q3-4: 1 prompt (ảnh)
+            { 10, 1 },  // Speaking Q5-7: 1 prompt (tình huống)
+            { 11, 1 },  // Speaking Q8-10: 1 prompt (thông tin)
             { 12, 1 },   // Speaking Q11: 1 prompt (ý kiến)
             { 13, 5 },  // Writing Q1-5: 5 prompts (ảnh + từ)
             { 14, 2 },  // Writing Q6-7: 2 prompts (email)
@@ -125,12 +154,12 @@ namespace ServiceLayer.AI.Prompt
                 case 4: return CreateListeningPart4Prompt(quantity, safeTopic);
 
                 // Reading
-                case 5: return CreateReadingPart5Prompt(quantity, topic); 
+                case 5: return CreateReadingPart5Prompt(quantity, topic);
                 case 6: return CreateReadingPart6Prompt(quantity, safeTopic);
                 case 7:
                     return CreateReadingPart7Prompt(quantity, safeTopic);
 
-                // Speaking (Mapping giả định: 8=Q1-2, 9=Q3, 10=Q4-6, 11=Q7-9, 12=Q10, 13=Q11)
+                // Speaking 
                 case 8: return CreateSpeakingPart1Prompt(quantity);
                 case 9: return CreateSpeakingPart2Prompt(quantity);
                 case 10: return CreateSpeakingPart3Prompt(quantity, safeTopic);
@@ -249,81 +278,70 @@ namespace ServiceLayer.AI.Prompt
                 ExamExamTitle = "AI Generated Listening Part 2",
                 Skill = "Listening",
                 PartLabel = "Part 2",
-                Prompts = new List<AIGeneratedPromptDTO> // Danh sách chứa nhiều Prompts
-        {
-            // Prompt cho câu hỏi đầu tiên
-            new AIGeneratedPromptDTO
-            {
-                ExamTitle = "Question-Response",
-                Description = "You will hear a question or statement and three responses...",
-                ReferenceAudioUrl = "Where is the marketing report?",
-                Questions = new List<AIGeneratedQuestionDTO> // Danh sách này chỉ chứa 1 câu hỏi
+                Prompts = new List<AIGeneratedPromptDTO> 
                 {
-                    new AIGeneratedQuestionDTO
+                    new AIGeneratedPromptDTO
                     {
-                        PartId = 2,
-                        QuestionType = "Listening",
-                        StemText = "Where is the marketing report?",
-                        Explanation = "Câu hỏi 'Where' hỏi về địa điểm. Lựa chọn (B) 'It's on your desk.' là câu trả lời hợp lý nhất.",
-                        ScoreWeight = 1, Time = 5,
-                        Options = new List<AIGeneratedOptionDTO>
+                        ExamTitle = "Question-Response",
+                        Description = "You will hear a question or statement and three responses...",
+                        ReferenceAudioUrl = "Where is the marketing report?",
+                        Questions = new List<AIGeneratedQuestionDTO> 
                         {
-                            new AIGeneratedOptionDTO { Label = "A", Content = "Yes, it was reported.", IsCorrect = false },
-                            new AIGeneratedOptionDTO { Label = "B", Content = "It's on your desk.", IsCorrect = true },
-                            new AIGeneratedOptionDTO { Label = "C", Content = "At 2:00 PM.", IsCorrect = false }
+                            new AIGeneratedQuestionDTO
+                            {
+                                PartId = 2,
+                                QuestionType = "Listening",
+                                StemText = "Listen and choose the most appropriate answer?",
+                                Explanation = "Câu hỏi 'Where' hỏi về địa điểm. Lựa chọn (B) là hợp lý nhất.",
+                                ScoreWeight = 1, 
+                                Time = 30,
+                                Options = new List<AIGeneratedOptionDTO>
+                                {
+                                    new AIGeneratedOptionDTO { Label = "A", Content = "Yes, it was reported.", IsCorrect = false },
+                                    new AIGeneratedOptionDTO { Label = "B", Content = "It's on your desk.", IsCorrect = true },
+                                    new AIGeneratedOptionDTO { Label = "C", Content = "At 2:00 PM.", IsCorrect = false }
+                                }
+                            }
                         }
                     }
                 }
-            },
-            // Prompt cho câu hỏi thứ hai (để làm mẫu)
-            new AIGeneratedPromptDTO
-            {
-                ExamTitle = "Question-Response",
-                Description = "You will hear a question or statement and three responses...",
-                ReferenceAudioUrl = "When should I send this package?",
-                Questions = new List<AIGeneratedQuestionDTO> // Danh sách này cũng chỉ chứa 1 câu hỏi
-                {
-                    new AIGeneratedQuestionDTO
-                    {
-                        PartId = 2,
-                        QuestionType = "Listening",
-                        StemText = "When should I send this package?",
-                        Explanation = "Câu hỏi 'When' hỏi về thời gian. Lựa chọn (C) 'Before lunchtime.' là câu trả lời hợp lý nhất.",
-                        ScoreWeight = 1, Time = 45,
-                        Options = new List<AIGeneratedOptionDTO>
-                        {
-                            new AIGeneratedOptionDTO { Label = "A", Content = "By express mail.", IsCorrect = false },
-                            new AIGeneratedOptionDTO { Label = "B", Content = "To the new client.", IsCorrect = false },
-                            new AIGeneratedOptionDTO { Label = "C", Content = "Before lunchtime.", IsCorrect = true }
-                        }
-                    }
-                }
-            }
-            // ... và cứ thế tiếp tục cho đến hết {quantity} prompts
-                 }
             };
-            string jsonExample = JsonConvert.SerializeObject(exampleDto, Formatting.Indented);
-            return $"""
-            Bạn là một chuyên gia ra đề thi TOEIC Listening Part 2.
-
-            **Yêu cầu:**
-            - Tạo ra chính xác **{quantity}** bộ đề thi Part 2 (mỗi bộ là một câu hỏi-đáp).
-            - Mỗi bộ đề bao gồm:
-                - Một câu hỏi hoặc một câu nói ngắn (đặt trong `StemText` của `AIGeneratedQuestionDTO`) mà thí sinh sẽ nghe.
-                - Ba (3) câu lựa chọn trả lời (đặt trong `Content` của `AIGeneratedOptionDTO`).
-                - Chỉ MỘT lựa chọn đúng (`IsCorrect: true`). Hai lựa chọn còn lại sai.
-                - Cung cấp giải thích (`Explanation`) ngắn gọn.
-                - Điền các thông tin khác như `ExamExamTitle`, `Skill`, `PartLabel`, `PartId`, `QuestionType`... như trong ví dụ.
-            - **Quan trọng:** Trả về kết quả dưới dạng một đối tượng JSON **AIGeneratedExamDTO** duy nhất, không có markdown hay giải thích bên ngoài, theo đúng cấu trúc ví dụ dưới đây (Lưu ý: mỗi câu hỏi Part 2 nằm trong một `prompt` riêng). Đảm bảo JSON là hợp lệ.
-
-            **Ví dụ cấu trúc JSON đầu ra (cho 1 bộ đề):**
-            ```json
-            {jsonExample}
-            ```
-            **Hãy bắt đầu tạo {quantity} bộ đề.**
-            Hãy chỉ trả về một JSON object duy nhất, không có lời dẫn, không có markdown, không có ký hiệu ```json, không có mô tả hoặc lời giải thích nào khác.
             
-            """;
+            string jsonExample = JsonConvert.SerializeObject(exampleDto, Formatting.Indented);
+            
+            return $"""
+    You are an expert TOEIC Listening Part 2 question generator.
+
+    **CRITICAL REQUIREMENT:**
+    - You MUST generate EXACTLY {quantity} prompts. NO MORE, NO LESS.
+    - The Prompts array MUST contain precisely {quantity} items.
+    - Count carefully before returning the JSON.
+
+    **Structure (for EACH of the {quantity} prompts):**
+    - 1 question/statement in ReferenceAudioUrl
+    - 1 Question object with:
+      - StemText (same as ReferenceAudioUrl)
+      - 3 Options (A/B/C), only 1 correct
+      - Vietnamese Explanation
+
+    **Example (1 prompt):**
+    ```json
+    {jsonExample}
+    ```
+
+    **Validation before response:**
+    - Check: Prompts.length === {quantity} ✓
+    - Check: Each Prompt has 1 Question ✓
+    - Check: Each Question has 3 Options ✓
+
+    **Output format:**
+    - Return ONLY valid JSON (AIGeneratedExamDTO)
+    - No markdown blocks (```json)
+    - No explanations
+    - No extra text
+
+    Generate EXACTLY {quantity} prompts now:
+    """;
         }
 
         private static string CreateListeningPart3Prompt(int quantity, string topic)
@@ -374,10 +392,10 @@ namespace ServiceLayer.AI.Prompt
                             new AIGeneratedOptionDTO { Label = "C", Content="Provide a summary of findings", IsCorrect=true}
                         }
                     }
-                
-                    
+
+
                 }
-                
+
             },
              new AIGeneratedPromptDTO {
                 ExamTitle = "Conversation about a Report",
@@ -541,7 +559,7 @@ namespace ServiceLayer.AI.Prompt
 
             string jsonExample = JsonConvert.SerializeObject(exampleDto, Formatting.Indented);
 
-             return $"""
+            return $"""
                  Bạn là một chuyên gia tạo đề thi TOEIC Listening Part 4.
 
                  **Nhiệm vụ:**
@@ -576,61 +594,117 @@ namespace ServiceLayer.AI.Prompt
         }
 
 
-        // --- Reading Prompts (Updated DTOs) ---
         private static string CreateReadingPart5Prompt(int quantity, string? topic)
         {
             var exampleDto = new AIGeneratedExamDTO
             {
-                ExamExamTitle = $"AI Generated Reading Part 5 - {topic ?? "Tự do"}",
+                ExamExamTitle = "AI Generated Reading Part 5",
                 Skill = "Reading",
                 PartLabel = "Part 5",
-                Prompts = new List<AIGeneratedPromptDTO> { // Mỗi Prompt chứa 1 câu hỏi Part 5
-                       new AIGeneratedPromptDTO
-                       {
-                           ExamTitle = "Incomplete Sentence",
-                           Description = "Choose the word or phrase that best completes the sentence.",
-                           Questions = new List<AIGeneratedQuestionDTO>
-                           {
-                               new AIGeneratedQuestionDTO
-                               {
-                                   PartId = 5, QuestionType = "MultipleChoice_SentenceCompletion",
-                                   StemText = "The marketing team ...... a new advertising campaign last month.",
-                                   Explanation = "Câu này ở thì quá khứ đơn...",
-                                   ScoreWeight = 1, Time = 30,
-                                   Options = new List<AIGeneratedOptionDTO>
-                                   {
-                                       new AIGeneratedOptionDTO { Label = "A", Content = "launch", IsCorrect = false },
-                                       new AIGeneratedOptionDTO { Label = "B", Content = "launches", IsCorrect = false },
-                                       new AIGeneratedOptionDTO { Label = "C", Content = "launched", IsCorrect = true },
-                                       new AIGeneratedOptionDTO { Label = "D", Content = "launching", IsCorrect = false }
-                                   }
-                               }
-                           }
-                       }
-                 }
+                Prompts = new List<AIGeneratedPromptDTO>
+        {
+            new AIGeneratedPromptDTO
+            {
+                ExamTitle = "Incomplete Sentence",
+                Description = "Choose the word or phrase that best completes the sentence.",
+                Questions = new List<AIGeneratedQuestionDTO>
+                {
+                    new AIGeneratedQuestionDTO
+                    {
+                        PartId = 5,
+                        QuestionType = "MultipleChoice_SentenceCompletion",
+                        StemText = "The team ...... the project last month.",
+                        Explanation = "Thì quá khứ đơn → 'completed'",
+                        ScoreWeight = 1,
+                        Time = 30,
+                        Options = new List<AIGeneratedOptionDTO>
+                        {
+                            new AIGeneratedOptionDTO { Label = "A", Content = "complete", IsCorrect = false },
+                            new AIGeneratedOptionDTO { Label = "B", Content = "completed", IsCorrect = true },
+                            new AIGeneratedOptionDTO { Label = "C", Content = "completes", IsCorrect = false },
+                            new AIGeneratedOptionDTO { Label = "D", Content = "completing", IsCorrect = false }
+                        }
+                    }
+                }
+            },
+            new AIGeneratedPromptDTO
+            {
+                ExamTitle = "Incomplete Sentence",
+                Description = "Choose the word or phrase that best completes the sentence.",
+                Questions = new List<AIGeneratedQuestionDTO>
+                {
+                    new AIGeneratedQuestionDTO
+                    {
+                        PartId = 5,
+                        QuestionType = "MultipleChoice_SentenceCompletion",
+                        StemText = "Submit reports ...... Friday.",
+                        Explanation = "'By' chỉ thời hạn",
+                        ScoreWeight = 1,
+                        Time = 30,
+                        Options = new List<AIGeneratedOptionDTO>
+                        {
+                            new AIGeneratedOptionDTO { Label = "A", Content = "on", IsCorrect = false },
+                            new AIGeneratedOptionDTO { Label = "B", Content = "by", IsCorrect = true },
+                            new AIGeneratedOptionDTO { Label = "C", Content = "at", IsCorrect = false },
+                            new AIGeneratedOptionDTO { Label = "D", Content = "in", IsCorrect = false }
+                        }
+                    }
+                }
+            }
+        }
             };
+
             string jsonExample = JsonConvert.SerializeObject(exampleDto, Formatting.Indented);
+
+      
             return $"""
-            Bạn là một chuyên gia ra đề thi TOEIC Reading Part 5.
+    You are an expert TOEIC Reading Part 5 question generator.
 
-            **Yêu cầu:**
-            - Tạo ra chính xác **{quantity}** bộ đề thi Part 5 (mỗi bộ là một câu hỏi).
-            - {(string.IsNullOrWhiteSpace(topic) ? "Chủ đề hoặc điểm ngữ pháp tự do." : $"Tập trung vào chủ đề: **{topic}**.")}
-            - Mỗi bộ đề bao gồm:
-                - Một câu chưa hoàn chỉnh (đặt trong `StemText` của `AIGeneratedQuestionDTO`).
-                - Bốn (4) lựa chọn (`Options` là `AIGeneratedOptionDTO`). Chỉ MỘT lựa chọn đúng (`IsCorrect: true`).
-                - Giải thích (`Explanation`) ngắn gọn.
-                - Điền các thông tin khác như `ExamExamTitle`, `Skill`, `PartLabel`, `PartId`, `QuestionType`... như trong ví dụ.
-            - **Quan trọng:** Trả về kết quả dưới dạng một đối tượng JSON **AIGeneratedExamDTO** duy nhất, không có markdown hay giải thích bên ngoài, theo đúng cấu trúc ví dụ dưới đây (Lưu ý: mỗi câu hỏi Part 5 nằm trong một `prompt` riêng). Đảm bảo JSON là hợp lệ.
+    🚨 CRITICAL STRUCTURE REQUIREMENT:
+    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    - Create EXACTLY {quantity} Prompt objects in the "Prompts" array
+    - Each Prompt contains EXACTLY 1 Question
+    - Structure: {quantity} Prompts → {quantity} independent sentences
+    - Each sentence is COMPLETELY INDEPENDENT (no shared context)
+    
+    COUNT BEFORE RETURNING:
+    - Prompts.length MUST equal {quantity}
+    - Each Prompts[i].Questions.length MUST equal 1
+    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-            **Ví dụ cấu trúc JSON đầu ra (cho 1 câu hỏi):**
-            ```json
-            {jsonExample}
-            ```
-            **Hãy bắt đầu tạo {quantity} bộ đề.**
-            Hãy chỉ trả về một JSON object duy nhất, không có lời dẫn, không có markdown, không có ký hiệu ```json, không có mô tả hoặc lời giải thích nào khác.
-            
-            """;
+    **Topic/Focus:** {topic ?? "General business vocabulary and grammar"}
+
+    **Each Prompt structure:**
+    - ExamTitle: "Incomplete Sentence"
+    - Description: "Choose the word or phrase that best completes the sentence."
+    - Questions: Array with 1 item containing:
+      - StemText: Incomplete sentence with "......" for the blank
+      - 4 Options (A/B/C/D), only 1 IsCorrect=true
+      - Explanation in Vietnamese
+      - PartId: 5, QuestionType: "MultipleChoice_SentenceCompletion"
+      - ScoreWeight: 1, Time: 30
+
+    **Grammar/Vocabulary focus:**
+    - Verb tenses, prepositions, word forms, conjunctions, quantifiers
+
+    **Example (shows 2 INDEPENDENT prompts):**
+    ```json
+    {jsonExample}
+    ```
+
+    **Self-verification checklist:**
+    ✓ Prompts array has {quantity} items (NOT 1 item with {quantity} questions!)
+    ✓ Each Prompt has exactly 1 Question
+    ✓ Each Question has 4 Options
+    ✓ Only 1 Option has IsCorrect=true
+
+    **Output requirements:**
+    - Valid JSON only (AIGeneratedExamDTO structure)
+    - No markdown code blocks (no ```json)
+    - No explanations outside JSON
+
+    Generate EXACTLY {quantity} INDEPENDENT prompts now:
+    """;
         }
 
         private static string CreateReadingPart6Prompt(int quantity, string topic)
@@ -679,9 +753,8 @@ namespace ServiceLayer.AI.Prompt
                 - Một đoạn văn bản hoàn chỉnh (đặt trong `Description` của `AIGeneratedPromptDTO`) có **bốn (4)** chỗ trống `[__1__]` đến `[__4__]`.
                 - **Bốn (4)** câu hỏi trắc nghiệm (`Questions` là `AIGeneratedQuestionDTO`), mỗi câu tương ứng một chỗ trống.
                     - `StemText` của câu hỏi chỉ rõ vị trí blank.
-                - Mỗi câu hỏi có 4 `Options`. Chỉ MỘT lựa chọn đúng.
                 - Cung cấp `Explanation` cho mỗi câu.
-                - Điền các thông tin khác như `ExamExamTitle`, `Skill`, `PartLabel`, `PartId`, `QuestionType`... như trong ví dụ.
+                - Điền các thông tin khác (`ExamExamTitle`, `Skill`, `PartLabel`, `PartId`, `QuestionType`...) như trong ví dụ.
             - **Quan trọng:** Trả về kết quả dưới dạng một đối tượng JSON **AIGeneratedExamDTO** duy nhất, không có markdown hay giải thích bên ngoài, theo đúng cấu trúc ví dụ dưới đây. Đảm bảo JSON là hợp lệ.
 
             **Ví dụ cấu trúc JSON đầu ra (cho 1 đoạn văn):**
@@ -696,45 +769,61 @@ namespace ServiceLayer.AI.Prompt
 
         private static string CreateReadingPart7Prompt(int quantity, string topic)
         {
-            // Luôn tạo 2 câu hỏi cho mỗi đoạn văn
-            int questionsPerPassage = 2;
             var exampleDto = new AIGeneratedExamDTO
             {
                 ExamExamTitle = $"AI Generated Reading Part 7 - {topic}",
                 Skill = "Reading",
                 PartLabel = "Part 7",
-                Prompts = new List<AIGeneratedPromptDTO> { // Mỗi Prompt chứa 1 đoạn văn + 2 câu hỏi
-                    new AIGeneratedPromptDTO {
-                        ExamTitle = "Reading Comprehension - Single Passage",
-                        Description = "[Sample email about a company policy change...]", // Đoạn văn
-                        Questions = new List<AIGeneratedQuestionDTO> {
-                            new AIGeneratedQuestionDTO {
-                                PartId = 7, QuestionType = "MultipleChoice_SinglePassage",
-                                StemText = "What is the main purpose of the email?",
-                                Explanation = "The email announces a change to the company's remote work policy.",
-                                ScoreWeight = 1, Time = 60,
-                                Options = new List<AIGeneratedOptionDTO>{
-                                    new AIGeneratedOptionDTO{ Label="A", Content="To schedule a meeting", IsCorrect=false },
-                                    new AIGeneratedOptionDTO{ Label="B", Content="To announce a policy change", IsCorrect=true },
-                                    new AIGeneratedOptionDTO{ Label="C", Content="To request employee feedback", IsCorrect=false },
-                                    new AIGeneratedOptionDTO{ Label="D", Content="To introduce a new manager", IsCorrect=false }
-                                }
-                            },
-                            new AIGeneratedQuestionDTO {
-                                PartId = 7, QuestionType = "MultipleChoice_SinglePassage",
-                                StemText = "According to the email, when will the change take effect?",
-                                Explanation = "The email states the policy will be effective 'starting next month'.",
-                                ScoreWeight = 1, Time = 60,
-                                Options = new List<AIGeneratedOptionDTO>{
-                                    new AIGeneratedOptionDTO{ Label="A", Content="Immediately", IsCorrect=false },
-                                    new AIGeneratedOptionDTO{ Label="B", Content="Next week", IsCorrect=false },
-                                    new AIGeneratedOptionDTO{ Label="C", Content="Next month", IsCorrect=true },
-                                    new AIGeneratedOptionDTO{ Label="D", Content="Next quarter", IsCorrect=false }
-                                }
-                            }
+                Prompts = new List<AIGeneratedPromptDTO> {
+            new AIGeneratedPromptDTO {
+                ExamTitle = "Reading Comprehension - Single Passage",
+                Description = "To: All Employees\nFrom: HR Department\nDate: March 15, 2024\nSubject: New Remote Work Policy\n\nDear Team,\n\nEffective April 1st, employees may work from home up to two days per week. To participate, please submit your preferred remote work schedule to your direct manager by March 25th. Note that employees in customer-facing roles may have limited flexibility due to operational needs. For questions, contact HR at hr@company.com.\n\nBest regards,\nHuman Resources",
+                Questions = new List<AIGeneratedQuestionDTO> {
+                    new AIGeneratedQuestionDTO {
+                        PartId = 7,
+                        QuestionType = "MultipleChoice_SinglePassage",
+                        StemText = "What is the main purpose of the email?",
+                        Explanation = "Email thông báo về chính sách làm việc từ xa mới ('New Remote Work Policy').",
+                        ScoreWeight = 1,
+                        Time = 60,
+                        Options = new List<AIGeneratedOptionDTO>{
+                            new AIGeneratedOptionDTO{ Label="A", Content="To schedule a meeting", IsCorrect=false },
+                            new AIGeneratedOptionDTO{ Label="B", Content="To announce a policy change", IsCorrect=true },
+                            new AIGeneratedOptionDTO{ Label="C", Content="To request employee feedback", IsCorrect=false },
+                            new AIGeneratedOptionDTO{ Label="D", Content="To introduce a new manager", IsCorrect=false }
+                        }
+                    },
+                    new AIGeneratedQuestionDTO {
+                        PartId = 7,
+                        QuestionType = "MultipleChoice_SinglePassage",
+                        StemText = "When will the new policy take effect?",
+                        Explanation = "Email nói rõ 'Effective April 1st'.",
+                        ScoreWeight = 1,
+                        Time = 60,
+                        Options = new List<AIGeneratedOptionDTO>{
+                            new AIGeneratedOptionDTO{ Label="A", Content="Immediately", IsCorrect=false },
+                            new AIGeneratedOptionDTO{ Label="B", Content="March 25th", IsCorrect=false },
+                            new AIGeneratedOptionDTO{ Label="C", Content="April 1st", IsCorrect=true },
+                            new AIGeneratedOptionDTO{ Label="D", Content="Next quarter", IsCorrect=false }
+                        }
+                    },
+                    new AIGeneratedQuestionDTO {
+                        PartId = 7,
+                        QuestionType = "MultipleChoice_SinglePassage",
+                        StemText = "What are employees asked to do by March 25th?",
+                        Explanation = "Email yêu cầu 'submit your preferred remote work schedule to your direct manager by March 25th'.",
+                        ScoreWeight = 1,
+                        Time = 60,
+                        Options = new List<AIGeneratedOptionDTO>{
+                            new AIGeneratedOptionDTO{ Label="A", Content="Contact HR", IsCorrect=false },
+                            new AIGeneratedOptionDTO{ Label="B", Content="Submit their work schedule", IsCorrect=true },
+                            new AIGeneratedOptionDTO{ Label="C", Content="Attend a training session", IsCorrect=false },
+                            new AIGeneratedOptionDTO{ Label="D", Content="Update their contact information", IsCorrect=false }
                         }
                     }
                 }
+            }
+        }
             };
             string jsonExample = JsonConvert.SerializeObject(exampleDto, Formatting.Indented);
             // Cập nhật yêu cầu prompt
@@ -751,13 +840,10 @@ namespace ServiceLayer.AI.Prompt
                 - Mỗi câu hỏi (`AIGeneratedQuestionDTO`) có `StemText`, 4 `Options` (`Label`, `Content`, `IsCorrect`), và `Explanation`. Chỉ MỘT lựa chọn đúng.
                 - Điền các thông tin khác (`ExamExamTitle`, `Skill`, `PartLabel`, `PartId`, `QuestionType`...) như trong ví dụ.
             - **Quan trọng:** Trả về kết quả dưới dạng một đối tượng JSON duy nhất, không có markdown hay giải thích bên ngoài, theo đúng cấu trúc ví dụ dưới đây. Đảm bảo JSON là hợp lệ.
-
-            **Ví dụ cấu trúc JSON đầu ra (cho một cụm Single Passage với 2 câu hỏi):**
-            ```json
             {jsonExample}
             ```
             **Hãy bắt đầu tạo {quantity} cụm đề thi (đoạn văn).**
-            Hãy đảm bảo bạn chỉ trả về một JSON object AIGeneratedExamDTO duy nhất chứa đúng {quantity} prompt bên trong mảng Prompts. Mỗi prompt phải có đúng 2 question. Không thêm bất kỳ nội dung nào khác.
+            Hãy đảm bảo bạn chỉ trả về một JSON object AIGeneratedExamDTO duy nhất chứa đúng {quantity} prompt bên trong mảng Prompts. Mỗi prompt phải có đúng 3 question. Không thêm bất kỳ nội dung nào khác.
             """;
         }
 
@@ -781,8 +867,8 @@ namespace ServiceLayer.AI.Prompt
                                 PartId = 8, // Part ID cho Q1-2
                                 QuestionType = "ReadAloud",
                                 StemText = "Read the text aloud clearly and naturally.", // Hướng dẫn chung
-                                ScoreWeight = 3, // Điểm ví dụ (thang 0-3)
-                                Time = 90 // Thời gian ví dụ (45s chuẩn bị + 45s đọc)
+                                ScoreWeight = 3, 
+                                Time = 45 
                                 // Options, CorrectAnswer, Explanation, Translation là null/empty
                             }
                         }
@@ -826,21 +912,37 @@ namespace ServiceLayer.AI.Prompt
                 ExamExamTitle = "AI Generated Speaking Q3",
                 Skill = "Speaking",
                 PartLabel = "Q3",
-                Prompts = new List<AIGeneratedPromptDTO> { // Mỗi prompt chứa 1 đề bài mô tả tranh
-                    new AIGeneratedPromptDTO {
-                        ExamTitle = "Describe a Picture",
-                        Description = "Look at the picture and describe it in as much detail as possible.", // Mô tả chung
-                        ReferenceImageUrl = "Detailed description of the image", // Sẽ điền sau
-                        Questions = new List<AIGeneratedQuestionDTO> {
-                            new AIGeneratedQuestionDTO {
-                                PartId = 9, QuestionType = "DescribeImage",
-                                // StemText chứa mô tả ảnh để AI Image dùng
-                                StemText = "A group of people are sitting around a conference table...",
-                                ScoreWeight = 3, Time = 45 // Điểm và thời gian ví dụ
-                            }
-                        }
+                Prompts = new List<AIGeneratedPromptDTO> { 
+            // ✅ VÍ DỤ 1: Prompt đầu tiên
+            new AIGeneratedPromptDTO {
+                ExamTitle = "Describe a Picture",
+                Description = "Look at the picture and describe it in as much detail as possible.",
+                ReferenceImageUrl = "A group of people are sitting around a conference table in a modern office. There is a woman standing at a whiteboard presenting charts to the team. Laptops and documents are visible on the table.",
+                Questions = new List<AIGeneratedQuestionDTO> {
+                    new AIGeneratedQuestionDTO {
+                        PartId = 9,
+                        QuestionType = "DescribeImage",
+                        StemText = "Describe the picture in detail.",
+                        ScoreWeight = 3,
+                        Time = 45 
                     }
                 }
+            },
+            new AIGeneratedPromptDTO {
+                ExamTitle = "Describe a Picture",
+                Description = "Look at the picture and describe it in as much detail as possible.",
+                ReferenceImageUrl = "A man is repairing a bicycle in front of a shop. Tools are scattered on the ground and a sign reading 'Bike Repair' is visible in the background.",
+                Questions = new List<AIGeneratedQuestionDTO> {
+                    new AIGeneratedQuestionDTO {
+                        PartId = 9,
+                        QuestionType = "DescribeImage",
+                        StemText = "Describe the picture in detail.",
+                        ScoreWeight = 3,
+                        Time = 45
+                    }
+                }
+            }
+        }
             };
             string jsonExample = JsonConvert.SerializeObject(exampleDto, Formatting.Indented);
             return $"""
@@ -910,17 +1012,17 @@ namespace ServiceLayer.AI.Prompt
         {
             var exampleDto = new AIGeneratedExamDTO
             {
-                ExamExamTitle = $"AI Generated Speaking Q7-9 - {topic}",
+                ExamExamTitle = $"AI Generated Speaking Q7-10 - {topic}",
                 Skill = "Speaking",
                 PartLabel = "Q7-9",
-                Prompts = new List<AIGeneratedPromptDTO> { // Mỗi prompt chứa 1 thông tin + 3 câu hỏi
+                Prompts = new List<AIGeneratedPromptDTO> { // Mỗi prompt chứa 1 thông tin + 4 câu hỏi
                     new AIGeneratedPromptDTO {
                         ExamTitle = "Respond using Information",
                         // Thông tin nằm trong Description
                         Description = "**Conference Schedule**\n9:00 AM: Opening Remarks\n10:00 AM: Workshop A - Marketing Strategies\n11:00 AM: Coffee Break\n11:30 AM: Workshop B - Financial Planning\n1:00 PM: Lunch",
                         Questions = new List<AIGeneratedQuestionDTO> {
-                             new AIGeneratedQuestionDTO { PartId = 11, QuestionType = "RespondToQuestion_Info", StemText = "What time does the conference begin?", ScoreWeight = 3, Time = 15 },
-                             new AIGeneratedQuestionDTO { PartId = 11, QuestionType = "RespondToQuestion_Info", StemText = "Could you tell me what Workshop A is about?", ScoreWeight = 3, Time = 15 },
+                             new AIGeneratedQuestionDTO { PartId = 11, QuestionType = "RespondToQuestion_Info", StemText = "What time does the conference begin?", ScoreWeight = 3, Time = 30 },
+                             new AIGeneratedQuestionDTO { PartId = 11, QuestionType = "RespondToQuestion_Info", StemText = "Could you tell me what Workshop A is about?", ScoreWeight = 3, Time = 30 },
                              new AIGeneratedQuestionDTO { PartId = 11, QuestionType = "RespondToQuestion_Info", StemText = "How long is the coffee break?", ScoreWeight = 3, Time = 30 }
                         }
                     }
@@ -928,10 +1030,10 @@ namespace ServiceLayer.AI.Prompt
             };
             string jsonExample = JsonConvert.SerializeObject(exampleDto, Formatting.Indented);
             return $"""
-            Bạn là một chuyên gia ra đề thi TOEIC Speaking Questions 7-9 (Respond to questions using information provided).
+            Bạn là một chuyên gia ra đề thi TOEIC Speaking Questions 7-10 (Respond to questions using information provided).
 
             **Yêu cầu:**
-            - Tạo ra chính xác **{quantity}** bộ đề thi Q7-9.
+            - Tạo ra chính xác **{quantity}** bộ đề thi Q7-.
             - Chủ đề chung: **{topic}**.
             - Mỗi bộ đề (prompt) phải bao gồm:
                 - Một đoạn văn bản chứa thông tin có cấu trúc (đặt trong `Description` của `AIGeneratedPromptDTO`).
@@ -948,53 +1050,7 @@ namespace ServiceLayer.AI.Prompt
             
             """;
         }
-
-/*        private static string CreateSpeakingQ10Prompt(int quantity, string topic)
-        {
-            var exampleDto = new AIGeneratedExamDTO
-            {
-                ExamExamTitle = $"AI Generated Speaking Q10 - {topic}",
-                Skill = "Speaking",
-                PartLabel = "Q10",
-                Prompts = new List<AIGeneratedPromptDTO> { // Mỗi prompt chứa 1 vấn đề + 1 yêu cầu
-                    new AIGeneratedPromptDTO {
-                        ExamTitle = "Propose a Solution",
-                         // Kịch bản vấn đề nằm trong Description
-                        Description = "Hi, this is Mark from accounting. I'm calling because I noticed a discrepancy in the latest sales report you submitted. The total revenue figure seems much lower than expected for the last quarter. Could you please look into this and get back to me as soon as possible? We need to finalize the quarterly review by tomorrow.",
-                        ReferenceAudioUrl = null, // Sẽ chứa audio của Description
-                        Questions = new List<AIGeneratedQuestionDTO> {
-                            new AIGeneratedQuestionDTO {
-                                PartId = 12, QuestionType = "ProposeSolution",
-                                // Hướng dẫn trả lời nằm trong StemText
-                                StemText = "Listen to the message. Then, respond as if you are the recipient. In your response, you should:\n* Acknowledge you received the message and understand the problem.\n* Propose two steps you will take to investigate the discrepancy.\n* State when you will provide an update.",
-                                ScoreWeight = 5, Time = 60 // Điểm và thời gian ví dụ
-                            }
-                        }
-                    }
-                }
-            };
-            string jsonExample = JsonConvert.SerializeObject(exampleDto, Formatting.Indented);
-            return $"""
-            Bạn là một chuyên gia ra đề thi TOEIC Speaking Question 10 (Propose a solution).
-
-             **Yêu cầu:**
-            - Tạo ra chính xác **{quantity}** tình huống vấn đề Q10.
-            - Chủ đề chung: **{topic}**.
-            - Mỗi tình huống (prompt) phải bao gồm:
-                - Một kịch bản mô tả vấn đề (đặt trong `Description` của `AIGeneratedPromptDTO`), thường là dạng tin nhắn thoại.
-                - Một câu hỏi/hướng dẫn (`StemText` của `AIGeneratedQuestionDTO`) yêu cầu thí sinh phản hồi và đề xuất giải pháp theo các điểm cụ thể.
-                - Điền các thông tin khác như `ExamExamTitle`, `Skill`, `PartLabel`, `PartId`, `QuestionType`, `Time`... như trong ví dụ.
-            - **Quan trọng:** Trả về kết quả dưới dạng một đối tượng JSON **AIGeneratedExamDTO** duy nhất, không có markdown hay giải thích bên ngoài, theo đúng cấu trúc ví dụ dưới đây.
-
-            **Ví dụ cấu trúc JSON đầu ra (cho 1 tình huống):**
-            ```json
-            {jsonExample}
-            ```
-            **Hãy bắt đầu tạo {quantity} tình huống.**
-            Hãy chỉ trả về một JSON object duy nhất, không có lời dẫn, không có markdown, không có ký hiệu ```json, không có mô tả hoặc lời giải thích nào khác.
-            
-            """;
-        }*/
+ 
 
         private static string CreateSpeakingPart5Prompt(int quantity, string topic)
         {
@@ -1039,7 +1095,8 @@ namespace ServiceLayer.AI.Prompt
             """;
         }
 
-        // --- Writing Prompts (Updated DTOs) ---
+        
+             // --- Writing Prompts (Updated DTOs) ---
         private static string CreateWritingPart1Prompt(int quantity)
         {
             var exampleDto = new AIGeneratedExamDTO
@@ -1092,9 +1149,8 @@ namespace ServiceLayer.AI.Prompt
             Hãy tạo ra **{quantity} bộ đề Writing Q1–5**, mỗi bộ gồm:
 
             1. **Mô tả ảnh (`ReferenceImageUrl`)**  
-               - Viết mô tả chi tiết bằng tiếng Anh cho bức ảnh.  
-               - Ví dụ: `"A man is reading a newspaper at a café table."`  
-               - Mô tả này dùng để **tạo hình ảnh minh họa bằng AI**.
+               - Viết **một mô tả chi tiết bằng tiếng Anh** cho bức ảnh (ví dụ: “A man is repairing a bicycle in front of a shop”).  
+               - Mô tả này sẽ được dùng để **tạo ảnh minh họa bằng AI** sau này.  
 
             2. **Hai từ hoặc cụm từ (`Description`)**  
                - Cung cấp hai từ hoặc cụm từ mà thí sinh bắt buộc phải sử dụng trong câu.  
@@ -1135,46 +1191,58 @@ namespace ServiceLayer.AI.Prompt
                 ExamExamTitle = $"AI Generated Writing Q6-7 - {topic}",
                 Skill = "Writing",
                 PartLabel = "Q6-7",
-                Prompts = new List<AIGeneratedPromptDTO> { // Mỗi prompt chứa 1 email yêu cầu + hướng dẫn
-                    new AIGeneratedPromptDTO {
-                        ExamTitle = "Respond to a written request",
-                        // Email yêu cầu nằm trong Description
-                        Description = "From: Dale City Library\nTo: Library Members\nSubject: Upcoming Author Event...",
-                        Questions = new List<AIGeneratedQuestionDTO> {
-                            new AIGeneratedQuestionDTO {
-                                PartId = 20, QuestionType = "RespondToEmail",
-                                // Hướng dẫn viết nằm trong StemText
-                                StemText = "Read the email. Respond to the Library Staff as a library member. In your email, ask TWO questions and make ONE suggestion.",
-                                // Email mẫu nằm trong Explanation
-                                Explanation = "[Sample response email including 2 questions and 1 suggestion...]",
-                                ScoreWeight = 4, Time = 600 // 10 phút
-                            }
-                        }
+                Prompts = new List<AIGeneratedPromptDTO> {
+            new AIGeneratedPromptDTO {
+                ExamTitle = "Respond to a written request",
+                // Email yêu cầu nằm trong Description
+                Description = "From: Marketing Department\nTo: All Staff\nSubject: Customer Satisfaction Survey\n\nDear Team Members,\n\nWe are conducting our annual customer satisfaction survey next month. We need volunteers to help distribute and collect survey forms at our main office. The task will take approximately 2 hours on March 15th. If you are interested, please reply to this email by March 1st.\n\nThank you,\nMarketing Team",
+                Questions = new List<AIGeneratedQuestionDTO> {
+                    new AIGeneratedQuestionDTO {
+                        PartId = 14, 
+                        QuestionType = "RespondToEmail",
+                        // Hướng dẫn viết nằm trong StemText
+                        StemText = "Read the email. Respond to the Marketing Team as a staff member. In your email, ask TWO questions and make ONE suggestion about the survey.",
+                        // Email mẫu nằm trong Explanation
+                        Explanation = "Dear Marketing Team,\n\nThank you for organizing the customer satisfaction survey. I am interested in volunteering to help.\n\nI have two questions: First, what time should volunteers arrive on March 15th? Second, will we need any special training before distributing the forms?\n\nI would also like to suggest that we provide small incentives, such as discount coupons, to encourage more customers to complete the survey.\n\nI look forward to hearing from you.\n\nBest regards,\n[Your Name]",
+                        ScoreWeight = 4,
+                        Time = 600 // 10 phút
                     }
                 }
+            }
+        }
             };
+
             string jsonExample = JsonConvert.SerializeObject(exampleDto, Formatting.Indented);
+
             return $"""
-            Bạn là một chuyên gia ra đề thi TOEIC Writing Questions 6-7 (Respond to a written request).
+    Bạn là một chuyên gia ra đề thi TOEIC Writing Questions 6-7 (Respond to a written request).
 
-            **Yêu cầu:**
-            - Tạo ra chính xác **{quantity}** đề bài Q6-7.
-            - Chủ đề chung: **{topic}**.
-            - Mỗi đề bài (prompt) phải bao gồm:
-                - Một email yêu cầu (đặt trong `Description` của `AIGeneratedPromptDTO`).
-                - Một câu hỏi/hướng dẫn (`StemText` của `AIGeneratedQuestionDTO`) yêu cầu viết email trả lời theo vai trò và yêu cầu cụ thể (hỏi thêm, đề xuất...).
-                - Cung cấp một email trả lời mẫu (`Explanation`).
-                - Điền các thông tin khác như `ExamExamTitle`, `Skill`, `PartLabel`, `PartId`, `QuestionType`, `Time`... như trong ví dụ.
-            - **Quan trọng:** Trả về kết quả dưới dạng một đối tượng JSON **AIGeneratedExamDTO** duy nhất, không có markdown hay giải thích bên ngoài, theo đúng cấu trúc ví dụ dưới đây.
+    **Yêu cầu:**
+    - Tạo ra chính xác **{quantity}** đề bài Q6-7.
+    - Chủ đề chung: **{topic}**.
+    - Mỗi đề bài (prompt) phải bao gồm:
+        - Một email yêu cầu hoàn chỉnh (đặt trong `Description` của `AIGeneratedPromptDTO`).
+        - Một câu hỏi/hướng dẫn (`StemText` của `AIGeneratedQuestionDTO`) yêu cầu viết email trả lời theo vai trò cụ thể.
+        - Yêu cầu phải bao gồm: **Hỏi HAI (2) câu hỏi** và **Đưa ra MỘT (1) đề xuất/gợi ý**.
+        - Cung cấp một email trả lời mẫu hoàn chỉnh (`Explanation`) thể hiện rõ 2 câu hỏi và 1 đề xuất.
+        - Điền các thông tin khác như `ExamExamTitle`, `Skill`, `PartLabel`, **`PartId = 14`**, `QuestionType`, `Time`... như trong ví dụ.
+    - **Quan trọng:** Trả về kết quả dưới dạng một đối tượng JSON **AIGeneratedExamDTO** duy nhất, không có markdown hay giải thích bên ngoài, theo đúng cấu trúc ví dụ dưới đây.
 
-            **Ví dụ cấu trúc JSON đầu ra (cho 1 đề bài):**
-            ```json
-            {jsonExample}
-            ```
-            **Hãy bắt đầu tạo {quantity} đề bài.**
-            Hãy chỉ trả về một JSON object duy nhất, không có lời dẫn, không có markdown, không có ký hiệu ```json, không có mô tả hoặc lời giải thích nào khác.
-            
-            """;
+    **Ví dụ cấu trúc JSON đầu ra (cho 1 đề bài):**
+    ```json
+    {jsonExample}
+    ```
+    
+    **Cấu trúc email trả lời mẫu phải có:**
+    1. Lời chào/mở đầu
+    2. Câu hỏi thứ nhất (Question 1)
+    3. Câu hỏi thứ hai (Question 2)
+    4. Một đề xuất/gợi ý (Suggestion)
+    5. Lời kết
+
+    **Hãy bắt đầu tạo {quantity} đề bài.**
+    Hãy chỉ trả về một JSON object duy nhất, không có lời dẫn, không có markdown, không có ký hiệu ```json, không có mô tả hoặc lời giải thích nào khác.
+    """;
         }
         private static string CreateWritingPart3Prompt(int quantity, string topic)
         {
@@ -1229,7 +1297,6 @@ namespace ServiceLayer.AI.Prompt
     """;
         }
 
+    
     }
 }
-
-
