@@ -8,20 +8,28 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ServiceLayer.Streak;
+using Microsoft.Extensions.Logging;
 
 namespace ServiceLayer.Exam.ExamAttempt
 {
     public class ExamAttemptService : IExamAttemptService
     {
-        private readonly RepositoryLayer.Exam.ExamAttempt.IExamAttemptRepository _examAttemptRepository;
+        private readonly IExamAttemptRepository _examAttemptRepository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IStreakService _streakService; 
+        private readonly ILogger<ExamAttemptService> _logger; 
 
         public ExamAttemptService(
-            RepositoryLayer.Exam.ExamAttempt.IExamAttemptRepository examAttemptRepository,
-            IUnitOfWork unitOfWork)
+            IExamAttemptRepository examAttemptRepository,
+            IUnitOfWork unitOfWork,
+            IStreakService streakService, 
+            ILogger<ExamAttemptService> logger) 
         {
             _examAttemptRepository = examAttemptRepository;
             _unitOfWork = unitOfWork;
+            _streakService = streakService; 
+            _logger = logger; 
         }
 
         public async Task<ExamAttemptRequestDTO> EndAnExam(ExamAttemptRequestDTO model)
@@ -101,6 +109,43 @@ namespace ServiceLayer.Exam.ExamAttempt
 
             _unitOfWork.ExamAttemptsGeneric.Update(attempt);
             await _unitOfWork.CompleteAsync();
+
+            //  ===== THÊM PHẦN NÀY (STREAK HOOK) =====
+            try
+            {
+                var userId = attempt.UserID;
+                var todayLocal = _streakService.GetTodayGMT7();
+                
+                var streakResult = await _streakService.UpdateOnValidPracticeAsync(userId, todayLocal);
+                
+                if (streakResult.Success)
+                {
+                    _logger.LogInformation(
+                        "Streak updated for user {UserId} after exam {AttemptId}. Event: {EventType}, Streak: {Streak}",
+                        userId, attemptId, streakResult.EventType, streakResult.Summary?.CurrentStreak ?? 0);
+
+                    if (streakResult.MilestoneReached)
+                    {
+                        _logger.LogInformation(
+                            " User {UserId} reached milestone {Milestone}!",
+                            userId, streakResult.MilestoneValue);
+                        // TODO Phase 6: Send notification
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning(
+                        "Failed to update streak for user {UserId}: {Message}",
+                        userId, streakResult.Message);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, 
+                    "Error updating streak for user {UserId} after exam {AttemptId}",
+                    attempt.UserID, attemptId);
+            }
+            // ===== KẾT THÚC PHẦN THÊM =====
 
             var duration = attempt.EndTime.Value - attempt.StartTime;
 

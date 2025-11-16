@@ -43,6 +43,10 @@ using RepositoryLayer.Statistic;
 using ServiceLayer.Statistic;
 using ServiceLayer.UserNoteAI;
 using ServiceLayer.Analytics;
+using ServiceLayer.Streak;
+using Hangfire;
+using Hangfire.SqlServer;
+using lumina.Filters;
 
 namespace lumina
 {
@@ -50,111 +54,168 @@ namespace lumina
     {
         public static void Main(string[] args)
         {
-
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
+            // ========================================
+            // 1. DATABASE
+            // ========================================
             builder.Services.AddDbContext<LuminaSystemContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+            // ========================================
+            // 2. HTTP CLIENTS
+            // ========================================
             builder.Services.AddHttpClient<ImageCaptioningService>(client =>
             {
                 client.BaseAddress = new Uri("http://localhost:5000");
-
                 client.Timeout = TimeSpan.FromSeconds(30);
-
             });
-            builder.Services.Configure<AzureSpeechSettings>(builder.Configuration.GetSection("AzureSpeechSettings"));
-            builder.Services.Configure<AzureSpeechSettings>(
-    builder.Configuration.GetSection("AzureSpeech"));
-            builder.Services.Configure<OpenAIOptions>(
-    builder.Configuration.GetSection("OpenAI"));
 
-            // ========================================
-            // ✅ TĂNG TIMEOUT CHO OPENAI HTTPCLIENT
-            // ========================================
             builder.Services.AddHttpClient<IExamGenerationAIService, ExamGenerationAIService>("OpenAI", c =>
             {
-                c.Timeout = TimeSpan.FromMinutes(10); // ✅ Tăng từ 3 phút lên 10 phút
-                
-                // ✅ (Optional) Tăng thêm buffer size nếu response lớn
+                c.Timeout = TimeSpan.FromMinutes(10); // ✅ Timeout cho OpenAI
                 c.MaxResponseContentBufferSize = 10 * 1024 * 1024; // 10 MB
             });
 
-            builder.Services.AddScoped<IAzureSpeechService, AzureSpeechService>();
+            builder.Services.AddHttpClient();
 
-            // ✅ FIX Bug #2: Register ScoringWeightService for consistent scoring
+            // ========================================
+            // 3. CONFIGURATION OPTIONS
+            // ========================================
+            builder.Services.Configure<AzureSpeechSettings>(builder.Configuration.GetSection("AzureSpeechSettings"));
+            builder.Services.Configure<AzureSpeechSettings>(builder.Configuration.GetSection("AzureSpeech"));
+            builder.Services.Configure<OpenAIOptions>(builder.Configuration.GetSection("OpenAI"));
+
+            // ========================================
+            // 4. SERVICES & REPOSITORIES (DI)
+            // ========================================
+            
+            // Azure & Speech Services
+            builder.Services.AddScoped<IAzureSpeechService, AzureSpeechService>();
+            builder.Services.AddScoped<ServiceLayer.TextToSpeech.ITextToSpeechService, ServiceLayer.TextToSpeech.TextToSpeechService>();
+
+            // Scoring Services
             builder.Services.AddScoped<IScoringWeightService, ScoringWeightService>();
             builder.Services.AddScoped<ISpeakingScoringService, SpeakingScoringService>();
             builder.Services.AddScoped<IListeningService, ListeningService>();
             builder.Services.AddScoped<IReadingService, ReadingService>();
+
+            // User & Role Services
             builder.Services.AddScoped<IRoleRepository, RoleRepository>();
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<IRoleService, RoleService>();
+            builder.Services.AddScoped<IUserRepository, UserRepository>();
+
+            // Package Services
             builder.Services.AddScoped<IPackageRepository, PackageRepository>();
             builder.Services.AddScoped<IPackageService, PackageService>();
 
-            builder.Services.AddScoped<RepositoryLayer.Exam.ExamAttempt.IExamAttemptRepository,RepositoryLayer.Exam.ExamAttempt.ExamAttemptRepository > ();
+            // Exam Attempt Services
+            builder.Services.AddScoped<RepositoryLayer.Exam.ExamAttempt.IExamAttemptRepository, RepositoryLayer.Exam.ExamAttempt.ExamAttemptRepository>();
             builder.Services.AddScoped<ServiceLayer.Exam.ExamAttempt.IExamAttemptService, ServiceLayer.Exam.ExamAttempt.ExamAttemptService>();
 
+            // Auth Services
             builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
-            
-            // Auth services - Tuân thủ SOLID principles
-            builder.Services.AddScoped<IGoogleAuthService, GoogleAuthService>(); // Service xử lý Google authentication
-            builder.Services.AddScoped<IAuthService, AuthService>(); // Service xử lý authentication chính
-            builder.Services.AddScoped<IPasswordResetService, PasswordResetService>(); // Service xử lý reset password
-            
+            builder.Services.AddScoped<IGoogleAuthService, GoogleAuthService>();
+            builder.Services.AddScoped<IAuthService, AuthService>();
+            builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
+
+            // Upload & Email Services
             builder.Services.AddScoped<IUploadService, UploadService>();
             builder.Services.AddTransient<IEmailSender, SmtpEmailSender>();
-            builder.Services.AddScoped<IEventService,EventService>();
+
+            // Event & Slide Services
+            builder.Services.AddScoped<IEventService, EventService>();
             builder.Services.AddScoped<IEventRepository, EventRepository>();
             builder.Services.AddScoped<ISlideService, SlideService>();
             builder.Services.AddScoped<ISlideRepository, SlideRepository>();
+
+            // Article Services
             builder.Services.AddScoped<IArticleRepository, ArticleRepository>();
             builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
-            builder.Services.AddScoped<IUserRepository, UserRepository>();
+            builder.Services.AddScoped<IArticleService, ArticleService>();
 
+            // Question Services
             builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
             builder.Services.AddScoped<IQuestionService, QuestionService>();
 
+            // Import Services
             builder.Services.AddScoped<IImportRepository, ImportRepository>();
             builder.Services.AddScoped<IImportService, ImportService>();
+
+            // Exam Services
             builder.Services.AddScoped<IExamRepository, ExamRepository>();
             builder.Services.AddScoped<IExamService, ExamService>();
-            builder.Services.AddScoped<ILeaderboardRepository, LeaderboardRepository>();
-            builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
             builder.Services.AddScoped<IExamPartRepository, ExamPartRepository>();
             builder.Services.AddScoped<IExamPartService, ExamPartService>();
-            
-            builder.Services.AddScoped<IUserNoteRepository,UserNoteRepository>();
+
+            // Leaderboard Services
+            builder.Services.AddScoped<ILeaderboardRepository, LeaderboardRepository>();
+            builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
+
+            // User Note Services
+            builder.Services.AddScoped<IUserNoteRepository, UserNoteRepository>();
             builder.Services.AddScoped<IUserNoteService, UserNoteService>();
 
+            // Vocabulary Services
             builder.Services.AddScoped<IVocabularyListRepository, VocabularyListRepository>();
             builder.Services.AddScoped<IVocabularyListService, VocabularyListService>();
             builder.Services.AddScoped<ISpacedRepetitionService, SpacedRepetitionService>();
-            builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-            builder.Services.AddScoped<IArticleService, ArticleService>();
 
-            builder.Services.AddScoped<IExamPartService, ExamPartService>();
-            builder.Services.AddScoped<IExamPartRepository, ExamPartRepository>();
+            // Writing Services
             builder.Services.AddScoped<IWrittingRepository, WrittingRepository>();
             builder.Services.AddScoped<IWritingService, WritingService>();
+
+            // Chat Services
             builder.Services.AddScoped<IAIChatService, AIChatService>();
+            builder.Services.AddScoped<IChatService, ChatService>();
+
+            // AI & Mapper Services
             builder.Services.AddScoped<IAIExamMapper, AIExamMapper>();
 
+            // Statistic Services
             builder.Services.AddScoped<IStatisticRepository, StatisticRepository>();
             builder.Services.AddScoped<IStatisticService, StatisticService>();
             builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
 
-            builder.Services.AddHttpClient<IExamGenerationAIService, ExamGenerationAIService>("OpenAI", c =>
+            // Unit of Work
+            builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+            // ✅ Streak Services
+            builder.Services.AddScoped<IStreakService, StreakService>();
+            builder.Services.AddScoped<StreakBackgroundJob>();
+            builder.Services.AddScoped<StreakReminderJob>(); // ✅ THÊM DÒNG NÀY
+
+            // ========================================
+            // 5. HANGFIRE (TRƯỚC builder.Build())
+            // ========================================
+            builder.Services.AddHangfire(configuration => configuration
+                .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+                .UseSimpleAssemblyNameTypeSerializer()
+                .UseRecommendedSerializerSettings()
+                .UseSqlServerStorage(
+                    builder.Configuration.GetConnectionString("DefaultConnection"),
+                    new SqlServerStorageOptions
+                    {
+                        CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
+                        SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
+                        QueuePollInterval = TimeSpan.Zero,
+                        UseRecommendedIsolationLevel = true,
+                        DisableGlobalLocks = true,
+                        SchemaName = "Hangfire"
+                    }
+                )
+            );
+
+            builder.Services.AddHangfireServer(options =>
             {
-                c.Timeout = TimeSpan.FromMinutes(180);
+                options.WorkerCount = 2;
+                options.ServerName = "LuminaStreakServer";
             });
 
-            builder.Services.AddScoped<ServiceLayer.TextToSpeech.ITextToSpeechService, ServiceLayer.TextToSpeech.TextToSpeechService>();
-            
-            // Chat services
-            builder.Services.AddScoped<IChatService, ChatService>();
+            // ========================================
+            // 6. CORS
+            // ========================================
             builder.Services.AddCors(options =>
             {
                 options.AddDefaultPolicy(policy =>
@@ -162,12 +223,12 @@ namespace lumina
                     policy.AllowAnyOrigin()
                         .AllowAnyHeader()
                         .AllowAnyMethod();
-                        //.AllowCredentials();
                 });
             });
 
-
-
+            // ========================================
+            // 7. JWT AUTHENTICATION
+            // ========================================
             var jwtSection = builder.Configuration.GetSection("Jwt");
             var jwtSecret = jwtSection["SecretKey"] ?? throw new InvalidOperationException("JWT secret key is not configured.");
             var jwtIssuer = jwtSection["Issuer"] ?? throw new InvalidOperationException("JWT issuer is not configured.");
@@ -188,15 +249,15 @@ namespace lumina
                         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
                     };
                 });
-            builder.Services.AddHttpClient();
+
             builder.Services.AddAuthorization();
 
-
+            // ========================================
+            // 8. CONTROLLERS & SWAGGER
+            // ========================================
             builder.Services.AddControllers();
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
-            
-            // ✅ SWAGGER WITH JWT AUTHENTICATION
+
             builder.Services.AddSwaggerGen(options =>
             {
                 options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
@@ -206,7 +267,6 @@ namespace lumina
                     Description = "API for Lumina TOEIC Learning Platform"
                 });
 
-                // Define JWT security scheme
                 options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
                 {
                     Name = "Authorization",
@@ -218,7 +278,7 @@ namespace lumina
                                   "Enter 'Bearer' [space] and then your token in the text input below.\r\n\r\n" +
                                   "Example: \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\""
                 });
-                // Require JWT for all endpoints
+
                 options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
                 {
                     {
@@ -233,16 +293,18 @@ namespace lumina
                         new string[] {}
                     }
                 });
-                options.CustomSchemaIds(type => type.FullName);
 
+                options.CustomSchemaIds(type => type.FullName);
             });
 
-
-
-
+            // ========================================
+            // ✅ BUILD APP (ĐIỂM CHIA)
+            // ========================================
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
+            // ========================================
+            // 9. MIDDLEWARE
+            // ========================================
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
@@ -250,12 +312,44 @@ namespace lumina
             }
 
             app.UseHttpsRedirection();
-
             app.UseCors();
-
             app.UseAuthentication();
             app.UseAuthorization();
 
+            // ========================================
+            // 10. HANGFIRE DASHBOARD & RECURRING JOBS
+            // ========================================
+            app.UseHangfireDashboard("/hangfire", new DashboardOptions
+            {
+                Authorization = new[] { new HangfireAuthorizationFilter() },
+                DashboardTitle = "Lumina Streak Jobs"
+            });
+
+            // Job 1: Auto-freeze/reset lúc 00:05 GMT+7
+            RecurringJob.AddOrUpdate<StreakBackgroundJob>(
+                "daily-streak-processing",
+                job => job.ProcessDailyStreaksAsync(),
+                "5 17 * * *", // 00:05 GMT+7 = 17:05 UTC
+                new RecurringJobOptions
+                {
+                    TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")
+                }
+            );
+
+            // Job 2: Gửi reminder lúc 21:00 GMT+7
+            RecurringJob.AddOrUpdate<StreakReminderJob>(
+                "daily-streak-reminder",
+                job => job.ProcessDailyRemindersAsync(),
+                "0 14 * * *", // 21:00 GMT+7 = 14:00 UTC   "*/2 * * * *",
+                new RecurringJobOptions
+                {
+                    TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")
+                }
+            );
+
+            // ========================================
+            // 11. MAP CONTROLLERS
+            // ========================================
             app.MapControllers();
 
             app.Run();

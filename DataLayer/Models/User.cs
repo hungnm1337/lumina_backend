@@ -25,6 +25,10 @@ public partial class User
 
     public bool? IsActive { get; set; }
 
+    public int? LongestStreak { get; set; }
+
+    public int? StreakFreezesAvailable { get; set; }
+
     public virtual ICollection<Account> Accounts { get; set; } = new List<Account>();
 
     public virtual ICollection<ArticleCategory> ArticleCategories { get; set; } = new List<ArticleCategory>();
