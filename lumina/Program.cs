@@ -146,6 +146,12 @@ namespace lumina
             builder.Services.AddScoped<IStatisticService, StatisticService>();
             builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
 
+            // ✅ NEW: Quota and Payment services
+            builder.Services.AddScoped<RepositoryLayer.Quota.IQuotaRepository, RepositoryLayer.Quota.QuotaRepository>();
+            builder.Services.AddScoped<ServiceLayer.Quota.IQuotaService, ServiceLayer.Quota.QuotaService>();
+            builder.Services.AddScoped<ServiceLayer.Payment.IPayOSService, ServiceLayer.Payment.PayOSService>();
+            builder.Services.AddScoped<ServiceLayer.Subscription.ISubscriptionService, ServiceLayer.Subscription.SubscriptionService>();
+
             builder.Services.AddHttpClient<IExamGenerationAIService, ExamGenerationAIService>("OpenAI", c =>
             {
                 c.Timeout = TimeSpan.FromMinutes(180);
