@@ -98,8 +98,14 @@ namespace Lumina.Tests
 
             // Assert
             var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-            dynamic value = badRequestResult.Value!;
-            Assert.Equal("Failed to finalize exam attempt", value.message);
+            var value = badRequestResult.Value;
+            Assert.NotNull(value);
+            
+            var messageProperty = value.GetType().GetProperty("message");
+            Assert.NotNull(messageProperty);
+            var message = messageProperty.GetValue(value)?.ToString();
+            Assert.Equal("Failed to finalize exam attempt", message);
+            
             _mockExamAttemptService.Verify(s => s.FinalizeAttemptAsync(request.ExamAttemptId), Times.Once);
         }
 
@@ -175,8 +181,13 @@ namespace Lumina.Tests
 
             // Assert
             var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-            dynamic value = badRequestResult.Value!;
-            Assert.Equal("Failed to finalize exam attempt", value.message);
+            var value = badRequestResult.Value;
+            Assert.NotNull(value);
+            
+            var messageProperty = value.GetType().GetProperty("message");
+            Assert.NotNull(messageProperty);
+            var message = messageProperty.GetValue(value)?.ToString();
+            Assert.Equal("Failed to finalize exam attempt", message);
         }
 
         [Fact]
