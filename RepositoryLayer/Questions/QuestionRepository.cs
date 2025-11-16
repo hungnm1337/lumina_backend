@@ -106,6 +106,7 @@ namespace RepositoryLayer.Questions
                             QuestionExplain = q.QuestionExplain,
                             ScoreWeight = q.ScoreWeight,
                             Time = q.Time,
+                            SampleAnswer = q.SampleAnswer,
                             Options = q.Options.Select(o => new OptionDto
                             {
                                 OptionId = o.OptionId,
@@ -166,6 +167,7 @@ namespace RepositoryLayer.Questions
 
             question.StemText = dto.StemText;
             question.QuestionExplain = dto.QuestionExplain;
+            question.SampleAnswer = dto.SampleAnswer;
 
             // Chỉ xử lý Option nếu có
             if (dto.Options != null && dto.Options.Any())
