@@ -58,12 +58,12 @@ namespace lumina.Controllers
             }
         }
 
-        [HttpGet("user/{userId}/article/{articleId}")]
-        public async Task<IActionResult> GetUserNoteByUserIDAndArticleId(int userId, int articleId)
+        [HttpGet("user/{userId}/article/{articleId}/section/{sectionId}")]
+        public async Task<IActionResult> GetUserNoteByUserIDAndArticleId(int userId, int articleId,int sectionId)
         {
             try
             {
-                var userNote = await _userNoteService.GetUserNoteByUserIDAndArticleId(userId, articleId);
+                var userNote = await _userNoteService.GetUserNoteByUserIDAndArticleId(userId, articleId, sectionId);
                 if (userNote != null)
                 {
                     return Ok(userNote);

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Collections.Specialized.BitVector32;
 
 namespace ServiceLayer.UserNote
 {
@@ -27,9 +28,9 @@ namespace ServiceLayer.UserNote
             return await _userNoteRepository.GetUserNoteByID(userNoteId);
         }
 
-        public async Task<UserNoteResponseDTO> GetUserNoteByUserIDAndArticleId(int userId, int articleId)
+        public async Task<UserNoteResponseDTO> GetUserNoteByUserIDAndArticleId(int userId, int articleId, int sectionId)
         {
-            return await _userNoteRepository.GetUserNoteByUserIDAndArticleId( userId,  articleId);
+            return await _userNoteRepository.GetUserNoteByUserIDAndArticleId( userId,  articleId, sectionId);
         }
 
         public async Task<bool> UpsertUserNote(UserNoteRequestDTO userNoteRequestDTO)
