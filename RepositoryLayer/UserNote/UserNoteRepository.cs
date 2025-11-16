@@ -107,7 +107,7 @@ namespace RepositoryLayer.UserNote
                     })
                     .FirstOrDefaultAsync();
 
-                return userNote; // Trả về null nếu không tìm thấy
+                return userNote;
             }
             catch (Exception ex)
             {
