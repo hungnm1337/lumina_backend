@@ -19,6 +19,7 @@ namespace DataLayer.DTOs.Questions
         public int ScoreWeight { get; set; } = 1;
         public int Time { get; set; } = 30;
         public List<OptionDto>? Options { get; set; }
+        public string? SampleAnswer { get; set; }
     }
 
 /*    public class OptionCrudDto
