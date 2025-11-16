@@ -74,6 +74,19 @@ namespace lumina.Controllers
                     return Unauthorized(new { message = "User not authenticated" });
                 }
 
+                // Check quota before incrementing
+                var result = await _quotaService.CheckQuotaAsync(userId, skill);
+                
+                if (!result.CanAccess && !result.IsPremium)
+                {
+                    return BadRequest(new 
+                    { 
+                        message = $"Đã hết lượt thi {skill.ToUpper()} miễn phí. Vui lòng nâng cấp Premium!",
+                        requiresUpgrade = result.RequiresUpgrade,
+                        remainingAttempts = result.RemainingAttempts
+                    });
+                }
+
                 await _quotaService.IncrementQuotaAsync(userId, skill);
 
                 return Ok(new { message = $"Quota incremented for {skill}" });
