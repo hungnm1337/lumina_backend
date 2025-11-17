@@ -13,6 +13,8 @@ using RepositoryLayer.UnitOfWork;
 using DataLayer.DTOs.Article;
 using DataLayer.DTOs.UserNote;
 
+#pragma warning disable CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
+
 namespace Lumina.Tests.IntegrationTest
 {
     public class IntegrationNoteArticles
@@ -133,11 +135,11 @@ namespace Lumina.Tests.IntegrationTest
             // ========== STEP 3: GET USER NOTE BY USER ID AND ARTICLE ID (Lấy note cũ) ==========
             // Trường hợp chưa có note cũ
             _mockUserNoteService
-                .Setup(s => s.GetUserNoteByUserIDAndArticleId(userId, articleId))
-                .ReturnsAsync((UserNoteResponseDTO)null);
+                .Setup(s => s.GetUserNoteByUserIDAndArticleId(userId, articleId, sectionId))
+                .ReturnsAsync(null as UserNoteResponseDTO);
 
             // Act - Step 3: Kiểm tra note cũ
-            var oldNoteResult = await _userNoteController.GetUserNoteByUserIDAndArticleId(userId, articleId);
+            var oldNoteResult = await _userNoteController.GetUserNoteByUserIDAndArticleId(userId, articleId, sectionId);
 
             // Assert - Step 3: Chưa có note cũ
             Assert.IsType<NotFoundObjectResult>(oldNoteResult);
@@ -258,7 +260,7 @@ namespace Lumina.Tests.IntegrationTest
             // Verify tất cả các services đã được gọi đúng số lần
             _mockArticleService.Verify(s => s.QueryAsync(It.IsAny<ArticleQueryParams>()), Times.Once);
             _mockArticleService.Verify(s => s.GetArticleByIdAsync(articleId), Times.Once);
-            _mockUserNoteService.Verify(s => s.GetUserNoteByUserIDAndArticleId(userId, articleId), Times.Once);
+            _mockUserNoteService.Verify(s => s.GetUserNoteByUserIDAndArticleId(userId, articleId, sectionId), Times.Once);
             _mockUserNoteService.Verify(s => s.UpsertUserNote(It.IsAny<UserNoteRequestDTO>()), Times.Exactly(2)); // Tạo + Sửa
             _mockUserNoteService.Verify(s => s.GetAllUserNotesByUserId(userId), Times.Once);
             _mockUserNoteService.Verify(s => s.GetUserNoteByID(noteId), Times.Once);
@@ -324,10 +326,10 @@ namespace Lumina.Tests.IntegrationTest
             };
 
             _mockUserNoteService
-                .Setup(s => s.GetUserNoteByUserIDAndArticleId(userId, articleId))
+                .Setup(s => s.GetUserNoteByUserIDAndArticleId(userId, articleId, sectionId))
                 .ReturnsAsync(existingNote);
 
-            var oldNoteResult = await _userNoteController.GetUserNoteByUserIDAndArticleId(userId, articleId);
+            var oldNoteResult = await _userNoteController.GetUserNoteByUserIDAndArticleId(userId, articleId, sectionId);
 
             // Assert: Đã có note cũ
             var oldNoteOkResult = Assert.IsType<OkObjectResult>(oldNoteResult);
@@ -354,7 +356,7 @@ namespace Lumina.Tests.IntegrationTest
             Assert.NotNull(updateOkResult.Value);
 
             // Verify
-            _mockUserNoteService.Verify(s => s.GetUserNoteByUserIDAndArticleId(userId, articleId), Times.Once);
+            _mockUserNoteService.Verify(s => s.GetUserNoteByUserIDAndArticleId(userId, articleId, sectionId), Times.Once);
             _mockUserNoteService.Verify(s => s.UpsertUserNote(It.IsAny<UserNoteRequestDTO>()), Times.Once);
         }
 
@@ -366,7 +368,7 @@ namespace Lumina.Tests.IntegrationTest
 
             _mockArticleService
                 .Setup(s => s.GetArticleByIdAsync(invalidArticleId))
-                .ReturnsAsync((ArticleResponseDTO)null);
+                .ReturnsAsync(null as ArticleResponseDTO);
 
             // Act
             var result = await _articlesController.GetArticleById(invalidArticleId);
@@ -441,7 +443,7 @@ namespace Lumina.Tests.IntegrationTest
 
             _mockUserNoteService
                 .Setup(s => s.GetUserNoteByID(invalidNoteId))
-                .ReturnsAsync((UserNoteResponseDTO)null);
+                .ReturnsAsync(null as UserNoteResponseDTO);
 
             // Act
             var result = await _userNoteController.GetUserNoteByID(invalidNoteId);

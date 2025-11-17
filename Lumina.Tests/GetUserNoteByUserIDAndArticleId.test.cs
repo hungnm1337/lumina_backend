@@ -24,47 +24,51 @@ namespace Lumina.Tests
         }
 
         [Fact]
-        public async Task GetUserNoteByUserIDAndArticleId_KhiUserIdMotVaArticleIdMot_TraVeOkVoiUserNote()
+        public async Task GetUserNoteByUserIDAndArticleId_KhiUserIdMotVaArticleIdMotVaSectionIdMot_TraVeOkVoiUserNote()
         {
             // Arrange
             int userId = 1;
             int articleId = 1;
+            int sectionId = 1;
             var expectedUserNote = new UserNoteResponseDTO
             {
                 NoteId = 1,
                 UserId = userId,
                 ArticleId = articleId,
+                SectionId = sectionId,
                 NoteContent = "Test note"
             };
 
             _mockUserNoteService
-                .Setup(s => s.GetUserNoteByUserIDAndArticleId(userId, articleId))
+                .Setup(s => s.GetUserNoteByUserIDAndArticleId(userId, articleId, sectionId))
                 .ReturnsAsync(expectedUserNote);
 
             // Act
-            var result = await _controller.GetUserNoteByUserIDAndArticleId(userId, articleId);
+            var result = await _controller.GetUserNoteByUserIDAndArticleId(userId, articleId, sectionId);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
             var userNote = Assert.IsType<UserNoteResponseDTO>(okResult.Value);
             Assert.Equal(userId, userNote.UserId);
             Assert.Equal(articleId, userNote.ArticleId);
-            _mockUserNoteService.Verify(s => s.GetUserNoteByUserIDAndArticleId(userId, articleId), Times.Once);
+            Assert.Equal(sectionId, userNote.SectionId);
+            _mockUserNoteService.Verify(s => s.GetUserNoteByUserIDAndArticleId(userId, articleId, sectionId), Times.Once);
         }
 
         [Fact]
-        public async Task GetUserNoteByUserIDAndArticleId_KhiUserIdKhongVaArticleIdKhong_TraVeNotFound()
+        public async Task GetUserNoteByUserIDAndArticleId_KhiUserIdKhongVaArticleIdKhongVaSectionIdKhong_TraVeNotFound()
         {
             // Arrange
             int userId = 0;
             int articleId = 0;
+            int sectionId = 0;
 
             _mockUserNoteService
-                .Setup(s => s.GetUserNoteByUserIDAndArticleId(userId, articleId))
+                .Setup(s => s.GetUserNoteByUserIDAndArticleId(userId, articleId, sectionId))
                 .ReturnsAsync(null as UserNoteResponseDTO);
 
             // Act
-            var result = await _controller.GetUserNoteByUserIDAndArticleId(userId, articleId);
+            var result = await _controller.GetUserNoteByUserIDAndArticleId(userId, articleId, sectionId);
 
             // Assert
             var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
@@ -74,22 +78,23 @@ namespace Lumina.Tests
             Assert.NotNull(messageProperty);
             var message = messageProperty.GetValue(value)?.ToString();
             Assert.Equal("User note not found.", message);
-            _mockUserNoteService.Verify(s => s.GetUserNoteByUserIDAndArticleId(userId, articleId), Times.Once);
+            _mockUserNoteService.Verify(s => s.GetUserNoteByUserIDAndArticleId(userId, articleId, sectionId), Times.Once);
         }
 
         [Fact]
-        public async Task GetUserNoteByUserIDAndArticleId_KhiUserIdAmMotVaArticleIdAmMot_TraVeNotFound()
+        public async Task GetUserNoteByUserIDAndArticleId_KhiUserIdAmMotVaArticleIdAmMotVaSectionIdAmMot_TraVeNotFound()
         {
             // Arrange
             int userId = -1;
             int articleId = -1;
+            int sectionId = -1;
 
             _mockUserNoteService
-                .Setup(s => s.GetUserNoteByUserIDAndArticleId(userId, articleId))
+                .Setup(s => s.GetUserNoteByUserIDAndArticleId(userId, articleId, sectionId))
                 .ReturnsAsync(null as UserNoteResponseDTO);
 
             // Act
-            var result = await _controller.GetUserNoteByUserIDAndArticleId(userId, articleId);
+            var result = await _controller.GetUserNoteByUserIDAndArticleId(userId, articleId, sectionId);
 
             // Assert
             var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
@@ -99,7 +104,7 @@ namespace Lumina.Tests
             Assert.NotNull(messageProperty);
             var message = messageProperty.GetValue(value)?.ToString();
             Assert.Equal("User note not found.", message);
-            _mockUserNoteService.Verify(s => s.GetUserNoteByUserIDAndArticleId(userId, articleId), Times.Once);
+            _mockUserNoteService.Verify(s => s.GetUserNoteByUserIDAndArticleId(userId, articleId, sectionId), Times.Once);
         }
 
         [Fact]
@@ -108,13 +113,14 @@ namespace Lumina.Tests
             // Arrange
             int userId = 999;
             int articleId = 999;
+            int sectionId = 999;
 
             _mockUserNoteService
-                .Setup(s => s.GetUserNoteByUserIDAndArticleId(userId, articleId))
+                .Setup(s => s.GetUserNoteByUserIDAndArticleId(userId, articleId, sectionId))
                 .ReturnsAsync(null as UserNoteResponseDTO);
 
             // Act
-            var result = await _controller.GetUserNoteByUserIDAndArticleId(userId, articleId);
+            var result = await _controller.GetUserNoteByUserIDAndArticleId(userId, articleId, sectionId);
 
             // Assert
             var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
@@ -124,7 +130,7 @@ namespace Lumina.Tests
             Assert.NotNull(messageProperty);
             var message = messageProperty.GetValue(value)?.ToString();
             Assert.Equal("User note not found.", message);
-            _mockUserNoteService.Verify(s => s.GetUserNoteByUserIDAndArticleId(userId, articleId), Times.Once);
+            _mockUserNoteService.Verify(s => s.GetUserNoteByUserIDAndArticleId(userId, articleId, sectionId), Times.Once);
         }
 
         [Fact]
@@ -133,13 +139,14 @@ namespace Lumina.Tests
             // Arrange
             int userId = 1;
             int articleId = 1;
+            int sectionId = 1;
 
             _mockUserNoteService
-                .Setup(s => s.GetUserNoteByUserIDAndArticleId(userId, articleId))
+                .Setup(s => s.GetUserNoteByUserIDAndArticleId(userId, articleId, sectionId))
                 .ThrowsAsync(new Exception("Database error"));
 
             // Act
-            var result = await _controller.GetUserNoteByUserIDAndArticleId(userId, articleId);
+            var result = await _controller.GetUserNoteByUserIDAndArticleId(userId, articleId, sectionId);
 
             // Assert
             var statusCodeResult = Assert.IsType<ObjectResult>(result);
