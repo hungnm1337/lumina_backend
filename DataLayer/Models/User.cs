@@ -28,6 +28,12 @@ public partial class User
     public int? LongestStreak { get; set; }
 
     public int? StreakFreezesAvailable { get; set; }
+    // Quota tracking for subscription tiers
+    public int MonthlyReadingAttempts { get; set; } = 0;
+
+    public int MonthlyListeningAttempts { get; set; } = 0;
+
+    public DateTime LastQuotaReset { get; set; } = DateTime.UtcNow;
 
     public virtual ICollection<Account> Accounts { get; set; } = new List<Account>();
 

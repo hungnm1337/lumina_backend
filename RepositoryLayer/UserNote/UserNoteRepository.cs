@@ -83,7 +83,7 @@ namespace RepositoryLayer.UserNote
             }
         }
 
-        public async Task<UserNoteResponseDTO> GetUserNoteByUserIDAndArticleId(int userId, int articleId)
+        public async Task<UserNoteResponseDTO> GetUserNoteByUserIDAndArticleId(int userId, int articleId, int sectionId)
         {
             try
             {
@@ -91,7 +91,7 @@ namespace RepositoryLayer.UserNote
                     .Include(x => x.User)
                     .Include(x => x.Article)
                     .Include(x => x.Section)
-                    .Where(un => un.UserId == userId && un.ArticleId == articleId)
+                    .Where(un => un.UserId == userId && un.ArticleId == articleId&& un.SectionId == sectionId)
                     .Select(un => new UserNoteResponseDTO()
                     {
                         NoteId = un.NoteId,
@@ -106,11 +106,6 @@ namespace RepositoryLayer.UserNote
                         UpdateAt = un.UpdateAt
                     })
                     .FirstOrDefaultAsync();
-
-                if (userNote == null)
-                {
-                    throw new KeyNotFoundException($"UserNote with ID {userId} not found");
-                }
 
                 return userNote;
             }

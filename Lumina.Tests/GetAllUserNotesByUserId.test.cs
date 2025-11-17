@@ -91,23 +91,25 @@ namespace Lumina.Tests
 
 
         [Fact]
-        public async Task GetAllUserNotesByUserId_KhiServiceThrowArgumentException_TraVeInternalServerError()
+        public async Task GetAllUserNotesByUserId_KhiUserIdAm_TraVeBadRequest()
         {
             // Arrange
             int userId = -1;
-
-            _mockUserNoteService
-                .Setup(s => s.GetAllUserNotesByUserId(userId))
-                .ThrowsAsync(new ArgumentException("Invalid user ID"));
 
             // Act
             var result = await _controller.GetAllUserNotesByUserId(userId);
 
             // Assert
-            var statusCodeResult = Assert.IsType<ObjectResult>(result);
-            Assert.Equal(500, statusCodeResult.StatusCode);
-            dynamic value = statusCodeResult.Value!;
-            Assert.Equal("An error occurred while retrieving user notes.", value.Message);
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            var value = badRequestResult.Value;
+            Assert.NotNull(value);
+            
+            var messageProperty = value.GetType().GetProperty("Message");
+            Assert.NotNull(messageProperty);
+            var message = messageProperty.GetValue(value)?.ToString();
+            Assert.Equal("Invalid user ID.", message);
+            
+            _mockUserNoteService.Verify(s => s.GetAllUserNotesByUserId(It.IsAny<int>()), Times.Never);
         }
 
         [Fact]
@@ -121,9 +123,41 @@ namespace Lumina.Tests
 
             // Assert
             var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-            dynamic value = badRequestResult.Value!;
-            Assert.Equal("Invalid userId.", value.Message);
+            var value = badRequestResult.Value;
+            Assert.NotNull(value);
+            
+            var messageProperty = value.GetType().GetProperty("Message");
+            Assert.NotNull(messageProperty);
+            var message = messageProperty.GetValue(value)?.ToString();
+            Assert.Equal("Invalid user ID.", message);
+            
             _mockUserNoteService.Verify(s => s.GetAllUserNotesByUserId(It.IsAny<int>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task GetAllUserNotesByUserId_KhiServiceThrowException_TraVeInternalServerError()
+        {
+            // Arrange
+            int userId = 1;
+
+            _mockUserNoteService
+                .Setup(s => s.GetAllUserNotesByUserId(userId))
+                .ThrowsAsync(new Exception("Database connection error"));
+
+            // Act
+            var result = await _controller.GetAllUserNotesByUserId(userId);
+
+            // Assert
+            var statusCodeResult = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(500, statusCodeResult.StatusCode);
+            
+            var value = statusCodeResult.Value;
+            Assert.NotNull(value);
+            
+            var messageProperty = value.GetType().GetProperty("Message");
+            Assert.NotNull(messageProperty);
+            var message = messageProperty.GetValue(value)?.ToString();
+            Assert.Equal("An error occurred while retrieving user notes.", message);
         }
     }
 }

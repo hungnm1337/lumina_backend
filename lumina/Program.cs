@@ -208,6 +208,13 @@ namespace lumina
             );
 
             builder.Services.AddHangfireServer(options =>
+            // ✅ NEW: Quota and Payment services
+            builder.Services.AddScoped<RepositoryLayer.Quota.IQuotaRepository, RepositoryLayer.Quota.QuotaRepository>();
+            builder.Services.AddScoped<ServiceLayer.Quota.IQuotaService, ServiceLayer.Quota.QuotaService>();
+            builder.Services.AddScoped<ServiceLayer.Payment.IPayOSService, ServiceLayer.Payment.PayOSService>();
+            builder.Services.AddScoped<ServiceLayer.Subscription.ISubscriptionService, ServiceLayer.Subscription.SubscriptionService>();
+
+            builder.Services.AddHttpClient<IExamGenerationAIService, ExamGenerationAIService>("OpenAI", c =>
             {
                 options.WorkerCount = 2;
                 options.ServerName = "LuminaStreakServer";
@@ -252,10 +259,13 @@ namespace lumina
 
             builder.Services.AddAuthorization();
 
-            // ========================================
-            // 8. CONTROLLERS & SWAGGER
-            // ========================================
-            builder.Services.AddControllers();
+            builder.Services.AddControllers()
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+                    options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+                });
+            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
 
             builder.Services.AddSwaggerGen(options =>
