@@ -16,6 +16,6 @@ namespace DataLayer.DTOs.UserNote
 
         public int SectionId { get; set; }
 
-        public string NoteContent { get; set; } = null!;
+        public string NoteContent { get; set; }
     }
 }

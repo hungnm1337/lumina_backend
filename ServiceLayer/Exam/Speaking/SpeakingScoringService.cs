@@ -20,19 +20,22 @@ namespace ServiceLayer.Exam.Speaking
         private readonly IAzureSpeechService _azureSpeechService;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConfiguration _configuration;
+        private readonly IScoringWeightService _scoringWeightService;
 
         public SpeakingScoringService(
             IUnitOfWork unitOfWork,
             IUploadService uploadService,
             IAzureSpeechService azureSpeechService,
             IHttpClientFactory httpClientFactory,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            IScoringWeightService scoringWeightService)
         {
             _unitOfWork = unitOfWork;
             _uploadService = uploadService;
             _azureSpeechService = azureSpeechService;
             _httpClientFactory = httpClientFactory;
             _configuration = configuration;
+            _scoringWeightService = scoringWeightService;
         }
         private async Task<SpeechAnalysisDTO> RetryAzureRecognitionAsync(
     string audioUrl,
@@ -130,8 +133,20 @@ namespace ServiceLayer.Exam.Speaking
             }
 
             var nlpResult = await GetNlpScoresAsync(azureResult.Transcript, question.SampleAnswer);
-            // Truyền thêm partCode vào hàm tính điểm
-            var overallScore = CalculateOverallScore(partCode, question.QuestionType, azureResult, nlpResult);
+
+            // ✅ FIX Bug #2: Use ScoringWeightService for consistent scoring
+            var weights = _scoringWeightService.GetWeightsForPart(partCode);
+            var overallScore = _scoringWeightService.CalculateOverallScore(
+                weights,
+                azureResult.PronunciationScore,
+                azureResult.AccuracyScore,
+                azureResult.FluencyScore,
+                nlpResult.Grammar_score,
+                nlpResult.Vocabulary_score,
+                nlpResult.Content_score
+            );
+
+            Console.WriteLine($"[Speaking] OverallScore calculated: {overallScore:F1} for PartCode={partCode}");
 
             // Save speaking answer to database
             var userAnswerSpeaking = new UserAnswerSpeaking
@@ -146,7 +161,8 @@ namespace ServiceLayer.Exam.Speaking
                 CompletenessScore = (decimal?)azureResult.CompletenessScore,
                 GrammarScore = (decimal?)nlpResult.Grammar_score,
                 VocabularyScore = (decimal?)nlpResult.Vocabulary_score,
-                ContentScore = (decimal?)nlpResult.Content_score
+                ContentScore = (decimal?)nlpResult.Content_score,
+                OverallScore = (decimal?)overallScore  // ✅ Store overall score in DB
             };
 
             await _unitOfWork.UserAnswersSpeaking.AddAsync(userAnswerSpeaking);
@@ -192,134 +208,144 @@ namespace ServiceLayer.Exam.Speaking
             catch { }
         }
         
+        /// <summary>
+        /// DEPRECATED: This method is replaced by ScoringWeightService.CalculateOverallScore()
+        /// Kept for backwards compatibility during migration.
+        /// </summary>
+        [Obsolete("Use ScoringWeightService.CalculateOverallScore() instead", false)]
         private float CalculateOverallScore(string partCode, string questionType, SpeechAnalysisDTO azureResult, NlpResponseDTO nlpResult)
         {
-            
-            // IIG Scoring Architecture:
-            // - Part 1: Chỉ Pronunciation + Intonation 
-            // - Part 2: + Grammar + Vocabulary + Cohesion 
-            // - Part 3-4: + Relevance + Completeness 
-            // - Part 5: TẤT CẢ + Argumentation (Phần 3.5, thang 0-5 - cao hơn 67%)
-            
-            float pronWeight, accWeight, fluWeight, gramWeight, vocabWeight, contentWeight;
-            
-            Console.WriteLine($"[Scoring] PartCode={partCode}, QuestionType={questionType}");
+            // ✅ FIX Bug #2: Delegate to ScoringWeightService for consistency
+            Console.WriteLine($"[DEPRECATED] CalculateOverallScore called - using ScoringWeightService instead");
 
-            // Phân loại theo PartCode để áp dụng weights phù hợp
-            switch (partCode?.ToUpper())
-            {
-                case "SPEAKING_PART_1": // Q1-2: Read Aloud - CHỈ Pronunciation + Intonation (Rubric 3.1)
-                    pronWeight = 0.50f;    // Pronunciation là CHÍNH (AccuracyScore)
-                    fluWeight = 0.25f;     // Fluency quan trọng thứ 2
-                    accWeight = 0.15f;     // CompletenessScore (đọc đủ từ)
-                    gramWeight = 0.05f;    // Ngữ pháp KHÔNG quan trọng (đọc theo script)
-                    vocabWeight = 0.05f;   // Từ vựng KHÔNG quan trọng
-                    contentWeight = 0.00f; // Content KHÔNG áp dụng
-                    break;
-
-                case "SPEAKING_PART_2": // Q3-4: Describe Picture - Thêm Grammar + Vocab + Cohesion (Rubric 3.2)
-                    gramWeight = 0.25f;    // Grammar bắt đầu quan trọng
-                    vocabWeight = 0.25f;   // Vocabulary mô tả chính xác
-                    contentWeight = 0.20f; // Cohesion + Relevance (mô tả đúng)
-                    fluWeight = 0.15f;     // Fluency vẫn quan trọng
-                    pronWeight = 0.10f;    // Pronunciation giảm xuống
-                    accWeight = 0.05f;     // Accuracy ít quan trọng
-                    break;
-
-                case "SPEAKING_PART_3": // Q5-7: Respond to Questions - Thêm Relevance + Completeness (Rubric 3.3)
-                    contentWeight = 0.30f; // Relevance + Completeness cao nhất
-                    fluWeight = 0.25f;     // Phản xạ tự phát cần fluency
-                    gramWeight = 0.20f;    // Grammar vẫn quan trọng
-                    vocabWeight = 0.15f;   // Vocabulary hỗ trợ
-                    pronWeight = 0.10f;    // Pronunciation giảm
-                    accWeight = 0.00f;     // Accuracy không áp dụng
-                    break;
-
-                case "SPEAKING_PART_4": // Q8-10: Info + Paraphrasing - Tổng hợp thông tin (Rubric 3.4)
-                    contentWeight = 0.30f; // Paraphrasing + Accuracy of info
-                    gramWeight = 0.25f;    // Grammar cao để diễn giải
-                    vocabWeight = 0.20f;   // Vocabulary để paraphrase
-                    fluWeight = 0.15f;     // Fluency
-                    pronWeight = 0.10f;    // Pronunciation
-                    accWeight = 0.00f;     // Accuracy không áp dụng
-                    break;
-
-                case "SPEAKING_PART_5": // Q11: Express Opinion - TẤT CẢ (Rubric 3.5, thang 0-5)
-                    gramWeight = 0.30f;    // "Sustained discourse" cần grammar tốt
-                    vocabWeight = 0.25f;   // "Accurate and precise vocabulary"
-                    contentWeight = 0.20f; // Argumentation depth + Coherence
-                    fluWeight = 0.15f;     // Connected speech
-                    pronWeight = 0.10f;    // Intelligibility
-                    accWeight = 0.00f;     // Không áp dụng
-                    break;
-
-                default: // Fallback - Cân bằng tất cả
-                    gramWeight = 0.25f;
-                    vocabWeight = 0.20f;
-                    contentWeight = 0.20f;
-                    fluWeight = 0.20f;
-                    pronWeight = 0.10f;
-                    accWeight = 0.05f;
-                    break;
-            }
-
-            // ✅ FIX: Round các score thành phần trước khi tính tổng để tránh floating-point errors
-            double totalScore =
-                Math.Round(azureResult.PronunciationScore, 1) * pronWeight +
-                Math.Round(azureResult.AccuracyScore, 1) * accWeight +
-                Math.Round(azureResult.FluencyScore, 1) * fluWeight +
-                Math.Round(nlpResult.Grammar_score, 1) * gramWeight +
-                Math.Round(nlpResult.Vocabulary_score, 1) * vocabWeight +
-                Math.Round(nlpResult.Content_score, 1) * contentWeight;
-
-            double totalWeight = pronWeight + accWeight + fluWeight + gramWeight + vocabWeight + contentWeight;
-            if (totalWeight > 0)
-            {
-                totalScore /= totalWeight;
-            }
-
-            
-            if (partCode?.ToUpper() == "SPEAKING_PART_5")
-            {
-                double originalScore = totalScore;
-                totalScore *= 1.67; // Scale lên thang 0-5 (thay vì 0-3)
-                totalScore = Math.Min(100, totalScore); // Cap tại 100
-            }
-
-            
-
-            Console.WriteLine($"[Scoring] PartCode={partCode}, Weights: P={pronWeight:P0}, A={accWeight:P0}, F={fluWeight:P0}, G={gramWeight:P0}, V={vocabWeight:P0}, C={contentWeight:P0}, Content={nlpResult.Content_score:F1}, Final={totalScore:F1}");
-
-            // ✅ FIX: Round kết quả cuối cùng về 1 chữ số thập phân
-            return (float)Math.Round(totalScore, 1);
+            var weights = _scoringWeightService.GetWeightsForPart(partCode);
+            return _scoringWeightService.CalculateOverallScore(
+                weights,
+                azureResult.PronunciationScore,
+                azureResult.AccuracyScore,
+                azureResult.FluencyScore,
+                nlpResult.Grammar_score,
+                nlpResult.Vocabulary_score,
+                nlpResult.Content_score
+            );
         }
 
+        /// <summary>
+        /// ✅ FIX Bug #4: Get NLP scores with fallback mechanism
+        /// If NLP service is unavailable/timeout, return fallback scores instead of crashing
+        /// </summary>
         private async Task<NlpResponseDTO> GetNlpScoresAsync(string transcript, string sampleAnswer)
         {
-            var client = _httpClientFactory.CreateClient();
-            client.Timeout = TimeSpan.FromSeconds(30);
-            var nlpServiceUrl = _configuration["ServiceUrls:NlpService"];
-
-            if (string.IsNullOrEmpty(nlpServiceUrl))
+            try
             {
-                throw new Exception("NLP Service URL is not configured in appsettings.json.");
+                var client = _httpClientFactory.CreateClient();
+                client.Timeout = TimeSpan.FromSeconds(30);
+                var nlpServiceUrl = _configuration["ServiceUrls:NlpService"];
+
+                if (string.IsNullOrEmpty(nlpServiceUrl))
+                {
+                    Console.WriteLine("[NLP] ⚠️ NLP Service URL is not configured, using fallback scores");
+                    return GetFallbackNlpScores(transcript, sampleAnswer);
+                }
+
+                var request = new NlpRequestDTO
+                {
+                    Transcript = transcript,
+                    Sample_answer = sampleAnswer
+                };
+
+                Console.WriteLine($"[NLP] Calling NLP service at: {nlpServiceUrl}/score_nlp");
+                var response = await client.PostAsJsonAsync($"{nlpServiceUrl}/score_nlp", request);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"[NLP] ⚠️ Service returned {response.StatusCode}: {errorContent}");
+                    Console.WriteLine($"[NLP] Using fallback scores");
+                    return GetFallbackNlpScores(transcript, sampleAnswer);
+                }
+
+                var result = await response.Content.ReadFromJsonAsync<NlpResponseDTO>();
+                Console.WriteLine($"[NLP] ✅ Success: Grammar={result.Grammar_score:F1}, Vocab={result.Vocabulary_score:F1}, Content={result.Content_score:F1}");
+                return result;
+            }
+            catch (TaskCanceledException ex)
+            {
+                // Timeout occurred
+                Console.WriteLine($"[NLP] ⏱️ Timeout after 30 seconds: {ex.Message}");
+                Console.WriteLine($"[NLP] Using fallback scores");
+                return GetFallbackNlpScores(transcript, sampleAnswer);
+            }
+            catch (HttpRequestException ex)
+            {
+                // Network error (NLP service down, connection refused, etc.)
+                Console.WriteLine($"[NLP] 🔌 Network error: {ex.Message}");
+                Console.WriteLine($"[NLP] Using fallback scores");
+                return GetFallbackNlpScores(transcript, sampleAnswer);
+            }
+            catch (Exception ex)
+            {
+                // Any other error
+                Console.WriteLine($"[NLP] ❌ Unexpected error: {ex.Message}");
+                Console.WriteLine($"[NLP] Using fallback scores");
+                return GetFallbackNlpScores(transcript, sampleAnswer);
+            }
+        }
+
+        /// <summary>
+        /// Fallback NLP scores when service is unavailable.
+        /// Uses heuristic-based scoring based on transcript characteristics.
+        /// </summary>
+        private NlpResponseDTO GetFallbackNlpScores(string transcript, string sampleAnswer)
+        {
+            // Basic heuristic scoring based on transcript characteristics
+            float grammarScore = 50f;
+            float vocabularyScore = 50f;
+            float contentScore = 50f;
+
+            if (!string.IsNullOrWhiteSpace(transcript) && transcript != ".")
+            {
+                // Transcript length heuristic (longer = better content coverage)
+                int transcriptLength = transcript.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
+                int sampleLength = string.IsNullOrWhiteSpace(sampleAnswer) ? 20 : sampleAnswer.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
+
+                // Content score: based on length ratio (capped at 100)
+                float lengthRatio = (float)transcriptLength / Math.Max(sampleLength, 1);
+                contentScore = Math.Min(lengthRatio * 60f, 75f); // Max 75 for fallback
+
+                // Grammar score: assume reasonable if they spoke enough words
+                if (transcriptLength >= 5)
+                {
+                    grammarScore = 60f;
+                }
+                else if (transcriptLength >= 3)
+                {
+                    grammarScore = 50f;
+                }
+                else
+                {
+                    grammarScore = 40f;
+                }
+
+                // Vocabulary score: similar to grammar
+                vocabularyScore = grammarScore;
+            }
+            else
+            {
+                // No transcript = low scores
+                grammarScore = 30f;
+                vocabularyScore = 30f;
+                contentScore = 30f;
             }
 
-            var request = new NlpRequestDTO
+            Console.WriteLine($"[NLP] Fallback scores: Grammar={grammarScore:F1}, Vocab={vocabularyScore:F1}, Content={contentScore:F1}");
+
+            return new NlpResponseDTO
             {
-                Transcript = transcript,
-                Sample_answer = sampleAnswer
+                Grammar_score = grammarScore,
+                Vocabulary_score = vocabularyScore,
+                Content_score = contentScore
             };
-
-            var response = await client.PostAsJsonAsync($"{nlpServiceUrl}/score_nlp", request);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                var errorContent = await response.Content.ReadAsStringAsync();
-                throw new Exception($"Failed to get scores from NLP service. Status: {response.StatusCode}, Details: {errorContent}");
-            }
-
-            return await response.Content.ReadFromJsonAsync<NlpResponseDTO>();
         }
     }
 }

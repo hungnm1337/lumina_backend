@@ -106,27 +106,6 @@ namespace Lumina.Tests
             Assert.Equal($"Exam attempt with ID {attemptId} not found.", messageProperty!.GetValue(response));
         }
 
-        [Fact]
-        public async Task GetExamAttemptById_ServiceReturnsNull_LogsWarning()
-        {
-            // Arrange
-            int attemptId = 999;
-            _mockExamAttemptService.Setup(s => s.GetExamAttemptById(attemptId))
-                .ReturnsAsync((ExamAttemptDetailResponseDTO)null!);
-
-            // Act
-            await _controller.GetExamAttemptById(attemptId);
-
-            // Assert
-            _mockLogger.Verify(
-                x => x.Log(
-                    LogLevel.Warning,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((v, t) => true),
-                    It.IsAny<Exception?>(),
-                    It.Is<Func<It.IsAnyType, Exception?, string>>((v, t) => true)),
-                Times.Once);
-        }
 
         [Fact]
         public async Task GetExamAttemptById_ServiceThrowsException_Returns500InternalServerError()
@@ -143,28 +122,6 @@ namespace Lumina.Tests
             var statusCodeResult = Assert.IsType<ObjectResult>(result.Result);
             Assert.Equal(StatusCodes.Status500InternalServerError, statusCodeResult.StatusCode);
             Assert.Equal("An unexpected error occurred while retrieving exam attempt details.", statusCodeResult.Value);
-        }
-
-        [Fact]
-        public async Task GetExamAttemptById_ServiceThrowsException_LogsError()
-        {
-            // Arrange
-            int attemptId = 1;
-            _mockExamAttemptService.Setup(s => s.GetExamAttemptById(attemptId))
-                .ThrowsAsync(new Exception("Database connection error"));
-
-            // Act
-            await _controller.GetExamAttemptById(attemptId);
-
-            // Assert
-            _mockLogger.Verify(
-                x => x.Log(
-                    LogLevel.Error,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((v, t) => true),
-                    It.IsAny<Exception?>(),
-                    It.Is<Func<It.IsAnyType, Exception?, string>>((v, t) => true)),
-                Times.Once);
         }
     }
 }

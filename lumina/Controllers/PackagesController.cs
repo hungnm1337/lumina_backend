@@ -15,6 +15,14 @@ namespace lumina.Controllers
             _packageService = packageService;
         }
 
+        [HttpGet("active")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetActivePackages()
+        {
+            var list = await _packageService.GetActivePackagesAsync();
+            return Ok(list);
+        }
+
         [HttpGet("active-pro")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetActiveProPackages()
@@ -32,13 +40,13 @@ namespace lumina.Controllers
             return Ok(pkg);
         }
 
-        [HttpPost]
+       /* [HttpPost]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreatePackage([FromBody] Package pkg)
         {
             await _packageService.AddPackageAsync(pkg);
             return CreatedAtAction(nameof(GetPackage), new { id = pkg.PackageId }, pkg);
-        }
+        }*/
 
 
         [HttpPut("{id}")]
@@ -68,13 +76,13 @@ namespace lumina.Controllers
             await _packageService.TogglePackageStatusAsync(id);
             return NoContent();
         }
-
+/*
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeletePackage(int id)
         {
             await _packageService.DeletePackageAsync(id);
             return NoContent();
-        }
+        }*/
 
         [HttpGet("user-active-package/{userId}")]
         public async Task<IActionResult> GetUserActivePackage(int userId)

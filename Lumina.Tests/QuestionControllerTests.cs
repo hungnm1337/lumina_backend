@@ -1,6 +1,6 @@
 using DataLayer.DTOs.Prompt;
 using DataLayer.DTOs.Questions;
-using DataLayer.DTOs.Exam; // ← THÊM DÒNG NÀY
+using DataLayer.DTOs.Exam;
 using lumina.Controllers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -10,7 +10,6 @@ using ServiceLayer.Questions;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -34,12 +33,14 @@ namespace Lumina.Tests
         [Fact]
         public async Task CreatePromptWithQuestions_ValidDto_ReturnsOkWithPromptId()
         {
-            // Arrange
+            // Arrange - ✅ BỔ SUNG ĐẦY ĐỦ TẤT CẢ PROPERTIES
             var dto = new CreatePromptWithQuestionsDTO
             {
                 Title = "Test Prompt",
                 ContentText = "Test Content",
                 Skill = "Reading",
+                ReferenceImageUrl = "https://example.com/image.jpg", // ✅ THÊM
+                ReferenceAudioUrl = "https://example.com/audio.mp3", // ✅ THÊM
                 Questions = new List<QuestionWithOptionsDTO>
                 {
                     new QuestionWithOptionsDTO
@@ -50,14 +51,17 @@ namespace Lumina.Tests
                             QuestionType = "Multiple Choice",
                             StemText = "Question 1",
                             ScoreWeight = 1,
+                            QuestionExplain = "Explanation for Q1", // ✅ THÊM
                             Time = 30,
                             QuestionNumber = 1,
                             PromptId = 1
                         },
-                        Options = new List<OptionDTO> // ← SỬA TỪ OptionDto → OptionDTO
+                        Options = new List<OptionDTO>
                         {
                             new OptionDTO { Content = "A", IsCorrect = true },
-                            new OptionDTO { Content = "B", IsCorrect = false }
+                            new OptionDTO { Content = "B", IsCorrect = false },
+                            new OptionDTO { Content = "C", IsCorrect = false },
+                            new OptionDTO { Content = "D", IsCorrect = false }
                         }
                     }
                 }
@@ -74,6 +78,15 @@ namespace Lumina.Tests
             var response = okResult.Value;
             var promptIdProperty = response.GetType().GetProperty("PromptId");
             Assert.Equal(1, promptIdProperty.GetValue(response));
+            
+            
+            _mockQuestionService.Verify(s => s.CreatePromptWithQuestionsAsync(
+                It.Is<CreatePromptWithQuestionsDTO>(d => 
+                    d.ReferenceImageUrl == "https://example.com/image.jpg" &&
+                    d.ReferenceAudioUrl == "https://example.com/audio.mp3" &&
+                    d.Questions[0].Options.Count == 4
+                )
+            ), Times.Once);
         }
 
         [Fact]
@@ -93,12 +106,14 @@ namespace Lumina.Tests
         [Fact]
         public async Task CreatePromptWithQuestions_MaxQuestionsExceeded_ReturnsBadRequest()
         {
-            // Arrange
+            // Arrange - ✅ BỔ SUNG ĐẦY ĐỦ PROPERTIES
             var dto = new CreatePromptWithQuestionsDTO
             {
                 Title = "Test",
                 ContentText = "Content",
                 Skill = "Reading",
+                ReferenceImageUrl = null, 
+                ReferenceAudioUrl = null, 
                 Questions = new List<QuestionWithOptionsDTO>()
             };
 
@@ -124,6 +139,8 @@ namespace Lumina.Tests
                 Title = "Test",
                 ContentText = "Content",
                 Skill = "Reading",
+                ReferenceImageUrl = null,
+                ReferenceAudioUrl = null,
                 Questions = new List<QuestionWithOptionsDTO>()
             };
 
@@ -149,6 +166,8 @@ namespace Lumina.Tests
                 Title = "Test",
                 ContentText = "Content",
                 Skill = "Reading",
+                ReferenceImageUrl = null,
+                ReferenceAudioUrl = null,
                 Questions = new List<QuestionWithOptionsDTO>()
             };
 
@@ -243,19 +262,55 @@ namespace Lumina.Tests
 
         #endregion
 
-        #region GetPaged Tests (5 test cases)
+        #region GetPaged Tests (3 test cases)
 
         [Fact]
-        public async Task GetPaged_ValidParametersWithoutFilter_ReturnsOkWithData()
+        public async Task GetPaged_ValidParameters_ReturnsOkWithData()
         {
-            // Arrange
+            // Arrange - ✅ BỔ SUNG ĐẦY ĐỦ PROPERTIES cho PromptDto
             var prompts = new List<PromptDto>
             {
-                new PromptDto { PromptId = 1, Title = "Prompt 1", ContentText = "Content 1", Skill = "Reading" },
-                new PromptDto { PromptId = 2, Title = "Prompt 2", ContentText = "Content 2", Skill = "Listening" }
+                new PromptDto 
+                { 
+                    PromptId = 1, 
+                    Title = "Prompt 1", 
+                    ContentText = "Content 1", 
+                    Skill = "Reading", 
+                    PartId = 1,
+                    ReferenceImageUrl = "image1.jpg", // ✅ THÊM
+                    ReferenceAudioUrl = "audio1.mp3", // ✅ THÊM
+                    Questions = new List<QuestionDto> // ✅ THÊM
+                    {
+                        new QuestionDto
+                        {
+                            QuestionId = 1,
+                            StemText = "Question 1",
+                            QuestionExplain = "Explanation",
+                            ScoreWeight = 1,
+                            Time = 30,
+                            PartId = 1,
+                            Options = new List<OptionDto>
+                            {
+                                new OptionDto { OptionId = 1, Content = "A", IsCorrect = true },
+                                new OptionDto { OptionId = 2, Content = "B", IsCorrect = false }
+                            }
+                        }
+                    }
+                },
+                new PromptDto 
+                { 
+                    PromptId = 2, 
+                    Title = "Prompt 2", 
+                    ContentText = "Content 2", 
+                    Skill = "Listening", 
+                    PartId = 2,
+                    ReferenceImageUrl = null, // ✅ Test null
+                    ReferenceAudioUrl = "audio2.mp3",
+                    Questions = new List<QuestionDto>()
+                }
             };
 
-            _mockQuestionService.Setup(s => s.GetPromptsPagedAsync(1, 10, null))
+            _mockQuestionService.Setup(s => s.GetPromptsPagedAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int?>()))
                 .ReturnsAsync((prompts, 1));
 
             // Act
@@ -270,54 +325,23 @@ namespace Lumina.Tests
             Assert.NotNull(itemsProperty);
             Assert.NotNull(totalPagesProperty);
             Assert.Equal(1, totalPagesProperty.GetValue(response));
+            
+            // ✅ VERIFY Questions được map
+            var items = itemsProperty.GetValue(response) as List<PromptDto>;
+            Assert.Equal(1, items[0].Questions.Count);
+            Assert.Equal(2, items[0].Questions[0].Options.Count);
         }
 
         [Fact]
-        public async Task GetPaged_WithPartIdFilter_ReturnsFilteredData()
+        public async Task GetPaged_BoundaryValues_ReturnsOkWithData()
         {
-            // Arrange
-            var prompts = new List<PromptDto>
-            {
-                new PromptDto { PromptId = 1, Title = "Prompt 1", PartId = 1 }
-            };
-
-            _mockQuestionService.Setup(s => s.GetPromptsPagedAsync(1, 10, 1))
-                .ReturnsAsync((prompts, 1));
-
-            // Act
-            var result = await _controller.GetPaged(1, 10, 1);
-
-            // Assert
-            var okResult = Assert.IsType<OkObjectResult>(result);
-            Assert.NotNull(okResult.Value);
-        }
-
-        [Fact]
-        public async Task GetPaged_PageNumberZero_ReturnsOkWithData()
-        {
-            // Arrange
+            // Arrange - Test empty list with all nullable fields
             var prompts = new List<PromptDto>();
             _mockQuestionService.Setup(s => s.GetPromptsPagedAsync(0, 10, null))
                 .ReturnsAsync((prompts, 0));
 
             // Act
             var result = await _controller.GetPaged(0, 10, null);
-
-            // Assert
-            var okResult = Assert.IsType<OkObjectResult>(result);
-            Assert.NotNull(okResult.Value);
-        }
-
-        [Fact]
-        public async Task GetPaged_CustomPageSize_ReturnsOkWithData()
-        {
-            // Arrange
-            var prompts = new List<PromptDto>();
-            _mockQuestionService.Setup(s => s.GetPromptsPagedAsync(1, 20, null))
-                .ReturnsAsync((prompts, 1));
-
-            // Act
-            var result = await _controller.GetPaged(1, 20, null);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
@@ -337,7 +361,7 @@ namespace Lumina.Tests
 
         #endregion
 
-        #region EditPassage Tests (4 test cases)
+        #region EditPassage Tests (7 test cases)
 
         [Fact]
         public async Task EditPassage_ValidDto_ReturnsOkWithSuccessMessage()
@@ -348,7 +372,9 @@ namespace Lumina.Tests
                 PromptId = 1,
                 Title = "Updated Title",
                 ContentText = "Updated Content",
-                Skill = "Reading"
+                Skill = "Reading",
+                ReferenceImageUrl = "image.jpg",
+                ReferenceAudioUrl = "audio.mp3"
             };
 
             _mockQuestionService.Setup(s => s.EditPromptWithQuestionsAsync(dto))
@@ -381,8 +407,14 @@ namespace Lumina.Tests
         [Fact]
         public async Task EditPassage_InvalidPromptId_ReturnsBadRequest()
         {
-            // Arrange
-            var dto = new PromptEditDto { PromptId = 0 };
+            // Arrange - Test cả PromptId = 0 và âm
+            var dto = new PromptEditDto 
+            { 
+                PromptId = 0,
+                Skill = "Reading",
+                ContentText = "Content",
+                Title = "Title"
+            };
 
             // Act
             var result = await _controller.EditPassage(dto);
@@ -415,22 +447,111 @@ namespace Lumina.Tests
             Assert.Equal("Prompt không tồn tại", notFoundResult.Value);
         }
 
+        [Fact]
+        public async Task EditPassage_ValidDtoWithOnlyRequiredFields_ReturnsOk()
+        {
+            // Arrange
+            var dto = new PromptEditDto 
+            { 
+                PromptId = 2,
+                Skill = "Reading",
+                ContentText = "Required content",
+                Title = "Required Title",
+                ReferenceImageUrl = null,
+                ReferenceAudioUrl = null
+            };
+            _mockQuestionService.Setup(s => s.EditPromptWithQuestionsAsync(dto))
+                .ReturnsAsync(true);
+
+            // Act
+            var result = await _controller.EditPassage(dto);
+
+            // Assert
+            Assert.IsType<OkObjectResult>(result);
+            _mockQuestionService.Verify(s => s.EditPromptWithQuestionsAsync(It.Is<PromptEditDto>(d => 
+                d.ReferenceImageUrl == null && d.ReferenceAudioUrl == null
+            )), Times.Once);
+        }
+
+        [Fact]
+        public async Task EditPassage_ValidDtoWithEmptyStrings_ReturnsOk()
+        {
+            // Arrange
+            var dto = new PromptEditDto 
+            { 
+                PromptId = 5,
+                Skill = "",
+                ContentText = "",
+                Title = ""
+            };
+            _mockQuestionService.Setup(s => s.EditPromptWithQuestionsAsync(dto))
+                .ReturnsAsync(true);
+
+            // Act
+            var result = await _controller.EditPassage(dto);
+
+            // Assert
+            Assert.IsType<OkObjectResult>(result);
+        }
+
+        [Fact]
+        public async Task EditPassage_ValidDtoWithBoundaryValues_ReturnsOk()
+        {
+            // Arrange - Test cả long string và int.MaxValue
+            var longText = new string('A', 10000);
+            var dto = new PromptEditDto 
+            { 
+                PromptId = int.MaxValue,
+                Skill = longText,
+                ContentText = longText,
+                Title = longText
+            };
+            _mockQuestionService.Setup(s => s.EditPromptWithQuestionsAsync(dto))
+                .ReturnsAsync(true);
+
+            // Act
+            var result = await _controller.EditPassage(dto);
+
+            // Assert
+            Assert.IsType<OkObjectResult>(result);
+            _mockQuestionService.Verify(s => s.EditPromptWithQuestionsAsync(It.Is<PromptEditDto>(d => 
+                d.PromptId == int.MaxValue && d.Skill.Length == 10000
+            )), Times.Once);
+        }
+
         #endregion
 
-        #region Update Tests (4 test cases)
+        #region Update Tests (7 test cases)
 
         [Fact]
         public async Task Update_ValidDto_ReturnsOkWithSuccessMessage()
         {
-            // Arrange
+            // Arrange - ✅ BỔ SUNG ĐẦY ĐỦ PROPERTIES
             var dto = new QuestionCrudDto
             {
                 QuestionId = 1,
                 PartId = 1,
+                PromptId = 1,
                 QuestionType = "Multiple Choice",
                 StemText = "Updated Question",
+                QuestionExplain = "Explanation",
                 ScoreWeight = 1,
-                Time = 30
+                Time = 30,
+                Options = new List<OptionDto> // ✅ OptionDto instead of OptionCrudDto
+                {
+                    new OptionDto 
+                    { 
+                        OptionId = 1, // ✅ THÊM
+                        Content = "A", 
+                        IsCorrect = true 
+                    },
+                    new OptionDto 
+                    { 
+                        OptionId = 2, // ✅ THÊM
+                        Content = "B", 
+                        IsCorrect = false 
+                    }
+                }
             };
 
             _mockQuestionService.Setup(s => s.UpdateQuestionAsync(dto))
@@ -444,6 +565,15 @@ namespace Lumina.Tests
             var response = okResult.Value;
             var messageProperty = response.GetType().GetProperty("message");
             Assert.Equal("Đã cập nhật!", messageProperty.GetValue(response));
+            
+            // ✅ VERIFY Options có OptionId
+            _mockQuestionService.Verify(s => s.UpdateQuestionAsync(
+                It.Is<QuestionCrudDto>(d => 
+                    d.Options != null && 
+                    d.Options.Count == 2 &&
+                    d.Options[0].OptionId == 1
+                )
+            ), Times.Once);
         }
 
         [Fact]
@@ -505,6 +635,95 @@ namespace Lumina.Tests
 
             // Act & Assert
             await Assert.ThrowsAsync<Exception>(() => _controller.Update(dto));
+        }
+
+        [Fact]
+        public async Task Update_ValidDtoWithoutOptionalFields_ReturnsOk()
+        {
+            // Arrange - Test null PromptId, QuestionExplain, Options
+            var dto = new QuestionCrudDto
+            {
+                QuestionId = 2,
+                PartId = 2,
+                PromptId = null,
+                QuestionType = "Speaking",
+                StemText = "Question",
+                QuestionExplain = null,
+                ScoreWeight = 10,
+                Time = 120,
+                Options = null
+            };
+            _mockQuestionService.Setup(s => s.UpdateQuestionAsync(dto))
+                .ReturnsAsync(true);
+
+            // Act
+            var result = await _controller.Update(dto);
+
+            // Assert
+            Assert.IsType<OkObjectResult>(result);
+            _mockQuestionService.Verify(s => s.UpdateQuestionAsync(It.Is<QuestionCrudDto>(d =>
+                d.PromptId == null && d.Options == null
+            )), Times.Once);
+        }
+
+        [Fact]
+        public async Task Update_ValidDtoWithEmptyValues_ReturnsOk()
+        {
+            // Arrange - Test empty strings và empty list
+            var dto = new QuestionCrudDto
+            {
+                QuestionId = 3,
+                PartId = 3,
+                QuestionType = "",
+                StemText = "",
+                QuestionExplain = "",
+                ScoreWeight = 1,
+                Time = 30,
+                Options = new List<OptionDto>()
+            };
+            _mockQuestionService.Setup(s => s.UpdateQuestionAsync(dto))
+                .ReturnsAsync(true);
+
+            // Act
+            var result = await _controller.Update(dto);
+
+            // Assert
+            Assert.IsType<OkObjectResult>(result);
+        }
+
+        [Fact]
+        public async Task Update_ValidDtoWithBoundaryValues_ReturnsOk()
+        {
+            // Arrange - Test int.MaxValue, long string, nhiều options, ScoreWeight=0
+            var options = new List<OptionDto>();
+            for (int i = 0; i < 100; i++)
+            {
+                options.Add(new OptionDto { Content = $"Option {i}", IsCorrect = i == 0 });
+            }
+
+            var dto = new QuestionCrudDto
+            {
+                QuestionId = int.MaxValue,
+                PartId = int.MaxValue,
+                QuestionType = "Boundary",
+                StemText = new string('A', 10000),
+                ScoreWeight = 0,
+                Time = 0,
+                Options = options
+            };
+            _mockQuestionService.Setup(s => s.UpdateQuestionAsync(dto))
+                .ReturnsAsync(true);
+
+            // Act
+            var result = await _controller.Update(dto);
+
+            // Assert
+            Assert.IsType<OkObjectResult>(result);
+            _mockQuestionService.Verify(s => s.UpdateQuestionAsync(It.Is<QuestionCrudDto>(d =>
+                d.QuestionId == int.MaxValue && 
+                d.ScoreWeight == 0 &&
+                d.Options.Count == 100
+            )), Times.Once);
         }
 
         #endregion

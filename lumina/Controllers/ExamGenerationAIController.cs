@@ -19,29 +19,86 @@ namespace lumina.Controllers
             _mapper = aIExamMapper;
         }
 
+        /* [HttpPost("smart-chat")]
+         public async Task<IActionResult> SmartChat([FromBody] CreateExamRequest request)
+         {
+             try
+             {
+                 Console.WriteLine($"[SmartChat] Received: {request.UserRequest}");
+
+                 // Bước 1: Phát hiện intent
+                 var intent = await _aiService.DetectIntentAsync(request.UserRequest);
+                 Console.WriteLine($"[SmartChat] Intent: IsExam={intent.IsExamRequest}, Reason={intent.Explanation}");
+
+                 if (intent.IsExamRequest)
+                 {
+                     // ===== XỬ LÝ TẠO ĐỀ THI =====
+                     var (partNumber, quantity, topic) = await _aiService.ParseUserRequestAsync(request.UserRequest);
+                     var aiExamDto = await _aiService.GenerateExamAsync(partNumber, quantity, topic);
+                     var saveDto = _mapper.MapAIGeneratedToCreatePrompts(aiExamDto);
+                     Console.WriteLine("Test" + saveDto);
+
+                     return Ok(new
+                     {
+                         type = "exam",
+                         message = $"✅ Đã tạo {aiExamDto.Prompts.Count} prompts với {saveDto.Sum(p => p.Questions.Count)} câu hỏi về {topic ?? "chủ đề chung"}",
+                         data = saveDto,
+                         examInfo = new
+                         {
+                             examTitle = aiExamDto.ExamExamTitle,
+                             skill = aiExamDto.Skill,
+                             partLabel = aiExamDto.PartLabel,
+                             promptCount = aiExamDto.Prompts.Count,
+                             totalQuestions = saveDto.Sum(p => p.Questions.Count)
+                         }
+                     });
+                 }
+                 else
+                 {
+                     // ===== XỬ LÝ CHAT TỰ DO =====
+                     var response = await _aiService.GeneralChatAsync(request.UserRequest);
+
+                     return Ok(new
+                     {
+                         type = "chat",
+                         message = response
+                     });
+                 }
+             }
+             catch (Exception ex)
+             {
+                 Console.WriteLine($"[SmartChat] Error: {ex.Message}");
+                 return BadRequest(new
+                 {
+                     success = false,
+                     message = ex.Message,
+                     detail = ex.InnerException?.Message
+                 });
+             }
+         }*/
+
         [HttpPost("smart-chat")]
         public async Task<IActionResult> SmartChat([FromBody] CreateExamRequest request)
         {
+            Console.WriteLine($"[SmartChat] Received: {request.UserRequest}");
+
             try
             {
-                Console.WriteLine($"[SmartChat] Received: {request.UserRequest}");
-
-                // Bước 1: Phát hiện intent
+                // ===== Bước 1: Phát hiện intent =====
                 var intent = await _aiService.DetectIntentAsync(request.UserRequest);
                 Console.WriteLine($"[SmartChat] Intent: IsExam={intent.IsExamRequest}, Reason={intent.Explanation}");
 
+                // ===== Bước 2: Nếu là yêu cầu tạo đề thi =====
                 if (intent.IsExamRequest)
                 {
-                    // ===== XỬ LÝ TẠO ĐỀ THI =====
                     var (partNumber, quantity, topic) = await _aiService.ParseUserRequestAsync(request.UserRequest);
                     var aiExamDto = await _aiService.GenerateExamAsync(partNumber, quantity, topic);
                     var saveDto = _mapper.MapAIGeneratedToCreatePrompts(aiExamDto);
-                    Console.WriteLine("Test" + saveDto);
 
                     return Ok(new
                     {
                         type = "exam",
-                        message = $"✅ Đã tạo {aiExamDto.Prompts.Count} prompts với {saveDto.Sum(p => p.Questions.Count)} câu hỏi về {topic ?? "chủ đề chung"}",
+                        message = $"Đã tạo {aiExamDto.Prompts.Count} prompts với {saveDto.Sum(p => p.Questions.Count)} câu hỏi về {topic ?? "chủ đề chung"}",
                         data = saveDto,
                         examInfo = new
                         {
@@ -53,29 +110,79 @@ namespace lumina.Controllers
                         }
                     });
                 }
-                else
-                {
-                    // ===== XỬ LÝ CHAT TỰ DO =====
-                    var response = await _aiService.GeneralChatAsync(request.UserRequest);
 
-                    return Ok(new
-                    {
-                        type = "chat",
-                        message = response
-                    });
-                }
+                // ===== Bước 3: Chat thông thường =====
+                var response = await ExecuteWithRetryAsync(() => _aiService.GeneralChatAsync(request.UserRequest));
+
+                return Ok(new
+                {
+                    type = "chat",
+                    message = response
+                });
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[SmartChat] Error: {ex.Message}");
-                return BadRequest(new
+                Console.WriteLine($"[SmartChat] Error: {ex}");
+
+                // Nếu Gemini API quá tải hoặc unavailable
+                if (ex.Message.Contains("503") || ex.Message.Contains("UNAVAILABLE") || ex.Message.Contains("overloaded"))
+                {
+                    return StatusCode(503, new
+                    {
+                        success = false,
+                        message = "Gemini API hiện đang quá tải, vui lòng thử lại sau.",
+                        detail = ex.Message
+                    });
+                }
+
+                // Nếu lỗi đến từ request sai định dạng
+                if (ex is ArgumentException || ex is FormatException)
+                {
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = "Yêu cầu không hợp lệ. Vui lòng kiểm tra lại nội dung đầu vào.",
+                        detail = ex.Message
+                    });
+                }
+
+                // Lỗi khác (mặc định 500)
+                return StatusCode(500, new
                 {
                     success = false,
-                    message = ex.Message,
-                    detail = ex.InnerException?.Message
+                    message = "Lỗi hệ thống, vui lòng thử lại sau.",
+                    detail = ex.Message
                 });
             }
         }
+
+
+        // === Hàm hỗ trợ retry tự động khi Gemini quá tải ===
+        private async Task<T> ExecuteWithRetryAsync<T>(Func<Task<T>> action, int maxRetries = 2, int delayMs = 2000)
+        {
+            for (int attempt = 0; attempt <= maxRetries; attempt++)
+            {
+                try
+                {
+                    return await action();
+                }
+                catch (Exception ex)
+                {
+                    if (attempt < maxRetries &&
+                        (ex.Message.Contains("503") || ex.Message.Contains("UNAVAILABLE") || ex.Message.Contains("overloaded")))
+                    {
+                        Console.WriteLine($"[SmartChat] Gemini overloaded, retrying... ({attempt + 1}/{maxRetries})");
+                        await Task.Delay(delayMs);
+                        continue;
+                    }
+
+                    throw;
+                }
+            }
+
+            throw new Exception("Gemini API vẫn quá tải sau khi thử lại.");
+        }
+
 
 
         // Endpoint để Staff gửi yêu cầu tạo đề thi

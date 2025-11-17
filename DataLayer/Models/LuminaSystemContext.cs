@@ -178,6 +178,11 @@ public partial class LuminaSystemContext : DbContext
 
         modelBuilder.Entity<UserAnswerSpeaking>(entity =>
         {
+            entity.HasIndex(u => new { u.AttemptID, u.QuestionId })
+    .IsUnique()
+    .HasDatabaseName("IX_UserAnswerSpeaking_AttemptID_QuestionId_Unique");
+
+
             entity.HasKey(e => e.UserAnswerSpeakingId);
             entity.ToTable("UserAnswerSpeaking");
 
@@ -187,7 +192,7 @@ public partial class LuminaSystemContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasOne(d => d.Question)
-                .WithMany(p => p.UserAnswerSpeakings)  // ✅ Chỉ định navigation property
+                .WithMany(p => p.UserAnswerSpeakings)  
                 .HasForeignKey(d => d.QuestionId)
                 .OnDelete(DeleteBehavior.NoAction);
         });

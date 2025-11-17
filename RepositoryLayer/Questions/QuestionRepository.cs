@@ -1,5 +1,4 @@
-﻿using DataLayer.DTOs.Passage;
-using DataLayer.DTOs.Prompt;
+﻿using DataLayer.DTOs.Prompt;
 using DataLayer.DTOs.Questions;
 using DataLayer.Models;
 using Microsoft.EntityFrameworkCore;
@@ -48,98 +47,7 @@ namespace RepositoryLayer.Questions
             _context.Options.AddRange(options);
             await _context.SaveChangesAsync();
         }
-        /*    public async Task<(List<PassageDto> Items, int TotalPages)> GetPassagePromptQuestionsPagedAsync(int page, int size, int? partId)
-            {
-                var query = _context.Passages.AsQueryable();
-
-
-                if (partId.HasValue)
-                {
-                    query = query.Where(p => p.Prompts.Any(pr => pr.Questions.Any(q => q.PartId == partId.Value)));
-                }
-
-                int totalRecords = await query.CountAsync();
-                int totalPages = (int)Math.Ceiling(totalRecords / (double)size);
-
-                var items = await query.OrderBy(p => p.PassageId)
-                    .Skip((page - 1) * size)
-                    .Take(size)
-                    .Select(pa => new PassageDto
-                    {
-                        PassageId = pa.PassageId,
-                        Title = pa.Title,
-                        ContentText = pa.ContentText,
-                        Prompt = pa.Prompts.Select(pr => new PromptDto
-                        {
-                            PromptId = pr.PromptId,
-                            Skill = pr.Skill,
-                            PromptText = pr.PromptText,
-                            ReferenceImageUrl = pr.ReferenceImageUrl,
-                            ReferenceAudioUrl = pr.ReferenceAudioUrl,
-                            PartId = pr.Questions.Any() ? pr.Questions.First().PartId : 0, // Lấy partId từ question đầu tiên trong prompt
-                            Questions = pr.Questions
-                                .Where(q => !partId.HasValue || q.PartId == partId.Value)
-                                .Select(q => new QuestionDto
-                                {
-                                    QuestionId = q.QuestionId,
-                                    StemText = q.StemText,
-                                    QuestionExplain = q.QuestionExplain,
-                                    ScoreWeight = q.ScoreWeight,
-                                    Time = q.Time,
-                                    Options = q.Options.Select(o => new OptionDto
-                                    {
-                                        OptionId = o.OptionId,
-                                        Content = o.Content,
-                                        IsCorrect = o.IsCorrect ?? false
-                                    }).ToList()
-                                }).ToList()
-                        }).FirstOrDefault()
-                    })
-                    .ToListAsync();
-
-                return (items, totalPages);
-            }*/
-
-
-        /* public async Task<bool> EditPassageWithPromptAsync(PassageEditDto dto)
-         {
-             var passage = await _context.Passages.Include(p => p.Prompts)
-                                            .FirstOrDefaultAsync(p => p.PassageId == dto.PassageId);
-             if (passage == null) return false;
-
-             // Update passage fields
-             passage.Title = dto.Title;
-             passage.ContentText = dto.ContentText;
-
-             if (dto.Prompt != null)
-             {
-                 var prompt = passage.Prompts.FirstOrDefault(pr => pr.PromptId == dto.Prompt.PromptId);
-                 if (prompt == null)
-                 {
-                     // Có thể tạo prompt mới nếu chưa có
-                     prompt = new Prompt
-                     {
-                         PromptId = dto.Prompt.PromptId,
-                         Skill = dto.Prompt.Skill,
-                         PromptText = dto.Prompt.PromptText,
-                         ReferenceImageUrl = dto.Prompt.ReferenceImageUrl,
-                         ReferenceAudioUrl = dto.Prompt.ReferenceAudioUrl
-                     };
-                     passage.Prompts.Add(prompt);
-                 }
-                 else
-                 {
-                     // Update prompt fields
-                     prompt.Skill = dto.Prompt.Skill;
-                     prompt.PromptText = dto.Prompt.PromptText;
-                     prompt.ReferenceImageUrl = dto.Prompt.ReferenceImageUrl;
-                     prompt.ReferenceAudioUrl = dto.Prompt.ReferenceAudioUrl;
-                 }
-             }
-
-             await _context.SaveChangesAsync();
-             return true;
-         }*/
+       
 
         public async Task<bool> EditPromptWithQuestionsAsync(PromptEditDto dto)
         {
@@ -198,6 +106,7 @@ namespace RepositoryLayer.Questions
                             QuestionExplain = q.QuestionExplain,
                             ScoreWeight = q.ScoreWeight,
                             Time = q.Time,
+                            SampleAnswer = q.SampleAnswer,
                             Options = q.Options.Select(o => new OptionDto
                             {
                                 OptionId = o.OptionId,
@@ -258,6 +167,7 @@ namespace RepositoryLayer.Questions
 
             question.StemText = dto.StemText;
             question.QuestionExplain = dto.QuestionExplain;
+            question.SampleAnswer = dto.SampleAnswer;
 
             // Chỉ xử lý Option nếu có
             if (dto.Options != null && dto.Options.Any())
@@ -343,44 +253,7 @@ namespace RepositoryLayer.Questions
             };
         }
 
-        //public async Task<bool> UpdatePassageAndPrompt(PassageEditDto dto)
-        //{
-        //    var passage = await _context.Passages.Include(p => p.Prompts)
-        //                               .FirstOrDefaultAsync(p => p.PassageId == dto.PassageId);
-        //    if (passage == null) return false;
 
-        //    passage.Title = dto.Title;
-        //    passage.ContentText = dto.ContentText;
-
-        //    if (dto.Prompt != null)
-        //    {
-        //        var prompt = passage.Prompts.FirstOrDefault(pr => pr.PromptId == dto.Prompt.PromptId);
-        //        if (prompt == null)
-        //        {
-        //            prompt = new Prompt
-        //            {
-        //                PromptId = dto.Prompt.PromptId,
-        //                Skill = dto.Prompt.Skill,
-        //                Title = dto.Prompt.Title, // ✅ Thêm Title
-        //                ContentText = dto.Prompt.ContentText, // ✅ Đổi từ PromptText
-        //                ReferenceImageUrl = dto.Prompt.ReferenceImageUrl,
-        //                ReferenceAudioUrl = dto.Prompt.ReferenceAudioUrl
-        //            };
-        //            passage.Prompts.Add(prompt);
-        //        }
-        //        else
-        //        {
-        //            prompt.Skill = dto.Prompt.Skill;
-        //            prompt.Title = dto.Prompt.Title; // ✅ Thêm Title
-        //            prompt.ContentText = dto.Prompt.ContentText; // ✅ Đổi từ PromptText
-        //            prompt.ReferenceImageUrl = dto.Prompt.ReferenceImageUrl;
-        //            prompt.ReferenceAudioUrl = dto.Prompt.ReferenceAudioUrl;
-        //        }
-        //    }
-
-        //    await _context.SaveChangesAsync();
-        //    return true;
-        //}
 
         public async Task<bool> DeletePromptAsync(int promptId)
         {

@@ -22,6 +22,7 @@ namespace DataLayer.DTOs.Questions
         public int ScoreWeight { get; set; }
         public int Time { get; set; }
         public int PartId { get; set; }
+        public string? SampleAnswer { get; set; }
         public List<OptionDto> Options { get; set; }
     }
 
@@ -37,13 +38,13 @@ namespace DataLayer.DTOs.Questions
         public List<QuestionDto> Questions { get; set; }
     }
 
-    public class PassageDto
+/*    public class PassageDto
     {
         public int PassageId { get; set; }
         public string Title { get; set; }
         public string ContentText { get; set; }
         public PromptDto Prompt { get; set; }
-    }
+    }*/
 
 
 
