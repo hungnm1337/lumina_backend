@@ -30,6 +30,39 @@ public class SmtpEmailSender : IEmailSender
         _enableSsl = smtpSection.GetValue("EnableSsl", true);
     }
 
+    /// <summary>
+    /// ✅ THÊM METHOD MỚI: Gửi email tùy chỉnh
+    /// </summary>
+    public async Task SendEmailAsync(string toEmail, string subject, string body, bool isHtml = true)
+    {
+        using var message = new MailMessage
+        {
+            From = new MailAddress(_senderEmail, _senderName),
+            Subject = subject,
+            Body = body,
+            IsBodyHtml = isHtml
+        };
+
+        message.To.Add(new MailAddress(toEmail));
+
+        using var client = new SmtpClient(_server, _port)
+        {
+            Credentials = new NetworkCredential(_username, _password),
+            EnableSsl = _enableSsl
+        };
+
+        try
+        {
+            await client.SendMailAsync(message);
+            _logger.LogInformation("Sent email to {Email} with subject: {Subject}", toEmail, subject);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send email to {Email} with subject: {Subject}", toEmail, subject);
+            throw;
+        }
+    }
+
     public async Task SendPasswordResetCodeAsync(string toEmail, string toName, string otpCode)
     {
         using var message = new MailMessage

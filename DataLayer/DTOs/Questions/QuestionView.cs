@@ -22,6 +22,7 @@ namespace DataLayer.DTOs.Questions
         public int ScoreWeight { get; set; }
         public int Time { get; set; }
         public int PartId { get; set; }
+        public string? SampleAnswer { get; set; }
         public List<OptionDto> Options { get; set; }
     }
 
