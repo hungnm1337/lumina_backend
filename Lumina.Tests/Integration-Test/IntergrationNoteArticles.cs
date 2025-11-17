@@ -1,17 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Xunit;
-using Moq;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using lumina.Controllers;
-using ServiceLayer.Article;
-using ServiceLayer.UserNote;
-using RepositoryLayer.UnitOfWork;
-using DataLayer.DTOs.Article;
-using DataLayer.DTOs.UserNote;
+﻿//using System;
+//using System.Collections.Generic;
+//using System.Linq;
+//using System.Threading.Tasks;
+//using Xunit;
+//using Moq;
+//using Microsoft.AspNetCore.Mvc;
+//using Microsoft.Extensions.Logging;
+//using lumina.Controllers;
+//using ServiceLayer.Article;
+//using ServiceLayer.UserNote;
+//using RepositoryLayer.UnitOfWork;
+//using DataLayer.DTOs.Article;
+//using DataLayer.DTOs.UserNote;
 
 #pragma warning disable CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
 
@@ -27,18 +27,18 @@ namespace Lumina.Tests.IntegrationTest
         private readonly ArticlesController _articlesController;
         private readonly UserNoteController _userNoteController;
 
-        public IntegrationNoteArticles()
-        {
-            _mockArticleService = new Mock<IArticleService>();
-            _mockUserNoteService = new Mock<IUserNoteService>();
-            _mockArticlesLogger = new Mock<ILogger<ArticlesController>>();
-            _mockUserNoteLogger = new Mock<ILogger<UserNoteController>>();
-            _mockUnitOfWork = new Mock<IUnitOfWork>();
+//        public IntegrationNoteArticles()
+//        {
+//            _mockArticleService = new Mock<IArticleService>();
+//            _mockUserNoteService = new Mock<IUserNoteService>();
+//            _mockArticlesLogger = new Mock<ILogger<ArticlesController>>();
+//            _mockUserNoteLogger = new Mock<ILogger<UserNoteController>>();
+//            _mockUnitOfWork = new Mock<IUnitOfWork>();
             
-            _articlesController = new ArticlesController(
-                _mockArticleService.Object, 
-                _mockArticlesLogger.Object, 
-                _mockUnitOfWork.Object);
+//            _articlesController = new ArticlesController(
+//                _mockArticleService.Object, 
+//                _mockArticlesLogger.Object, 
+//                _mockUnitOfWork.Object);
             
             _userNoteController = new UserNoteController(_mockUserNoteService.Object);
         }
