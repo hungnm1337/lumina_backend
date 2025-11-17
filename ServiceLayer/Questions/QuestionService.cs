@@ -185,7 +185,8 @@ namespace ServiceLayer.Questions
                             QuestionExplain = q.Question.QuestionExplain,
                             Time = q.Question.Time,
                             QuestionNumber = assignNumber++,
-                            PromptId = promptId
+                            PromptId = promptId,
+                            SampleAnswer = q.Question.SampleAnswer
                         };
 
                         _dbContext.Questions.Add(question);

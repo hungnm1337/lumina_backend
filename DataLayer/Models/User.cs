@@ -25,6 +25,9 @@ public partial class User
 
     public bool? IsActive { get; set; }
 
+    public int? LongestStreak { get; set; }
+
+    public int? StreakFreezesAvailable { get; set; }
     // Quota tracking for subscription tiers
     public int MonthlyReadingAttempts { get; set; } = 0;
 

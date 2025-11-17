@@ -16,6 +16,8 @@ namespace DataLayer.DTOs.AIGeneratedExam
         public int ScoreWeight { get; set; }
         public int Time { get; set; }
 
+        public string? SampleAnswer { get; set; }
+
         public List<AIGeneratedOptionDTO>? Options { get; set; } // null cho Speaking, Writing
     }
 }
