@@ -184,7 +184,13 @@ namespace lumina
             // ✅ Streak Services
             builder.Services.AddScoped<IStreakService, StreakService>();
             builder.Services.AddScoped<StreakBackgroundJob>();
-            builder.Services.AddScoped<StreakReminderJob>(); // ✅ THÊM DÒNG NÀY
+            builder.Services.AddScoped<StreakReminderJob>();
+
+            // ✅ Quota and Payment services
+            builder.Services.AddScoped<RepositoryLayer.Quota.IQuotaRepository, RepositoryLayer.Quota.QuotaRepository>();
+            builder.Services.AddScoped<ServiceLayer.Quota.IQuotaService, ServiceLayer.Quota.QuotaService>();
+            builder.Services.AddScoped<ServiceLayer.Payment.IPayOSService, ServiceLayer.Payment.PayOSService>();
+            builder.Services.AddScoped<ServiceLayer.Subscription.ISubscriptionService, ServiceLayer.Subscription.SubscriptionService>();
 
             // ========================================
             // 5. HANGFIRE (TRƯỚC builder.Build())
@@ -208,13 +214,6 @@ namespace lumina
             );
 
             builder.Services.AddHangfireServer(options =>
-            // ✅ NEW: Quota and Payment services
-            builder.Services.AddScoped<RepositoryLayer.Quota.IQuotaRepository, RepositoryLayer.Quota.QuotaRepository>();
-            builder.Services.AddScoped<ServiceLayer.Quota.IQuotaService, ServiceLayer.Quota.QuotaService>();
-            builder.Services.AddScoped<ServiceLayer.Payment.IPayOSService, ServiceLayer.Payment.PayOSService>();
-            builder.Services.AddScoped<ServiceLayer.Subscription.ISubscriptionService, ServiceLayer.Subscription.SubscriptionService>();
-
-            builder.Services.AddHttpClient<IExamGenerationAIService, ExamGenerationAIService>("OpenAI", c =>
             {
                 options.WorkerCount = 2;
                 options.ServerName = "LuminaStreakServer";
