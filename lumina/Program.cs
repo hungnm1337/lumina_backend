@@ -325,6 +325,14 @@ namespace lumina
                 DashboardTitle = "Lumina Streak Jobs"
             });
 
+            //  Xóa jobs cũ để tránh catch-up
+            if (app.Environment.IsDevelopment())
+            {
+                RecurringJob.RemoveIfExists("daily-streak-processing");
+                RecurringJob.RemoveIfExists("daily-streak-reminder");
+                Console.WriteLine("✅ Removed existing Hangfire jobs (Development mode)");
+            }
+
             // Job 1: Auto-freeze/reset lúc 00:05 GMT+7
             RecurringJob.AddOrUpdate<StreakBackgroundJob>(
                 "daily-streak-processing",
@@ -332,7 +340,8 @@ namespace lumina
                 "5 17 * * *", // 00:05 GMT+7 = 17:05 UTC
                 new RecurringJobOptions
                 {
-                    TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")
+                    TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"),
+                    MisfireHandling = MisfireHandlingMode.Ignorable // ✅ THÊM
                 }
             );
 
@@ -340,18 +349,15 @@ namespace lumina
             RecurringJob.AddOrUpdate<StreakReminderJob>(
                 "daily-streak-reminder",
                 job => job.ProcessDailyRemindersAsync(),
-                "0 14 * * *", // 21:00 GMT+7 = 14:00 UTC   "*/2 * * * *",
+                "0 14 * * *", // 21:00 GMT+7 = 14:00 UTC
                 new RecurringJobOptions
                 {
-                    TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")
+                    TimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"),
+                    MisfireHandling = MisfireHandlingMode.Ignorable // ✅ THÊM
                 }
             );
 
-            // ========================================
-            // 11. MAP CONTROLLERS
-            // ========================================
             app.MapControllers();
-
             app.Run();
         }
     }

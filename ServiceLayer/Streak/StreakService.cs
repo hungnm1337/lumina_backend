@@ -329,12 +329,12 @@ namespace ServiceLayer.Streak
         {
             try
             {
-                // ✅ FIX: Convert DateOnly → DateTime để query
+                
                 var yesterdayDateTime = todayLocal.AddDays(-1).ToDateTime(TimeOnly.MaxValue);
 
                 // Lấy users có CurrentStreak > 0 và LastPracticeDate < todayLocal - 1
                 var userIds = await _context.Users
-                    .Where(u => (u.CurrentStreak ?? 0) > 0  // ✅ FIX NULL
+                    .Where(u => (u.CurrentStreak ?? 0) > 0  
                         && u.LastPracticeDate.HasValue 
                         && u.LastPracticeDate.Value < yesterdayDateTime)
                     .Select(u => u.UserId)
@@ -441,7 +441,6 @@ namespace ServiceLayer.Streak
             var user = await _context.Users.FirstOrDefaultAsync(u => u.UserId == userId);
             if (user == null) return;
 
-            // ✅ FIX: Handle NULL trong tất cả cases
             var currentFreezeTokens = user.StreakFreezesAvailable ?? 0;
 
             // Trao thưởng theo milestone

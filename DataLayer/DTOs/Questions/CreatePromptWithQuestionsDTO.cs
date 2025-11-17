@@ -47,6 +47,9 @@ namespace DataLayer.DTOs.Questions
 
         [Required]
         public int PromptId { get; set; }
+
+        [StringLength(2000)]
+        public string? SampleAnswer { get; set; }
     }
 
 }

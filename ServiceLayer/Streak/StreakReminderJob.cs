@@ -6,9 +6,7 @@ using DataLayer.DTOs.Streak;
 
 namespace ServiceLayer.Streak
 {
-    /// <summary>
-    /// Background job gửi nhắc nhở streak hàng ngày lúc 21:00 GMT+7
-    /// </summary>
+
     public class StreakReminderJob
     {
         private readonly IStreakService _streakService;
@@ -25,14 +23,29 @@ namespace ServiceLayer.Streak
             _logger = logger;
         }
 
-        /// <summary>
-        /// Job chạy hàng ngày lúc 21:00 GMT+7
-        /// Gửi email nhắc nhở cho users chưa học hôm nay
-        /// </summary>
+        /// Gửi email nhắc nhở cho users chưa học hôm nay 21h
         public async Task ProcessDailyRemindersAsync()
         {
             var startTime = DateTime.UtcNow;
             _logger.LogInformation("=== START Daily Streak Reminder at {Time} UTC ===", startTime);
+
+            // ✅ THÊM: Defense layer - Kiểm tra thời gian
+            var nowGMT7 = TimeZoneInfo.ConvertTimeFromUtc(
+                DateTime.UtcNow,
+                TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")
+            );
+
+            // Chỉ chạy trong khung giờ 20:00 - 22:00 GMT+7
+            if (nowGMT7.Hour < 20 || nowGMT7.Hour >= 22)
+            {
+                _logger.LogWarning(
+                    "⚠️ Job triggered outside allowed time window. Current time: {Time} GMT+7. Expected: 20:00-22:00. Skipping execution.",
+                    nowGMT7.ToString("yyyy-MM-dd HH:mm:ss")
+                );
+                return;
+            }
+
+            _logger.LogInformation("✅ Time check passed. Current time: {Time} GMT+7", nowGMT7.ToString("HH:mm:ss"));
 
             try
             {
@@ -103,13 +116,12 @@ namespace ServiceLayer.Streak
                 _logger.LogError(ex,
                     "FATAL ERROR in Daily Streak Reminder after {Duration}ms",
                     duration.TotalMilliseconds);
-                throw; // Re-throw để Hangfire retry
+                throw;
             }
         }
 
-        /// <summary>
-        /// Gửi email nhắc nhở cho 1 user
-        /// </summary>
+
+        /// Gửi email 
         private async Task SendReminderEmailAsync(StreakReminderDTO user)
         {
             var subject = $"⏰ Nhắc nhở: Hãy duy trì chuỗi {user.CurrentStreak} ngày của bạn!";
@@ -119,9 +131,6 @@ namespace ServiceLayer.Streak
             await _emailSender.SendEmailAsync(user.Email, subject, body);
         }
 
-        /// <summary>
-        /// Tạo nội dung email HTML
-        /// </summary>
         private string GenerateEmailBody(StreakReminderDTO user)
         {
             // Chọn emoji dựa vào streak

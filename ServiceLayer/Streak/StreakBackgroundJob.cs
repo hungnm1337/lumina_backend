@@ -5,9 +5,6 @@ using Microsoft.Extensions.Logging;
 
 namespace ServiceLayer.Streak
 {
-    /// <summary>
-    /// Background job xử lý auto-freeze/reset streak hàng ngày
-    /// </summary>
     public class StreakBackgroundJob
     {
         private readonly IStreakService _streakService;

@@ -851,58 +851,62 @@ namespace ServiceLayer.AI.Prompt
         // --- Speaking Prompts (Updated DTOs) ---
         private static string CreateSpeakingPart1Prompt(int quantity)
         {
-            // --- Cập nhật exampleDto ---
             var exampleDto = new AIGeneratedExamDTO
             {
                 ExamExamTitle = "AI Generated Speaking Q1-2",
-                Skill = "Speaking",
+                Skill = "SPEAKING",
                 PartLabel = "Q1-2",
                 Prompts = new List<AIGeneratedPromptDTO> {
-                    new AIGeneratedPromptDTO {
-                        ExamTitle = "Read a Text Aloud",
-                        Description = "Welcome to the City Museum's new exhibit on ancient Egypt. We are open daily from 9 AM to 5 PM. Tickets can be purchased online or at the entrance. Please note that photography without flash is permitted in most galleries. Enjoy your visit!", // Đoạn văn đọc
-                        // Thêm một QuestionDTO để lưu metadata
-                        Questions = new List<AIGeneratedQuestionDTO> {
-                            new AIGeneratedQuestionDTO {
-                                PartId = 8, // Part ID cho Q1-2
-                                QuestionType = "ReadAloud",
-                                StemText = "Read the text aloud clearly and naturally.", // Hướng dẫn chung
-                                ScoreWeight = 3, 
-                                Time = 45 
-                                // Options, CorrectAnswer, Explanation, Translation là null/empty
-                            }
-                        }
+            new AIGeneratedPromptDTO {
+                ExamTitle = "Read a Text Aloud",
+                Description = "Welcome to the City Museum's new exhibit on ancient Egypt. We are open daily from 9 AM to 5 PM. Tickets can be purchased online or at the entrance. Please note that photography without flash is permitted in most galleries. Enjoy your visit!",
+                Questions = new List<AIGeneratedQuestionDTO> {
+                    new AIGeneratedQuestionDTO {
+                        PartId = 8,
+                        QuestionType = "SPEAKING",
+                        StemText = "Read the text aloud clearly and naturally.",
+                        ScoreWeight = 3,
+                        Time = 45,
+                        // ✅ THÊM: Câu trả lời mẫu (đọc đúng text)
+                        SampleAnswer = "Welcome to the City Museum's new exhibit on ancient Egypt. We are open daily from 9 AM to 5 PM. Tickets can be purchased online or at the entrance. Please note that photography without flash is permitted in most galleries. Enjoy your visit!"
                     }
                 }
+            }
+        }
             };
-            // --- Kết thúc cập nhật exampleDto ---
+
             string jsonExample = JsonConvert.SerializeObject(exampleDto, Formatting.Indented);
-            // --- Cập nhật yêu cầu prompt ---
+
             return $"""
-            Bạn là một chuyên gia ra đề thi TOEIC Speaking Questions 1-2 (Read a text aloud).
+    Bạn là một chuyên gia ra đề thi TOEIC Speaking Questions 1-2 (Read a text aloud).
 
-            **Yêu cầu:**
-            - Tạo ra một đối tượng JSON **AIGeneratedExamDTO** duy nhất.
-            - Mảng `Prompts` phải chứa **CHÍNH XÁC {quantity}** đối tượng `AIGeneratedPromptDTO` (mỗi đối tượng đại diện cho một đoạn văn cần đọc).
-            - **Mỗi** `AIGeneratedPromptDTO`:
-                - Phải chứa đoạn văn cần đọc (dài khoảng 100-150 từ) trong trường `Description`.
-                - Phải chứa **MỘT** đối tượng `AIGeneratedQuestionDTO` trong mảng `Questions`. Đối tượng này dùng để lưu:
-                    - `PartId`: 8
-                    - `QuestionType`: "ReadAloud"
-                    - `StemText`: Hướng dẫn chung như "Read the text aloud clearly and naturally."
-                    - `ScoreWeight`: Điểm cho phần đọc (ví dụ: 3).
-                    - `Time`: Tổng thời gian cho phần đọc (ví dụ: 90 giây = 45s chuẩn bị + 45s đọc).
-            - Điền các thông tin khác (`ExamExamTitle`, `Skill`, `PartLabel`...) như trong ví dụ.
-            - **Quan trọng:** Trả về kết quả dưới dạng một đối tượng JSON duy nhất, không có markdown hay giải thích bên ngoài, theo đúng cấu trúc ví dụ dưới đây.
+    **Yêu cầu:**
+    - Tạo ra một đối tượng JSON **AIGeneratedExamDTO** duy nhất.
+    - Mảng `Prompts` phải chứa **CHÍNH XÁC {quantity}** đối tượng `AIGeneratedPromptDTO` (mỗi đối tượng đại diện cho một đoạn văn cần đọc).
+    - **Mỗi** `AIGeneratedPromptDTO`:
+        - Phải chứa đoạn văn cần đọc (dài khoảng 100-150 từ) trong trường `Description`.
+        - Phải chứa **MỘT** đối tượng `AIGeneratedQuestionDTO` trong mảng `Questions`. Đối tượng này dùng để lưu:
+            - `PartId`: 8
+            - `QuestionType`: "ReadAloud"
+            - `StemText`: Hướng dẫn chung như "Read the text aloud clearly and naturally."
+            - `ScoreWeight`: Điểm cho phần đọc (ví dụ: 3).
+            - `Time`: Tổng thời gian cho phần đọc (ví dụ: 90 giây = 45s chuẩn bị + 45s đọc).
+            - **`SampleAnswer`**: ✅ **BẮT BUỘC** - Câu trả lời mẫu (chính là nội dung đoạn văn cần đọc, copy từ `Description`)
+    - Điền các thông tin khác (`ExamExamTitle`, `Skill`, `PartLabel`...) như trong ví dụ.
+    - **Quan trọng:** Trả về kết quả dưới dạng một đối tượng JSON duy nhất, không có markdown hay giải thích bên ngoài, theo đúng cấu trúc ví dụ dưới đây.
 
-            **Ví dụ cấu trúc JSON đầu ra (cho 1 đoạn văn):**
-            ```json
-            {jsonExample}
-            ```
-            **Hãy bắt đầu tạo {quantity} đoạn văn.**
-            Hãy chỉ trả về một JSON object duy nhất, không có lời dẫn, không có markdown, không có ký hiệu ```json, không có mô tả hoặc lời giải thích nào khác.
-            """;
-            // --- Kết thúc cập nhật yêu cầu prompt ---
+    **Ví dụ cấu trúc JSON đầu ra (cho 1 đoạn văn):**
+    ```json
+    {jsonExample}
+    ```
+    
+    **Lưu ý về SampleAnswer:**
+    - `SampleAnswer` PHẢI là **chính xác nội dung trong `Description`** (văn bản cần đọc)
+    - Đây là bản mẫu để hệ thống so sánh với bản ghi âm của học viên
+    
+    **Hãy bắt đầu tạo {quantity} đoạn văn.**
+    Hãy chỉ trả về một JSON object duy nhất, không có lời dẫn, không có markdown, không có ký hiệu ```json, không có mô tả hoặc lời giải thích nào khác.
+    """;
         }
 
         private static string CreateSpeakingPart2Prompt(int quantity)
@@ -910,10 +914,9 @@ namespace ServiceLayer.AI.Prompt
             var exampleDto = new AIGeneratedExamDTO
             {
                 ExamExamTitle = "AI Generated Speaking Q3",
-                Skill = "Speaking",
+                Skill = "SPEAKING",
                 PartLabel = "Q3",
-                Prompts = new List<AIGeneratedPromptDTO> { 
-            // ✅ VÍ DỤ 1: Prompt đầu tiên
+                Prompts = new List<AIGeneratedPromptDTO> {
             new AIGeneratedPromptDTO {
                 ExamTitle = "Describe a Picture",
                 Description = "Look at the picture and describe it in as much detail as possible.",
@@ -921,48 +924,42 @@ namespace ServiceLayer.AI.Prompt
                 Questions = new List<AIGeneratedQuestionDTO> {
                     new AIGeneratedQuestionDTO {
                         PartId = 9,
-                        QuestionType = "DescribeImage",
+                        QuestionType = "SPEAKING",
                         StemText = "Describe the picture in detail.",
                         ScoreWeight = 3,
-                        Time = 45 
-                    }
-                }
-            },
-            new AIGeneratedPromptDTO {
-                ExamTitle = "Describe a Picture",
-                Description = "Look at the picture and describe it in as much detail as possible.",
-                ReferenceImageUrl = "A man is repairing a bicycle in front of a shop. Tools are scattered on the ground and a sign reading 'Bike Repair' is visible in the background.",
-                Questions = new List<AIGeneratedQuestionDTO> {
-                    new AIGeneratedQuestionDTO {
-                        PartId = 9,
-                        QuestionType = "DescribeImage",
-                        StemText = "Describe the picture in detail.",
-                        ScoreWeight = 3,
-                        Time = 45
+                        Time = 45,
+                        SampleAnswer = "In this picture, I can see a business meeting taking place in a modern conference room. A group of approximately five people are sitting around a large conference table. They appear to be listening attentively to a female colleague who is standing at a whiteboard. She seems to be presenting some charts or data to the team. On the conference table, I can see several laptops and documents spread out, which suggests this is an important working session. The office looks professional and well-lit, creating a productive atmosphere for the meeting."
                     }
                 }
             }
         }
             };
+
             string jsonExample = JsonConvert.SerializeObject(exampleDto, Formatting.Indented);
+
             return $"""
-            Bạn là một chuyên gia ra đề thi TOEIC Speaking Question 3 (Describe a picture).
+    Bạn là một chuyên gia ra đề thi TOEIC Speaking Question 3 (Describe a picture).
 
-             **Yêu cầu:**
-            - Tạo ra chính xác **{quantity}** đề bài mô tả tranh.
-            - Với mỗi đề bài:
-                - **Tạo một mô tả chi tiết cho bức ảnh (đặt trong `ReferenceImageUrl` của `AIGeneratedPromptDTO`)**.
-                - Điền các thông tin khác như `ExamExamTitle`, `Skill`, `PartLabel`, `PartId`, `QuestionType`... như trong ví dụ.
-            - **Quan trọng:** Trả về kết quả dưới dạng một đối tượng JSON **AIGeneratedExamDTO** duy nhất, không có markdown hay giải thích bên ngoài, theo đúng cấu trúc ví dụ dưới đây.
+    **Yêu cầu:**
+    - Tạo ra chính xác **{quantity}** đề bài mô tả tranh.
+    - Với mỗi đề bài:
+        - **Tạo một mô tả chi tiết cho bức ảnh (đặt trong `ReferenceImageUrl` của `AIGeneratedPromptDTO`)**.
+        - **✅ Tạo câu trả lời mẫu (`SampleAnswer`)**: Viết một đoạn văn mẫu (khoảng 100-150 từ) mô tả chi tiết bức ảnh theo phong cách TOEIC Speaking.
+        - Điền các thông tin khác như `ExamExamTitle`, `Skill`, `PartLabel`, `PartId`, `QuestionType`... như trong ví dụ.
+    - **Quan trọng:** Trả về kết quả dưới dạng một đối tượng JSON **AIGeneratedExamDTO** duy nhất, không có markdown hay giải thích bên ngoài, theo đúng cấu trúc ví dụ dưới đây.
 
-            **Ví dụ cấu trúc JSON đầu ra (cho 1 đề bài):**
-            ```json
-            {jsonExample}
-            ```
-            **Hãy bắt đầu tạo {quantity} đề bài.**
-            Hãy chỉ trả về một JSON object duy nhất, không có lời dẫn, không có markdown, không có ký hiệu ```json, không có mô tả hoặc lời giải thích nào khác.
-            
-            """;
+    **Yêu cầu về SampleAnswer:**
+    - Sử dụng cấu trúc: "In this picture, I can see..." → "There is/are..." → "It appears that..."
+    - Mô tả chi tiết vị trí, hành động, bối cảnh
+    - Ngôn ngữ tự nhiên, rõ ràng, phù hợp trình độ TOEIC
+
+    **Ví dụ cấu trúc JSON đầu ra (cho 1 đề bài):**
+    ```json
+    {jsonExample}
+    ```
+    **Hãy bắt đầu tạo {quantity} đề bài.**
+    Hãy chỉ trả về một JSON object duy nhất, không có lời dẫn, không có markdown, không có ký hiệu ```json, không có mô tả hoặc lời giải thích nào khác.
+    """;
         }
 
         private static string CreateSpeakingPart3Prompt(int quantity, string topic)
@@ -970,87 +967,145 @@ namespace ServiceLayer.AI.Prompt
             var exampleDto = new AIGeneratedExamDTO
             {
                 ExamExamTitle = $"AI Generated Speaking Q4-6 - {topic}",
-                Skill = "Speaking",
+                Skill = "SPEAKING",
                 PartLabel = "Q4-6",
-                Prompts = new List<AIGeneratedPromptDTO> { // Mỗi prompt chứa 1 tình huống + 3 câu hỏi
-                    new AIGeneratedPromptDTO {
-                        ExamTitle = "Respond to Questions",
-                        // Tình huống nằm trong Description
-                        Description = "Imagine that a market research company is conducting a survey about people's reading habits. You have agreed to participate in a telephone interview.",
-                        Questions = new List<AIGeneratedQuestionDTO> {
-                            new AIGeneratedQuestionDTO { PartId = 10, QuestionType = "RespondToQuestion_Scenario", StemText = "How often do you read books?", ScoreWeight = 3, Time = 15 },
-                            new AIGeneratedQuestionDTO { PartId = 10, QuestionType = "RespondToQuestion_Scenario", StemText = "What kind of books do you enjoy reading the most?", ScoreWeight = 3, Time = 15 },
-                            new AIGeneratedQuestionDTO { PartId = 10, QuestionType = "RespondToQuestion_Scenario", StemText = "Describe your favorite place to read.", ScoreWeight = 3, Time = 30 }
-                        }
+                Prompts = new List<AIGeneratedPromptDTO> {
+            new AIGeneratedPromptDTO {
+                ExamTitle = "Respond to Questions",
+                Description = "Imagine that a market research company is conducting a survey about people's reading habits. You have agreed to participate in a telephone interview.",
+                Questions = new List<AIGeneratedQuestionDTO> {
+                    new AIGeneratedQuestionDTO {
+                        PartId = 10,
+                        QuestionType = "SPEAKING",
+                        StemText = "How often do you read books?",
+                        ScoreWeight = 3,
+                        Time = 15,
+                        // ✅ THÊM: Câu trả lời mẫu
+                        SampleAnswer = "I usually read books about two or three times a week, mostly in the evenings after work. On weekends, I try to spend more time reading, perhaps for an hour or two each day."
+                    },
+                    new AIGeneratedQuestionDTO {
+                        PartId = 10,
+                        QuestionType = "SPEAKING",
+                        StemText = "What kind of books do you enjoy reading the most?",
+                        ScoreWeight = 3,
+                        Time = 15,
+                        SampleAnswer = "I particularly enjoy reading mystery novels and business books. Mystery novels help me relax and escape from daily stress, while business books provide valuable insights for my career development."
+                    },
+                    new AIGeneratedQuestionDTO {
+                        PartId = 10,
+                        QuestionType = "SPEAKING",
+                        StemText = "Describe your favorite place to read.",
+                        ScoreWeight = 3,
+                        Time = 30,
+                        SampleAnswer = "My favorite place to read is a cozy corner in my living room. I have a comfortable armchair next to a large window that provides natural light during the day. There's a small side table where I can place my coffee and a reading lamp for evening reading. The quiet atmosphere and comfortable setting make it the perfect spot for me to concentrate on my books."
                     }
                 }
+            }
+        }
             };
+
             string jsonExample = JsonConvert.SerializeObject(exampleDto, Formatting.Indented);
+
             return $"""
-            Bạn là một chuyên gia ra đề thi TOEIC Speaking Questions 4-6 (Respond to questions).
+    Bạn là một chuyên gia ra đề thi TOEIC Speaking Questions 4-6 (Respond to questions).
 
-            **Yêu cầu:**
-            - Tạo ra chính xác **{quantity}** bộ đề thi Q4-6.
-            - Chủ đề chung: **{topic}**.
-            - Mỗi bộ đề (prompt) phải bao gồm:
-                - Một đoạn văn ngắn giới thiệu tình huống (đặt trong `Description` của `AIGeneratedPromptDTO`).
-                - **Ba (3)** câu hỏi nói (`Questions` là `AIGeneratedQuestionDTO`), `StemText` là nội dung câu hỏi.
-                - Điền các thông tin khác như `ExamExamTitle`, `Skill`, `PartLabel`, `PartId`, `QuestionType`, `Time`... như trong ví dụ.
-            - **Quan trọng:** Trả về kết quả dưới dạng một đối tượng JSON **AIGeneratedExamDTO** duy nhất, không có markdown hay giải thích bên ngoài, theo đúng cấu trúc ví dụ dưới đây.
+    **Yêu cầu:**
+    - Tạo ra chính xác **{quantity}** bộ đề thi Q4-6.
+    - Chủ đề chung: **{topic}**.
+    - Mỗi bộ đề (prompt) phải bao gồm:
+        - Một đoạn văn ngắn giới thiệu tình huống (đặt trong `Description` của `AIGeneratedPromptDTO`).
+        - **Ba (3)** câu hỏi nói (`Questions` là `AIGeneratedQuestionDTO`), `StemText` là nội dung câu hỏi.
+        - **✅ Mỗi câu hỏi phải có `SampleAnswer`**:
+            - Câu 1-2: Câu trả lời ngắn (30-50 từ)
+            - Câu 3: Câu trả lời dài hơn (60-80 từ)
+        - Điền các thông tin khác như `ExamExamTitle`, `Skill`, `PartLabel`, `PartId`, `QuestionType`, `Time`... như trong ví dụ.
+    - **Quan trọng:** Trả về kết quả dưới dạng một đối tượng JSON **AIGeneratedExamDTO** duy nhất, không có markdown hay giải thích bên ngoài, theo đúng cấu trúc ví dụ dưới đây.
 
-            **Ví dụ cấu trúc JSON đầu ra (cho 1 bộ đề):**
-            ```json
-            {jsonExample}
-            ```
-            **Hãy bắt đầu tạo {quantity} bộ đề.**
-            Hãy chỉ trả về một JSON object duy nhất, không có lời dẫn, không có markdown, không có ký hiệu ```json, không có mô tả hoặc lời giải thích nào khác.
-            
-            """;
+    **Yêu cầu về SampleAnswer:**
+    - Trả lời trực tiếp câu hỏi
+    - Sử dụng ngôn ngữ tự nhiên, rõ ràng
+    - Cung cấp chi tiết cụ thể, ví dụ minh họa
+    - Phù hợp với độ dài yêu cầu (câu 1-2 ngắn, câu 3 dài hơn)
+
+    **Ví dụ cấu trúc JSON đầu ra (cho 1 bộ đề):**
+    ```json
+    {jsonExample}
+    ```
+    **Hãy bắt đầu tạo {quantity} bộ đề.**
+    Hãy chỉ trả về một JSON object duy nhất, không có lời dẫn, không có markdown, không có ký hiệu ```json, không có mô tả hoặc lời giải thích nào khác.
+    """;
         }
 
         private static string CreateSpeakingPart4Prompt(int quantity, string topic)
         {
             var exampleDto = new AIGeneratedExamDTO
             {
-                ExamExamTitle = $"AI Generated Speaking Q7-10 - {topic}",
-                Skill = "Speaking",
+                ExamExamTitle = $"AI Generated Speaking Q7-9 - {topic}",
+                Skill = "SPEAKING",
                 PartLabel = "Q7-9",
-                Prompts = new List<AIGeneratedPromptDTO> { // Mỗi prompt chứa 1 thông tin + 4 câu hỏi
-                    new AIGeneratedPromptDTO {
-                        ExamTitle = "Respond using Information",
-                        // Thông tin nằm trong Description
-                        Description = "**Conference Schedule**\n9:00 AM: Opening Remarks\n10:00 AM: Workshop A - Marketing Strategies\n11:00 AM: Coffee Break\n11:30 AM: Workshop B - Financial Planning\n1:00 PM: Lunch",
-                        Questions = new List<AIGeneratedQuestionDTO> {
-                             new AIGeneratedQuestionDTO { PartId = 11, QuestionType = "RespondToQuestion_Info", StemText = "What time does the conference begin?", ScoreWeight = 3, Time = 30 },
-                             new AIGeneratedQuestionDTO { PartId = 11, QuestionType = "RespondToQuestion_Info", StemText = "Could you tell me what Workshop A is about?", ScoreWeight = 3, Time = 30 },
-                             new AIGeneratedQuestionDTO { PartId = 11, QuestionType = "RespondToQuestion_Info", StemText = "How long is the coffee break?", ScoreWeight = 3, Time = 30 }
-                        }
+                Prompts = new List<AIGeneratedPromptDTO> {
+            new AIGeneratedPromptDTO {
+                ExamTitle = "Respond using Information",
+                Description = "**Conference Schedule**\n9:00 AM: Opening Remarks\n10:00 AM: Workshop A - Marketing Strategies\n11:00 AM: Coffee Break\n11:30 AM: Workshop B - Financial Planning\n1:00 PM: Lunch",
+                Questions = new List<AIGeneratedQuestionDTO> {
+                    new AIGeneratedQuestionDTO {
+                        PartId = 11,
+                        QuestionType = "SPEAKING",
+                        StemText = "What time does the conference begin?",
+                        ScoreWeight = 3,
+                        Time = 30,
+                        // ✅ THÊM
+                        SampleAnswer = "According to the schedule, the conference begins at 9:00 AM with the opening remarks."
+                    },
+                    new AIGeneratedQuestionDTO {
+                        PartId = 11,
+                        QuestionType = "SPEAKING",
+                        StemText = "Could you tell me what Workshop A is about?",
+                        ScoreWeight = 3,
+                        Time = 30,
+                        SampleAnswer = "Certainly. Workshop A, which takes place at 10:00 AM, focuses on Marketing Strategies."
+                    },
+                    new AIGeneratedQuestionDTO {
+                        PartId = 11,
+                        QuestionType = "SPEAKING",
+                        StemText = "How long is the coffee break?",
+                        ScoreWeight = 3,
+                        Time = 30,
+                        SampleAnswer = "Based on the schedule, the coffee break starts at 11:00 AM and Workshop B begins at 11:30 AM, so the coffee break lasts for 30 minutes."
                     }
                 }
-            };
-            string jsonExample = JsonConvert.SerializeObject(exampleDto, Formatting.Indented);
-            return $"""
-            Bạn là một chuyên gia ra đề thi TOEIC Speaking Questions 7-10 (Respond to questions using information provided).
-
-            **Yêu cầu:**
-            - Tạo ra chính xác **{quantity}** bộ đề thi Q7-.
-            - Chủ đề chung: **{topic}**.
-            - Mỗi bộ đề (prompt) phải bao gồm:
-                - Một đoạn văn bản chứa thông tin có cấu trúc (đặt trong `Description` của `AIGeneratedPromptDTO`).
-                - **Ba (3)** câu hỏi nói (`Questions`) yêu cầu tìm và trình bày thông tin. `StemText` là nội dung câu hỏi.
-                - Điền các thông tin khác như `ExamExamTitle`, `Skill`, `PartLabel`, `PartId`, `QuestionType`, `Time`... như trong ví dụ.
-            - **Quan trọng:** Trả về kết quả dưới dạng một đối tượng JSON **AIGeneratedExamDTO** duy nhất, không có markdown hay giải thích bên ngoài, theo đúng cấu trúc ví dụ dưới đây.
-
-            **Ví dụ cấu trúc JSON đầu ra (cho 1 bộ đề):**
-            ```json
-            {jsonExample}
-            ```
-            **Hãy bắt đầu tạo {quantity} bộ đề.**
-            Hãy chỉ trả về một JSON object duy nhất, không có lời dẫn, không có markdown, không có ký hiệu ```json, không có mô tả hoặc lời giải thích nào khác.
-            
-            """;
+            }
         }
- 
+            };
+
+            string jsonExample = JsonConvert.SerializeObject(exampleDto, Formatting.Indented);
+
+            return $"""
+    Bạn là một chuyên gia ra đề thi TOEIC Speaking Questions 7-9 (Respond to questions using information provided).
+
+    **Yêu cầu:**
+    - Tạo ra chính xác **{quantity}** bộ đề thi Q7-9.
+    - Chủ đề chung: **{topic}**.
+    - Mỗi bộ đề (prompt) phải bao gồm:
+        - Một đoạn văn bản chứa thông tin có cấu trúc (đặt trong `Description` của `AIGeneratedPromptDTO`).
+        - **Ba (3)** câu hỏi nói (`Questions`) yêu cầu tìm và trình bày thông tin. `StemText` là nội dung câu hỏi.
+        - **✅ Mỗi câu hỏi phải có `SampleAnswer`**: Câu trả lời mẫu dựa trên thông tin đã cho (40-60 từ mỗi câu)
+        - Điền các thông tin khác như `ExamExamTitle`, `Skill`, `PartLabel`, `PartId`, `QuestionType`, `Time`... như trong ví dụ.
+    - **Quan trọng:** Trả về kết quả dưới dạng một đối tượng JSON **AIGeneratedExamDTO** duy nhất, không có markdown hay giải thích bên ngoài, theo đúng cấu trúc ví dụ dưới đây.
+
+    **Yêu cầu về SampleAnswer:**
+    - Trích dẫn chính xác thông tin từ `Description`
+    - Sử dụng cụm từ giới thiệu: "According to...", "Based on the information...", "The schedule shows that..."
+    - Trả lời đầy đủ, rõ ràng, không thêm thông tin không có trong nguồn
+
+    **Ví dụ cấu trúc JSON đầu ra (cho 1 bộ đề):**
+    ```json
+    {jsonExample}
+    ```
+    **Hãy bắt đầu tạo {quantity} bộ đề.**
+    Hãy chỉ trả về một JSON object duy nhất, không có lời dẫn, không có markdown, không có ký hiệu ```json, không có mô tả hoặc lời giải thích nào khác.
+    """;
+        }
 
         private static string CreateSpeakingPart5Prompt(int quantity, string topic)
         {
@@ -1059,44 +1114,58 @@ namespace ServiceLayer.AI.Prompt
                 ExamExamTitle = $"AI Generated Speaking Q11 - {topic}",
                 Skill = "Speaking",
                 PartLabel = "Q11",
-                Prompts = new List<AIGeneratedPromptDTO> { // Mỗi prompt chứa 1 câu hỏi quan điểm
-                    new AIGeneratedPromptDTO {
-                        ExamTitle = "Express an Opinion",
-                        Description = "Listen to the question. Then give your opinion and support it with reasons and examples.", // Mô tả chung
-                        Questions = new List<AIGeneratedQuestionDTO> {
-                            new AIGeneratedQuestionDTO {
-                                PartId = 13, QuestionType = "ExpressOpinion",
-                                StemText = "Some people prefer to work for a large company, while others prefer a small company. Which do you prefer and why? Include specific reasons and examples to support your opinion.", // Câu hỏi quan điểm
-                                ScoreWeight = 5, Time = 60 // Điểm và thời gian ví dụ
-                            }
-                        }
+                Prompts = new List<AIGeneratedPromptDTO> {
+            new AIGeneratedPromptDTO {
+                ExamTitle = "Express an Opinion",
+                Description = "Listen to the question. Then give your opinion and support it with reasons and examples.",
+                Questions = new List<AIGeneratedQuestionDTO> {
+                    new AIGeneratedQuestionDTO {
+                        PartId = 12,
+                        QuestionType = "SPEAKING",
+                        StemText = "Some people prefer to work for a large company, while others prefer a small company. Which do you prefer and why? Include specific reasons and examples to support your opinion.",
+                        ScoreWeight = 5,
+                        Time = 60,
+                        SampleAnswer = "I personally prefer working for a large company for several reasons. First, large companies typically offer better career advancement opportunities. They have well-defined career paths and provide regular training programs that help employees develop their skills. For example, when I worked at a multinational corporation, I had access to professional development courses and mentorship programs that significantly improved my capabilities.\n\nSecond, large companies usually provide more comprehensive benefits packages, including health insurance, retirement plans, and paid vacation time. These benefits contribute to better work-life balance and financial security.\n\nFinally, working for a large company allows me to collaborate with diverse teams and learn from experienced professionals. This exposure to different perspectives and expertise has been invaluable for my professional growth.\n\nWhile I acknowledge that small companies can offer more flexibility and closer relationships with colleagues, I believe the structured environment and resources available at large companies better align with my career goals and personal preferences."
                     }
                 }
+            }
+        }
             };
+
             string jsonExample = JsonConvert.SerializeObject(exampleDto, Formatting.Indented);
+
             return $"""
-            Bạn là một chuyên gia ra đề thi TOEIC Speaking Question 11 (Express an opinion).
+    Bạn là một chuyên gia ra đề thi TOEIC Speaking Question 11 (Express an opinion).
 
-            **Yêu cầu:**
-            - Tạo ra chính xác **{quantity}** câu hỏi yêu cầu bày tỏ quan điểm Q11.
-            - Chủ đề chung: **{topic}**.
-            - Mỗi câu hỏi (prompt) phải:
-                - Là một câu hỏi trực tiếp (`StemText` của `AIGeneratedQuestionDTO`) về một vấn đề phổ biến, yêu cầu thí sinh chọn phe và bảo vệ quan điểm bằng lý lẽ/ví dụ.
-                - Điền các thông tin khác như `ExamExamTitle`, `Skill`, `PartLabel`, `PartId`, `QuestionType`, `Time`... như trong ví dụ.
-            - **Quan trọng:** Trả về kết quả dưới dạng một đối tượng JSON **AIGeneratedExamDTO** duy nhất, không có markdown hay giải thích bên ngoài, theo đúng cấu trúc ví dụ dưới đây.
+    **Yêu cầu:**
+    - Tạo ra chính xác **{quantity}** câu hỏi yêu cầu bày tỏ quan điểm Q11.
+    - Chủ đề chung: **{topic}**.
+    - Mỗi câu hỏi (prompt) phải:
+        - Là một câu hỏi trực tiếp (`StemText` của `AIGeneratedQuestionDTO`) về một vấn đề phổ biến, yêu cầu thí sinh chọn phe và bảo vệ quan điểm bằng lý lẽ/ví dụ.
+        - **✅ Phải có `SampleAnswer`**: Câu trả lời mẫu dài và chi tiết (120-150 từ), bao gồm:
+            - Câu mở đầu: Nêu quan điểm rõ ràng
+            - 2-3 lý do chính, mỗi lý do có ví dụ minh họa
+            - Câu kết: Tổng kết lại quan điểm
+        - Điền các thông tin khác như `ExamExamTitle`, `Skill`, `PartLabel`, `PartId`, `QuestionType`, `Time`... như trong ví dụ.
+    - **Quan trọng:** Trả về kết quả dưới dạng một đối tượng JSON **AIGeneratedExamDTO** duy nhất, không có markdown hay giải thích bên ngoài, theo đúng cấu trúc ví dụ dưới đây.
 
-            **Ví dụ cấu trúc JSON đầu ra (cho 1 câu hỏi):**
-            ```json
-            {jsonExample}
-            ```
-            **Hãy bắt đầu tạo {quantity} câu hỏi.**
-            Hãy chỉ trả về một JSON object duy nhất, không có lời dẫn, không có markdown, không có ký hiệu ```json, không có mô tả hoặc lời giải thích nào khác.
-            
-            """;
+    **Cấu trúc SampleAnswer:**
+    1. **Introduction** (20-30 từ): Nêu rõ quan điểm
+    2. **Reason 1 + Example** (20-30 từ)
+    3. **Reason 2 + Example** (20-30 từ)
+    4. **Conclusion** (20-30 từ): Khẳng định lại quan điểm
+
+    **Ví dụ cấu trúc JSON đầu ra (cho 1 câu hỏi):**
+    ```json
+    {jsonExample}
+    ```
+    **Hãy bắt đầu tạo {quantity} câu hỏi.**
+    Hãy chỉ trả về một JSON object duy nhất, không có lời dẫn, không có markdown, không có ký hiệu ```json, không có mô tả hoặc lời giải thích nào khác.
+    """;
         }
 
-        
-             // --- Writing Prompts (Updated DTOs) ---
+
+        // --- Writing Prompts (Updated DTOs) ---
         private static string CreateWritingPart1Prompt(int quantity)
         {
             var exampleDto = new AIGeneratedExamDTO
@@ -1118,7 +1187,7 @@ namespace ServiceLayer.AI.Prompt
                     new AIGeneratedQuestionDTO
                     {
                         PartId = 19,
-                        QuestionType = "SentenceFromImageAndWords",
+                        QuestionType = "WRITING",
                         // Hướng dẫn cố định
                         StemText = "Write ONE sentence based on the picture using the TWO words or phrases provided.",
                         // Câu mẫu đúng (để AI học cách viết)
@@ -1199,7 +1268,7 @@ namespace ServiceLayer.AI.Prompt
                 Questions = new List<AIGeneratedQuestionDTO> {
                     new AIGeneratedQuestionDTO {
                         PartId = 14, 
-                        QuestionType = "RespondToEmail",
+                        QuestionType = "WRITING",
                         // Hướng dẫn viết nằm trong StemText
                         StemText = "Read the email. Respond to the Marketing Team as a staff member. In your email, ask TWO questions and make ONE suggestion about the survey.",
                         // Email mẫu nằm trong Explanation
@@ -1262,7 +1331,7 @@ namespace ServiceLayer.AI.Prompt
                     new AIGeneratedQuestionDTO
                     {
                         PartId = 2,
-                        QuestionType = "OpinionEssay",
+                        QuestionType = "WRITING",
                         StemText = "Do you agree or disagree with the following statement? 'Technology makes people less creative.' Use specific reasons and examples to support your answer.",
                         Explanation = "[Sample Outline:\n- Introduction: State opinion (agree/disagree).\n- Body Paragraph 1: Reason 1 + Example...\n- Conclusion: Restate opinion...]",
                         ScoreWeight = 5,
