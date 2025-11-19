@@ -244,16 +244,26 @@ public class ArticlesController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize]
+    [AllowAnonymous]
     public async Task<ActionResult<List<ArticleResponseDTO>>> GetAllArticles()
     {
         try
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            
+            // Nếu chưa đăng nhập, chỉ lấy published articles
             if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var currentUserId))
             {
-                _logger.LogWarning("Invalid token: Claim 'NameIdentifier' not found or invalid.");
-                return Unauthorized(new ErrorResponse("Invalid token - User ID could not be determined."));
+                _logger.LogInformation("Anonymous user accessing articles - returning only published articles");
+                var query = new ArticleQueryParams
+                {
+                    Page = 1,
+                    PageSize = 1000,
+                    IsPublished = true,
+                    Status = "Published"
+                };
+                var result = await _articleService.QueryAsync(query);
+                return Ok(result.Items);
             }
 
             _logger.LogInformation("Getting articles for user {UserId}", currentUserId);
@@ -263,7 +273,16 @@ public class ArticlesController : ControllerBase
             if (user == null)
             {
                 _logger.LogWarning("User {UserId} not found in database", currentUserId);
-                return Unauthorized(new ErrorResponse("User not found."));
+                // Nếu user không tồn tại, trả về published articles như anonymous
+                var query = new ArticleQueryParams
+                {
+                    Page = 1,
+                    PageSize = 1000,
+                    IsPublished = true,
+                    Status = "Published"
+                };
+                var result = await _articleService.QueryAsync(query);
+                return Ok(result.Items);
             }
 
             _logger.LogInformation("User {UserId} has RoleId {RoleId}", currentUserId, user.RoleId);
@@ -300,22 +319,32 @@ public class ArticlesController : ControllerBase
 
     // GET api/articles/query?page=1&pageSize=10&sortBy=createdAt&sortDir=desc&search=...&categoryId=...&isPublished=true
     [HttpGet("query")]
-    [Authorize]
+    [AllowAnonymous]
     public async Task<ActionResult<PagedResponse<ArticleResponseDTO>>> Query([FromQuery] ArticleQueryParams query)
     {
         try
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            
+            // Nếu chưa đăng nhập, chỉ lấy published articles
             if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var currentUserId))
             {
-                return Unauthorized(new ErrorResponse("Invalid token - User ID could not be determined."));
+                _logger.LogInformation("Anonymous user querying articles - enforcing published filter");
+                query.IsPublished = true;
+                query.Status = "Published";
+                var anonymousResult = await _articleService.QueryAsync(query);
+                return Ok(anonymousResult);
             }
 
             // Lấy role của user hiện tại
             var user = await _unitOfWork.Users.GetUserByIdAsync(currentUserId);
             if (user == null)
             {
-                return Unauthorized(new ErrorResponse("User not found."));
+                // Nếu user không tồn tại, chỉ lấy published articles
+                query.IsPublished = true;
+                query.Status = "Published";
+                var userNotFoundResult = await _articleService.QueryAsync(query);
+                return Ok(userNotFoundResult);
             }
 
             // Nếu là Staff (RoleID = 3), chỉ lấy bài viết của chính họ

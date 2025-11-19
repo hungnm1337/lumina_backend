@@ -933,6 +933,9 @@ namespace DataLayer.Migrations
                     b.Property<DateTime>("LastQuotaReset")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("LongestStreak")
+                        .HasColumnType("int");
+
                     b.Property<int>("MonthlyListeningAttempts")
                         .HasColumnType("int");
 
@@ -946,6 +949,9 @@ namespace DataLayer.Migrations
                     b.Property<int>("RoleId")
                         .HasColumnType("int")
                         .HasColumnName("RoleID");
+
+                    b.Property<int?>("StreakFreezesAvailable")
+                        .HasColumnType("int");
 
                     b.HasKey("UserId")
                         .HasName("PK__Users__1788CCACF48D0559");
@@ -1244,7 +1250,16 @@ namespace DataLayer.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserSpacedRepetitionId"));
 
+                    b.Property<int?>("BestQuizScore")
+                        .HasColumnType("int");
+
                     b.Property<int?>("Intervals")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("LastQuizCompletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("LastQuizScore")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("LastReviewedAt")
@@ -1261,6 +1276,9 @@ namespace DataLayer.Migrations
                     b.Property<string>("Status")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<int?>("TotalQuizAttempts")
+                        .HasColumnType("int");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
