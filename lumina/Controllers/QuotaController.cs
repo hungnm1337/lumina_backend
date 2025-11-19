@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ServiceLayer.Quota;
+using DataLayer.DTOs.Quota;
 using System.Security.Claims;
 
 namespace lumina.Controllers
@@ -17,6 +18,30 @@ namespace lumina.Controllers
         {
             _quotaService = quotaService;
             _logger = logger;
+        }
+
+        /// <summary>
+        /// Get remaining quota for current user
+        /// </summary>
+        [HttpGet("remaining")]
+        public async Task<IActionResult> GetRemainingQuota()
+        {
+            try
+            {
+                var userIdClaim = User.FindFirst("UserId")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+                {
+                    return Unauthorized(new { message = "User not authenticated" });
+                }
+
+                var result = await _quotaService.GetRemainingQuotaAsync(userId);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting remaining quota");
+                return StatusCode(500, new { message = "Error getting remaining quota", error = ex.Message });
+            }
         }
 
         /// <summary>
