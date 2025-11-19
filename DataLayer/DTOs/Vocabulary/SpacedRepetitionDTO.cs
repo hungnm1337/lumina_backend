@@ -6,8 +6,10 @@ namespace DataLayer.DTOs.Vocabulary
     {
         public int UserSpacedRepetitionId { get; set; }
         public int UserId { get; set; }
+        public int? VocabularyId { get; set; } // Null = folder level, Not null = word level
         public int VocabularyListId { get; set; }
         public string VocabularyListName { get; set; } = string.Empty;
+        public string? VocabularyWord { get; set; } // Word text if VocabularyId is set
         public DateTime LastReviewedAt { get; set; }
         public DateTime? NextReviewAt { get; set; }
         public int ReviewCount { get; set; }
@@ -16,7 +18,7 @@ namespace DataLayer.DTOs.Vocabulary
         public bool IsDue { get; set; }
         public int DaysUntilReview { get; set; }
         
-        // Quiz score fields
+        // Quiz score fields (only used when VocabularyId is null)
         public int? BestQuizScore { get; set; }
         public int? LastQuizScore { get; set; }
         public DateTime? LastQuizCompletedAt { get; set; }
@@ -25,7 +27,13 @@ namespace DataLayer.DTOs.Vocabulary
 
     public class ReviewVocabularyRequestDTO
     {
-        public int UserSpacedRepetitionId { get; set; }
+        // Option 1: Use existing UserSpacedRepetitionId (backward compatible)
+        public int? UserSpacedRepetitionId { get; set; }
+        
+        // Option 2: Create new record with VocabularyId and VocabularyListId
+        public int? VocabularyId { get; set; }
+        public int? VocabularyListId { get; set; }
+        
         public int Quality { get; set; } // 0-5: 0 = không nhớ, 5 = nhớ rất tốt
     }
 

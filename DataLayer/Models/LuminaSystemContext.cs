@@ -644,6 +644,12 @@ public partial class LuminaSystemContext : DbContext
                 .HasForeignKey(d => d.VocabularyListId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_UserSpacedRepetition_VocabularyList");
+
+            entity.HasOne(d => d.Vocabulary)
+                .WithMany()
+                .HasForeignKey(d => d.VocabularyId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("FK_UserSpacedRepetition_Vocabulary");
         });
 
         modelBuilder.Entity<Vocabulary>(entity =>
