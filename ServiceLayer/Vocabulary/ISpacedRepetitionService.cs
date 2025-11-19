@@ -15,6 +15,8 @@ namespace ServiceLayer.Vocabulary
         Task<ReviewVocabularyResponseDTO> ReviewVocabularyAsync(int userId, ReviewVocabularyRequestDTO request);
         Task<SpacedRepetitionDTO?> GetByUserAndListAsync(int userId, int vocabularyListId);
         Task<SpacedRepetitionDTO> CreateRepetitionAsync(int userId, int vocabularyListId);
+        Task<bool> SaveQuizResultAsync(int userId, SaveQuizResultRequestDTO request);
+        Task<IEnumerable<QuizScoreDTO>> GetQuizScoresAsync(int userId, int? vocabularyListId = null);
     }
 }
 

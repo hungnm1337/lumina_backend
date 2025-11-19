@@ -49,7 +49,8 @@ namespace ServiceLayer.ExamGenerationAI.Mappers
                     QuestionExplain = aiQuestion.Explanation ?? string.Empty,
                     Time = aiQuestion.Time,
                     QuestionNumber = 0,  // Gán lại khi lưu DB
-                    PromptId = 0 // Gán lại khi lưu DB
+                    PromptId = 0, // Gán lại khi lưu DB
+                    SampleAnswer = aiQuestion.SampleAnswer
                 },
                 Options = aiQuestion.Options?.Select(o => new OptionDTO
                 {
