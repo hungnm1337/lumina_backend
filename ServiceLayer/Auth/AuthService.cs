@@ -671,8 +671,11 @@ public sealed class AuthService : IAuthService
         var refreshToken = _jwtTokenService.GenerateRefreshToken();
         
         // Revoke old refresh tokens for this user
+        var now = DateTime.UtcNow;
         var existingTokens = await _context.RefreshTokens
-            .Where(rt => rt.UserId == user.UserId && rt.IsActive)
+            .Where(rt => rt.UserId == user.UserId 
+                      && !rt.IsRevoked 
+                      && rt.ExpiresAt > now)
             .ToListAsync();
         
         foreach (var token in existingTokens)
@@ -712,6 +715,7 @@ public sealed class AuthService : IAuthService
     
     public async Task<LoginResponse> RefreshTokenAsync(RefreshTokenRequest request)
     {
+        var now = DateTime.UtcNow;
         var refreshTokenEntity = await _context.RefreshTokens
             .Include(rt => rt.User)
                 .ThenInclude(u => u.Role)
@@ -724,11 +728,17 @@ public sealed class AuthService : IAuthService
             throw AuthServiceException.Unauthorized("Invalid refresh token");
         }
         
-        if (!refreshTokenEntity.IsActive)
+        if (refreshTokenEntity.IsRevoked)
         {
-            _logger.LogWarning("Refresh token is not active. UserId: {UserId}, IsRevoked: {IsRevoked}, IsExpired: {IsExpired}",
-                refreshTokenEntity.UserId, refreshTokenEntity.IsRevoked, refreshTokenEntity.IsExpired);
-            throw AuthServiceException.Unauthorized("Refresh token is no longer valid");
+            _logger.LogWarning("Refresh token is revoked. UserId: {UserId}", refreshTokenEntity.UserId);
+            throw AuthServiceException.Unauthorized("Refresh token has been revoked");
+        }
+        
+        if (refreshTokenEntity.ExpiresAt <= now)
+        {
+            _logger.LogWarning("Refresh token is expired. UserId: {UserId}, ExpiresAt: {ExpiresAt}",
+                refreshTokenEntity.UserId, refreshTokenEntity.ExpiresAt);
+            throw AuthServiceException.Unauthorized("Refresh token has expired");
         }
         
         if (refreshTokenEntity.User.IsActive is false)
