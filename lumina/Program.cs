@@ -114,6 +114,10 @@ namespace lumina
             builder.Services.AddScoped<RepositoryLayer.Exam.ExamAttempt.IExamAttemptRepository, RepositoryLayer.Exam.ExamAttempt.ExamAttemptRepository>();
             builder.Services.AddScoped<ServiceLayer.Exam.ExamAttempt.IExamAttemptService, ServiceLayer.Exam.ExamAttempt.ExamAttemptService>();
 
+            // Mock Test Services
+            builder.Services.AddScoped<RepositoryLayer.MockTest.IMockTestRepository, RepositoryLayer.MockTest.MockTestRepository>();
+            builder.Services.AddScoped<ServiceLayer.MockTest.IMockTestService, ServiceLayer.MockTest.MockTestService>();
+
             // Auth Services
             builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
             builder.Services.AddScoped<IGoogleAuthService, GoogleAuthService>();

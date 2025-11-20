@@ -933,6 +933,9 @@ namespace DataLayer.Migrations
                     b.Property<DateTime>("LastQuotaReset")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("LongestStreak")
+                        .HasColumnType("int");
+
                     b.Property<int>("MonthlyListeningAttempts")
                         .HasColumnType("int");
 
@@ -946,6 +949,9 @@ namespace DataLayer.Migrations
                     b.Property<int>("RoleId")
                         .HasColumnType("int")
                         .HasColumnName("RoleID");
+
+                    b.Property<int?>("StreakFreezesAvailable")
+                        .HasColumnType("int");
 
                     b.HasKey("UserId")
                         .HasName("PK__Users__1788CCACF48D0559");

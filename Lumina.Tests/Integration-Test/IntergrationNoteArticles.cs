@@ -1,17 +1,17 @@
-﻿//using System;
-//using System.Collections.Generic;
-//using System.Linq;
-//using System.Threading.Tasks;
-//using Xunit;
-//using Moq;
-//using Microsoft.AspNetCore.Mvc;
-//using Microsoft.Extensions.Logging;
-//using lumina.Controllers;
-//using ServiceLayer.Article;
-//using ServiceLayer.UserNote;
-//using RepositoryLayer.UnitOfWork;
-//using DataLayer.DTOs.Article;
-//using DataLayer.DTOs.UserNote;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Xunit;
+using Moq;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using lumina.Controllers;
+using ServiceLayer.Article;
+using ServiceLayer.UserNote;
+using RepositoryLayer.UnitOfWork;
+using DataLayer.DTOs.Article;
+using DataLayer.DTOs.UserNote;
 
 #pragma warning disable CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
 
@@ -27,18 +27,18 @@ namespace Lumina.Tests.IntegrationTest
         private readonly ArticlesController _articlesController;
         private readonly UserNoteController _userNoteController;
 
-//        public IntegrationNoteArticles()
-//        {
-//            _mockArticleService = new Mock<IArticleService>();
-//            _mockUserNoteService = new Mock<IUserNoteService>();
-//            _mockArticlesLogger = new Mock<ILogger<ArticlesController>>();
-//            _mockUserNoteLogger = new Mock<ILogger<UserNoteController>>();
-//            _mockUnitOfWork = new Mock<IUnitOfWork>();
+        public IntegrationNoteArticles()
+        {
+            _mockArticleService = new Mock<IArticleService>();
+            _mockUserNoteService = new Mock<IUserNoteService>();
+            _mockArticlesLogger = new Mock<ILogger<ArticlesController>>();
+            _mockUserNoteLogger = new Mock<ILogger<UserNoteController>>();
+            _mockUnitOfWork = new Mock<IUnitOfWork>();
             
-//            _articlesController = new ArticlesController(
-//                _mockArticleService.Object, 
-//                _mockArticlesLogger.Object, 
-//                _mockUnitOfWork.Object);
+            _articlesController = new ArticlesController(
+                _mockArticleService.Object, 
+                _mockArticlesLogger.Object, 
+                _mockUnitOfWork.Object);
             
             _userNoteController = new UserNoteController(_mockUserNoteService.Object);
         }
@@ -46,7 +46,7 @@ namespace Lumina.Tests.IntegrationTest
         [Fact]
         public async Task IntegrationTest_LuongDocArticleVaTaoNote_ThanhCong()
         {
-            // ========== STEP 1: GET PUBLIC ARTICLES (Lấy danh sách article) ==========
+            // ========== STEP 1: GET PUBLIC ARTICLES (L?y danh s�ch article) ==========
             int userId = 1;
             int articleId = 10;
             int sectionId = 5;
@@ -87,16 +87,16 @@ namespace Lumina.Tests.IntegrationTest
                 .Setup(s => s.QueryAsync(It.IsAny<ArticleQueryParams>()))
                 .ReturnsAsync(pagedResult);
 
-            // Act - Step 1: Lấy danh sách article công khai
+            // Act - Step 1: L?y danh s�ch article c�ng khai
             var articlesResult = await _articlesController.GetPublicArticles();
 
-            // Assert - Step 1: Kiểm tra danh sách article
+            // Assert - Step 1: Ki?m tra danh s�ch article
             var articlesOkResult = Assert.IsType<OkObjectResult>(articlesResult.Result);
             var articlesList = Assert.IsAssignableFrom<IEnumerable<ArticleResponseDTO>>(articlesOkResult.Value);
             Assert.Equal(2, articlesList.Count());
             Assert.Contains(articlesList, a => a.ArticleId == articleId);
 
-            // ========== STEP 2: GET ARTICLE BY ID (Vào detail 1 article) ==========
+            // ========== STEP 2: GET ARTICLE BY ID (V�o detail 1 article) ==========
             var articleDetail = new ArticleResponseDTO
             {
                 ArticleId = articleId,
@@ -122,32 +122,32 @@ namespace Lumina.Tests.IntegrationTest
                 .Setup(s => s.GetArticleByIdAsync(articleId))
                 .ReturnsAsync(articleDetail);
 
-            // Act - Step 2: Xem chi tiết article
+            // Act - Step 2: Xem chi ti?t article
             var detailResult = await _articlesController.GetArticleById(articleId);
 
-            // Assert - Step 2: Kiểm tra chi tiết article
+            // Assert - Step 2: Ki?m tra chi ti?t article
             var detailOkResult = Assert.IsType<OkObjectResult>(detailResult);
             var articleResponse = Assert.IsType<ArticleResponseDTO>(detailOkResult.Value);
             Assert.Equal(articleId, articleResponse.ArticleId);
             Assert.NotEmpty(articleResponse.Sections);
             Assert.Equal(sectionId, articleResponse.Sections[0].SectionId);
 
-            // ========== STEP 3: GET USER NOTE BY USER ID AND ARTICLE ID (Lấy note cũ) ==========
-            // Trường hợp chưa có note cũ
+            // ========== STEP 3: GET USER NOTE BY USER ID AND ARTICLE ID (L?y note cu) ==========
+            // Tru?ng h?p chua c� note cu
             _mockUserNoteService
                 .Setup(s => s.GetUserNoteByUserIDAndArticleId(userId, articleId, sectionId))
                 .ReturnsAsync(null as UserNoteResponseDTO);
 
-            // Act - Step 3: Kiểm tra note cũ
+            // Act - Step 3: Ki?m tra note cu
             var oldNoteResult = await _userNoteController.GetUserNoteByUserIDAndArticleId(userId, articleId, sectionId);
 
-            // Assert - Step 3: Chưa có note cũ
+            // Assert - Step 3: Chua c� note cu
             Assert.IsType<NotFoundObjectResult>(oldNoteResult);
 
-            // ========== STEP 4: UPSERT USER NOTE (Người dùng thêm note mới) ==========
+            // ========== STEP 4: UPSERT USER NOTE (Ngu?i d�ng th�m note m?i) ==========
             var createNoteRequest = new UserNoteRequestDTO
             {
-                NoteId = 0, // 0 = tạo mới
+                NoteId = 0, // 0 = t?o m?i
                 UserId = userId,
                 ArticleId = articleId,
                 SectionId = sectionId,
@@ -158,10 +158,10 @@ namespace Lumina.Tests.IntegrationTest
                 .Setup(s => s.UpsertUserNote(It.IsAny<UserNoteRequestDTO>()))
                 .ReturnsAsync(true);
 
-            // Act - Step 4: Tạo note mới
+            // Act - Step 4: T?o note m?i
             var createNoteResult = await _userNoteController.UpsertUserNote(createNoteRequest);
 
-            // Assert - Step 4: Note được tạo thành công
+            // Assert - Step 4: Note du?c t?o th�nh c�ng
             var createNoteOkResult = Assert.IsType<OkObjectResult>(createNoteResult);
             var createValue = createNoteOkResult.Value;
             Assert.NotNull(createValue);
@@ -170,7 +170,7 @@ namespace Lumina.Tests.IntegrationTest
             var message = messageProperty.GetValue(createValue)?.ToString();
             Assert.Equal("User note upserted successfully.", message);
 
-            // ========== STEP 5: GET ALL USER NOTES BY USER ID (Xem danh sách note) ==========
+            // ========== STEP 5: GET ALL USER NOTES BY USER ID (Xem danh s�ch note) ==========
             int noteId = 100;
             var userNotes = new List<UserNoteResponseDTO>
             {
@@ -193,17 +193,17 @@ namespace Lumina.Tests.IntegrationTest
                 .Setup(s => s.GetAllUserNotesByUserId(userId))
                 .ReturnsAsync(userNotes);
 
-            // Act - Step 5: Lấy danh sách note của user
+            // Act - Step 5: L?y danh s�ch note c?a user
             var allNotesResult = await _userNoteController.GetAllUserNotesByUserId(userId);
 
-            // Assert - Step 5: Kiểm tra danh sách note
+            // Assert - Step 5: Ki?m tra danh s�ch note
             var allNotesOkResult = Assert.IsType<OkObjectResult>(allNotesResult);
             var notesList = Assert.IsAssignableFrom<IEnumerable<UserNoteResponseDTO>>(allNotesOkResult.Value);
             Assert.Single(notesList);
             Assert.Equal(noteId, notesList.First().NoteId);
             Assert.Equal(articleId, notesList.First().ArticleId);
 
-            // ========== STEP 6: GET USER NOTE BY ID (Người dùng chọn 1 note) ==========
+            // ========== STEP 6: GET USER NOTE BY ID (Ngu?i d�ng ch?n 1 note) ==========
             var selectedNote = new UserNoteResponseDTO
             {
                 NoteId = noteId,
@@ -222,16 +222,16 @@ namespace Lumina.Tests.IntegrationTest
                 .Setup(s => s.GetUserNoteByID(noteId))
                 .ReturnsAsync(selectedNote);
 
-            // Act - Step 6: Xem chi tiết note
+            // Act - Step 6: Xem chi ti?t note
             var selectedNoteResult = await _userNoteController.GetUserNoteByID(noteId);
 
-            // Assert - Step 6: Kiểm tra note được chọn
+            // Assert - Step 6: Ki?m tra note du?c ch?n
             var selectedNoteOkResult = Assert.IsType<OkObjectResult>(selectedNoteResult);
             var noteResponse = Assert.IsType<UserNoteResponseDTO>(selectedNoteOkResult.Value);
             Assert.Equal(noteId, noteResponse.NoteId);
             Assert.Equal("This is a very important tip for reading comprehension!", noteResponse.NoteContent);
 
-            // ========== STEP 7: UPSERT USER NOTE (Người dùng sửa note) ==========
+            // ========== STEP 7: UPSERT USER NOTE (Ngu?i d�ng s?a note) ==========
             var updateNoteRequest = new UserNoteRequestDTO
             {
                 NoteId = noteId,
@@ -245,10 +245,10 @@ namespace Lumina.Tests.IntegrationTest
                 .Setup(s => s.UpsertUserNote(It.Is<UserNoteRequestDTO>(r => r.NoteId == noteId)))
                 .ReturnsAsync(true);
 
-            // Act - Step 7: Cập nhật note
+            // Act - Step 7: C?p nh?t note
             var updateNoteResult = await _userNoteController.UpsertUserNote(updateNoteRequest);
 
-            // Assert - Step 7: Note được cập nhật thành công
+            // Assert - Step 7: Note du?c c?p nh?t th�nh c�ng
             var updateNoteOkResult = Assert.IsType<OkObjectResult>(updateNoteResult);
             var updateValue = updateNoteOkResult.Value;
             Assert.NotNull(updateValue);
@@ -257,11 +257,11 @@ namespace Lumina.Tests.IntegrationTest
             var updateMessage = updateMessageProperty.GetValue(updateValue)?.ToString();
             Assert.Equal("User note upserted successfully.", updateMessage);
 
-            // Verify tất cả các services đã được gọi đúng số lần
+            // Verify t?t c? c�c services d� du?c g?i d�ng s? l?n
             _mockArticleService.Verify(s => s.QueryAsync(It.IsAny<ArticleQueryParams>()), Times.Once);
             _mockArticleService.Verify(s => s.GetArticleByIdAsync(articleId), Times.Once);
             _mockUserNoteService.Verify(s => s.GetUserNoteByUserIDAndArticleId(userId, articleId, sectionId), Times.Once);
-            _mockUserNoteService.Verify(s => s.UpsertUserNote(It.IsAny<UserNoteRequestDTO>()), Times.Exactly(2)); // Tạo + Sửa
+            _mockUserNoteService.Verify(s => s.UpsertUserNote(It.IsAny<UserNoteRequestDTO>()), Times.Exactly(2)); // T?o + S?a
             _mockUserNoteService.Verify(s => s.GetAllUserNotesByUserId(userId), Times.Once);
             _mockUserNoteService.Verify(s => s.GetUserNoteByID(noteId), Times.Once);
         }
@@ -269,7 +269,7 @@ namespace Lumina.Tests.IntegrationTest
         [Fact]
         public async Task IntegrationTest_LuongDocArticleVaUpdateNoteCu_ThanhCong()
         {
-            // Test khi người dùng ĐÃ CÓ note cũ và muốn update
+            // Test khi ngu?i d�ng �� C� note cu v� mu?n update
             int userId = 1;
             int articleId = 10;
             int sectionId = 5;
@@ -314,7 +314,7 @@ namespace Lumina.Tests.IntegrationTest
             var detailResult = await _articlesController.GetArticleById(articleId);
             Assert.IsType<OkObjectResult>(detailResult);
 
-            // Step 3: Get existing note (ĐÃ CÓ note cũ)
+            // Step 3: Get existing note (�� C� note cu)
             var existingNote = new UserNoteResponseDTO
             {
                 NoteId = existingNoteId,
@@ -331,7 +331,7 @@ namespace Lumina.Tests.IntegrationTest
 
             var oldNoteResult = await _userNoteController.GetUserNoteByUserIDAndArticleId(userId, articleId, sectionId);
 
-            // Assert: Đã có note cũ
+            // Assert: �� c� note cu
             var oldNoteOkResult = Assert.IsType<OkObjectResult>(oldNoteResult);
             var oldNote = Assert.IsType<UserNoteResponseDTO>(oldNoteOkResult.Value);
             Assert.Equal(existingNoteId, oldNote.NoteId);
@@ -376,7 +376,7 @@ namespace Lumina.Tests.IntegrationTest
             // Assert
             Assert.IsType<NotFoundResult>(result);
 
-            // Verify service được gọi
+            // Verify service du?c g?i
             _mockArticleService.Verify(s => s.GetArticleByIdAsync(invalidArticleId), Times.Once);
         }
 
@@ -395,7 +395,7 @@ namespace Lumina.Tests.IntegrationTest
 
             _mockUserNoteService
                 .Setup(s => s.UpsertUserNote(It.IsAny<UserNoteRequestDTO>()))
-                .ReturnsAsync(false); // Service trả về false = không thành công
+                .ReturnsAsync(false); // Service tr? v? false = kh�ng th�nh c�ng
 
             // Act
             var result = await _userNoteController.UpsertUserNote(invalidNoteRequest);
@@ -431,7 +431,7 @@ namespace Lumina.Tests.IntegrationTest
             var message = messageProperty.GetValue(value)?.ToString();
             Assert.Equal("Invalid user ID.", message);
 
-            // Verify service KHÔNG được gọi vì đã fail validation
+            // Verify service KH�NG du?c g?i v� d� fail validation
             _mockUserNoteService.Verify(s => s.GetAllUserNotesByUserId(It.IsAny<int>()), Times.Never);
         }
 
