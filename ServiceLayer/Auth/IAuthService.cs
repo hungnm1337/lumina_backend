@@ -17,4 +17,6 @@ public interface IAuthService
     Task<VerifyRegistrationResponse> VerifyRegistrationAsync(VerifyRegistrationRequest request);
     
     Task<ResendOtpResponse> ResendRegistrationOtpAsync(ResendRegistrationOtpRequest request);
+    
+    Task<LoginResponse> RefreshTokenAsync(RefreshTokenRequest request);
 }

@@ -44,6 +44,12 @@ public class ForgotPasswordRequest
     public string Email { get; set; } = string.Empty;
 }
 
+public class RefreshTokenRequest
+{
+    [Required]
+    public string RefreshToken { get; set; } = string.Empty;
+}
+
 public class VerifyResetCodeRequest
 {
     [Required]
