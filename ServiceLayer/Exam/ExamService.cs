@@ -48,7 +48,7 @@ using System.Threading.Tasks;
         var newExams = sourceExams.Select(e => new Exam
         {
             ExamType = e.ExamType,
-            Name = e.Name,
+            Name = $"{e.Name} TOEIC {toSetKey}",
             Description = e.Description,
             IsActive = false,
             CreatedBy = createdBy,

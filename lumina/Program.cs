@@ -47,6 +47,7 @@ using ServiceLayer.Streak;
 using Hangfire;
 using Hangfire.SqlServer;
 using lumina.Filters;
+using RepositoryLayer.Streak;
 
 namespace lumina
 {
@@ -182,6 +183,7 @@ namespace lumina
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             // ✅ Streak Services
+            builder.Services.AddScoped<IStreakRepository, StreakRepository>();
             builder.Services.AddScoped<IStreakService, StreakService>();
             builder.Services.AddScoped<StreakBackgroundJob>();
             builder.Services.AddScoped<StreakReminderJob>();
