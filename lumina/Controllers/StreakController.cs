@@ -203,6 +203,17 @@ namespace lumina.Controllers
                 });
             }
         }
+
+        /// <summary>
+        /// Lấy danh sách top users theo streak
+        /// GET /api/streak/top
+        /// </summary>
+        [HttpGet("top")]
+        public async Task<IActionResult> GetTopStreakUsers()
+        {
+            var topUsers = await _streakService.GetTopStreakUsersAsync(10);
+            return Ok(topUsers);
+        }
     }
 
     // DTO cho request body

@@ -69,9 +69,9 @@ namespace lumina.Controllers
             }
         }
 
-        [HttpGet("passage-question-tree-paged")]
+        [HttpGet("prompt-question-tree-paged")]
         [Authorize(Roles = "Staff")]
-        public async Task<IActionResult> GetPaged(
+        public async Task<IActionResult> GetQuestionByPage(
     [FromQuery] int page = 1,
     [FromQuery] int size = 10,
     [FromQuery] int? partId = null)
