@@ -120,6 +120,57 @@ namespace lumina.Controllers
             }
         }
 
+        // POST api/spaced-repetition/quiz/save-result
+        [HttpPost("quiz/save-result")]
+        public async Task<IActionResult> SaveQuizResult([FromBody] SaveQuizResultRequestDTO request)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null)
+            {
+                return Unauthorized(new { message = "User not authenticated" });
+            }
+
+            if (request.Score < 0 || request.Score > 100)
+            {
+                return BadRequest(new { message = "Score must be between 0 and 100" });
+            }
+
+            try
+            {
+                var result = await _spacedRepetitionService.SaveQuizResultAsync(userId.Value, request);
+                return Ok(new { success = result, message = "Quiz result saved successfully" });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        // GET api/spaced-repetition/quiz/scores?vocabularyListId={id}
+        [HttpGet("quiz/scores")]
+        public async Task<IActionResult> GetQuizScores([FromQuery] int? vocabularyListId = null)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null)
+            {
+                return Unauthorized(new { message = "User not authenticated" });
+            }
+
+            try
+            {
+                var scores = await _spacedRepetitionService.GetQuizScoresAsync(userId.Value, vocabularyListId);
+                return Ok(scores);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
         private int? GetCurrentUserId()
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);

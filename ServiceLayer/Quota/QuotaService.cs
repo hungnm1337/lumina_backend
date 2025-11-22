@@ -1,4 +1,5 @@
 using RepositoryLayer.Quota;
+using DataLayer.DTOs.Quota;
 
 namespace ServiceLayer.Quota
 {
@@ -7,6 +8,7 @@ namespace ServiceLayer.Quota
         Task<QuotaCheckResult> CheckQuotaAsync(int userId, string skill);
         Task IncrementQuotaAsync(int userId, string skill);
         Task ResetMonthlyQuotaAsync();
+        Task<QuotaRemainingDto> GetRemainingQuotaAsync(int userId);
     }
 
     public class QuotaService : IQuotaService
@@ -88,6 +90,36 @@ namespace ServiceLayer.Quota
         {
             // This will be called by a scheduled job (Hangfire) at the start of each month
             await _quotaRepo.ResetAllQuotasAsync();
+        }
+
+        public async Task<QuotaRemainingDto> GetRemainingQuotaAsync(int userId)
+        {
+            var userStatus = await _quotaRepo.GetUserQuotaStatusAsync(userId);
+
+            if (userStatus.SubscriptionType == "PREMIUM")
+            {
+                return new QuotaRemainingDto
+                {
+                    IsPremium = true,
+                    ReadingRemaining = -1, // Unlimited
+                    ListeningRemaining = -1,
+                    ReadingUsed = userStatus.MonthlyReadingAttempts,
+                    ListeningUsed = userStatus.MonthlyListeningAttempts,
+                    ReadingLimit = -1,
+                    ListeningLimit = -1
+                };
+            }
+
+            return new QuotaRemainingDto
+            {
+                IsPremium = false,
+                ReadingRemaining = Math.Max(0, FREE_TIER_LIMIT - userStatus.MonthlyReadingAttempts),
+                ListeningRemaining = Math.Max(0, FREE_TIER_LIMIT - userStatus.MonthlyListeningAttempts),
+                ReadingUsed = userStatus.MonthlyReadingAttempts,
+                ListeningUsed = userStatus.MonthlyListeningAttempts,
+                ReadingLimit = FREE_TIER_LIMIT,
+                ListeningLimit = FREE_TIER_LIMIT
+            };
         }
     }
 }

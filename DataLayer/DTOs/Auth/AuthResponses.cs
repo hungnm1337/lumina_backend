@@ -11,7 +11,9 @@ public class AuthUserResponse
 public class LoginResponse
 {
     public string Token { get; set; } = string.Empty;
+    public string RefreshToken { get; set; } = string.Empty;
     public int ExpiresIn { get; set; }
+    public int RefreshExpiresIn { get; set; }
     public AuthUserResponse User { get; set; } = new();
 }
 
@@ -24,7 +26,9 @@ public class VerifyRegistrationResponse
 {
     public string Message { get; set; } = string.Empty;
     public string Token { get; set; } = string.Empty;
+    public string RefreshToken { get; set; } = string.Empty;
     public int ExpiresIn { get; set; }
+    public int RefreshExpiresIn { get; set; }
     public AuthUserResponse User { get; set; } = new();
 }
 

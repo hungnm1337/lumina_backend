@@ -12,8 +12,13 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataLayer.Migrations
 {
     [DbContext(typeof(LuminaSystemContext))]
+<<<<<<<< HEAD:DataLayer/Migrations/20251117145210_v36.Designer.cs
     [Migration("20251117145210_v36")]
     partial class v36
+========
+    [Migration("20251116134911_v28")]
+    partial class v28
+>>>>>>>> main:DataLayer/Migrations/20251116134911_v28.Designer.cs
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

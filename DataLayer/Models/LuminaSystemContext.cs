@@ -75,6 +75,9 @@ public partial class LuminaSystemContext : DbContext
 
     public virtual DbSet<VocabularyList> VocabularyLists { get; set; }
     public virtual DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
+    
+    public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
+    
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         // Only configure SQL Server if no options have been provided
@@ -701,6 +704,38 @@ public partial class LuminaSystemContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK_PasswordResetTokens_Users");
+        });
+
+        modelBuilder.Entity<RefreshToken>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK_RefreshTokens");
+
+            entity.ToTable("RefreshTokens");
+
+            entity.Property(e => e.Token)
+                .HasMaxLength(512)
+                .IsRequired();
+            
+            entity.Property(e => e.CreatedAt)
+                .HasPrecision(3)
+                .HasDefaultValueSql("(sysutcdatetime())");
+            
+            entity.Property(e => e.ExpiresAt).HasPrecision(3);
+            
+            entity.Property(e => e.IsRevoked).HasDefaultValue(false);
+            
+            entity.Property(e => e.RevokedReason).HasMaxLength(255);
+            
+            entity.Property(e => e.RevokedAt).HasPrecision(3);
+            
+            entity.Property(e => e.ReplacedByToken).HasMaxLength(512);
+
+            entity.HasOne(d => d.User).WithMany(p => p.RefreshTokens)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_RefreshTokens_Users");
+            
+            entity.HasIndex(e => e.Token).IsUnique();
         });
 
         OnModelCreatingPartial(modelBuilder);

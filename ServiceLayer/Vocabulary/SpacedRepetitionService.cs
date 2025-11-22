@@ -36,7 +36,11 @@ namespace ServiceLayer.Vocabulary
                 IsDue = true,
                 DaysUntilReview = item.NextReviewAt.HasValue 
                     ? Math.Max(0, (int)(item.NextReviewAt.Value - now).TotalDays)
-                    : 0
+                    : 0,
+                BestQuizScore = item.BestQuizScore,
+                LastQuizScore = item.LastQuizScore,
+                LastQuizCompletedAt = item.LastQuizCompletedAt,
+                TotalQuizAttempts = item.TotalQuizAttempts
             });
         }
 
@@ -59,7 +63,11 @@ namespace ServiceLayer.Vocabulary
                 IsDue = item.NextReviewAt.HasValue && item.NextReviewAt.Value <= now,
                 DaysUntilReview = item.NextReviewAt.HasValue 
                     ? Math.Max(0, (int)(item.NextReviewAt.Value - now).TotalDays)
-                    : 0
+                    : 0,
+                BestQuizScore = item.BestQuizScore,
+                LastQuizScore = item.LastQuizScore,
+                LastQuizCompletedAt = item.LastQuizCompletedAt,
+                TotalQuizAttempts = item.TotalQuizAttempts
             });
         }
 
@@ -106,7 +114,11 @@ namespace ServiceLayer.Vocabulary
                     Intervals = repetition.Intervals ?? 1,
                     Status = repetition.Status ?? "New",
                     IsDue = false,
-                    DaysUntilReview = newIntervals
+                    DaysUntilReview = newIntervals,
+                    BestQuizScore = repetition.BestQuizScore,
+                    LastQuizScore = repetition.LastQuizScore,
+                    LastQuizCompletedAt = repetition.LastQuizCompletedAt,
+                    TotalQuizAttempts = repetition.TotalQuizAttempts
                 },
                 NextReviewAt = repetition.NextReviewAt,
                 NewIntervals = newIntervals
@@ -135,7 +147,11 @@ namespace ServiceLayer.Vocabulary
                 IsDue = item.NextReviewAt.HasValue && item.NextReviewAt.Value <= now,
                 DaysUntilReview = item.NextReviewAt.HasValue 
                     ? Math.Max(0, (int)(item.NextReviewAt.Value - now).TotalDays)
-                    : 0
+                    : 0,
+                BestQuizScore = item.BestQuizScore,
+                LastQuizScore = item.LastQuizScore,
+                LastQuizCompletedAt = item.LastQuizCompletedAt,
+                TotalQuizAttempts = item.TotalQuizAttempts
             };
         }
 
@@ -185,7 +201,11 @@ namespace ServiceLayer.Vocabulary
                 Intervals = 1,
                 Status = "New",
                 IsDue = false,
-                DaysUntilReview = 1
+                DaysUntilReview = 1,
+                BestQuizScore = null,
+                LastQuizScore = null,
+                LastQuizCompletedAt = null,
+                TotalQuizAttempts = null
             };
         }
 
@@ -220,6 +240,83 @@ namespace ServiceLayer.Vocabulary
             newIntervals = Math.Min(newIntervals, 90);
 
             return (newIntervals, newStatus);
+        }
+
+        // Save quiz result
+        public async Task<bool> SaveQuizResultAsync(int userId, SaveQuizResultRequestDTO request)
+        {
+            // Tìm hoặc tạo UserSpacedRepetition record
+            var repetition = await _unitOfWork.UserSpacedRepetitions.GetByUserAndListAsync(
+                userId, 
+                request.VocabularyListId
+            );
+
+            if (repetition == null)
+            {
+                // Nếu chưa có, tạo mới
+                var vocabularyList = await _unitOfWork.VocabularyLists.FindByIdAsync(request.VocabularyListId);
+                if (vocabularyList == null)
+                {
+                    throw new KeyNotFoundException("Vocabulary list not found.");
+                }
+
+                repetition = new UserSpacedRepetition
+                {
+                    UserId = userId,
+                    VocabularyListId = request.VocabularyListId,
+                    LastReviewedAt = DateTime.UtcNow,
+                    NextReviewAt = DateTime.UtcNow.AddDays(1),
+                    ReviewCount = 0,
+                    Intervals = 1,
+                    Status = "New"
+                };
+                await _unitOfWork.UserSpacedRepetitions.AddAsync(repetition);
+            }
+
+            // Cập nhật quiz scores
+            repetition.LastQuizScore = request.Score;
+            repetition.LastQuizCompletedAt = DateTime.UtcNow;
+            repetition.TotalQuizAttempts = (repetition.TotalQuizAttempts ?? 0) + 1;
+
+            // Cập nhật best score nếu điểm mới cao hơn
+            if (!repetition.BestQuizScore.HasValue || request.Score > repetition.BestQuizScore.Value)
+            {
+                repetition.BestQuizScore = request.Score;
+            }
+
+            await _unitOfWork.UserSpacedRepetitions.UpdateAsync(repetition);
+            await _unitOfWork.CompleteAsync();
+
+            return true;
+        }
+
+        // Get quiz scores
+        public async Task<IEnumerable<QuizScoreDTO>> GetQuizScoresAsync(int userId, int? vocabularyListId = null)
+        {
+            IEnumerable<UserSpacedRepetition> items;
+
+            if (vocabularyListId.HasValue)
+            {
+                var item = await _unitOfWork.UserSpacedRepetitions.GetByUserAndListAsync(userId, vocabularyListId.Value);
+                items = item != null ? new[] { item } : Enumerable.Empty<UserSpacedRepetition>();
+            }
+            else
+            {
+                items = await _unitOfWork.UserSpacedRepetitions.GetByUserIdAsync(userId);
+            }
+
+            return items
+                .Where(item => item.BestQuizScore.HasValue || item.LastQuizScore.HasValue) // Chỉ lấy những folder đã làm quiz
+                .Select(item => new QuizScoreDTO
+                {
+                    VocabularyListId = item.VocabularyListId,
+                    VocabularyListName = item.VocabularyList?.Name ?? "Unknown",
+                    BestScore = item.BestQuizScore,
+                    LastScore = item.LastQuizScore,
+                    LastCompletedAt = item.LastQuizCompletedAt,
+                    TotalAttempts = item.TotalQuizAttempts
+                })
+                .ToList();
         }
     }
 }
