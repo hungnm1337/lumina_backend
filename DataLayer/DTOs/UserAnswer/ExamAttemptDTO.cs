@@ -24,6 +24,7 @@ namespace DataLayer.DTOs.UserAnswer
         public int? Score { get; set; }
 
         public string Status { get; set; }
+        
     }
 
     public class ExamAttemptResponseDTO
@@ -43,6 +44,8 @@ namespace DataLayer.DTOs.UserAnswer
         public int? Score { get; set; }
 
         public string Status { get; set; }
+
+        public bool IsMocktest { get; set; }
     }
 
     public class ExamAttemptDetailResponseDTO
