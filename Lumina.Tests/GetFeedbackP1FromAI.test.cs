@@ -62,8 +62,8 @@ namespace Lumina.Tests
             // Arrange
             var request = new WritingRequestP1DTO
             {
-                PictureCaption = "A woman is reading",
-                UserAnswer = "This is my answer"
+                PictureCaption = "A woman is reading a book in the library",
+                UserAnswer = "The woman is reading a book in the library."
             };
 
             _controller.ModelState.AddModelError("PictureCaption", "Picture caption is required");
@@ -202,6 +202,7 @@ namespace Lumina.Tests
             var request = new WritingRequestP1DTO
             {
                 PictureCaption = "A woman is reading",
+                VocabularyRequest = "library, book, reading",
                 UserAnswer = "This is my answer"
             };
 

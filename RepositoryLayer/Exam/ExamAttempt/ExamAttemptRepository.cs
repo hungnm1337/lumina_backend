@@ -75,7 +75,8 @@ namespace RepositoryLayer.Exam.ExamAttempt
                     StartTime = attempt.StartTime,
                     EndTime = attempt.EndTime,
                     Score = attempt.Score,
-                    Status = attempt.Status
+                    Status = attempt.Status,
+                    IsMocktest = attempt.ExamPartId != null
                 })
                 .ToListAsync();
 
@@ -133,6 +134,7 @@ namespace RepositoryLayer.Exam.ExamAttempt
                     {
                         Options = null,
                         PromptId = answer.Question.PromptId,
+                        PartCode = answer.Question.Part.PartCode,
                         QuestionId = answer.Question.QuestionId,
                         Prompt = answer.Question.Prompt != null ? new DataLayer.DTOs.Exam.PromptDTO()
                         {
@@ -181,6 +183,7 @@ namespace RepositoryLayer.Exam.ExamAttempt
                             .ToList(), 
                         PromptId = answer.Question.PromptId,
                         QuestionId = answer.Question.QuestionId,
+                        PartCode = answer.Question.Part.PartCode,
                         Prompt = answer.Question.Prompt != null ? new DataLayer.DTOs.Exam.PromptDTO()
                         {
                             PromptId = answer.Question.Prompt.PromptId,
@@ -231,6 +234,8 @@ namespace RepositoryLayer.Exam.ExamAttempt
                         Options = null,
                         PromptId = answer.Question.PromptId,
                         QuestionId = answer.Question.QuestionId,
+                        PartCode = answer.Question.Part.PartCode,
+
                         Prompt = answer.Question.Prompt != null ? new DataLayer.DTOs.Exam.PromptDTO()
                         {
                             PromptId = answer.Question.Prompt.PromptId,
@@ -276,6 +281,8 @@ namespace RepositoryLayer.Exam.ExamAttempt
                         Options = null,
                         PromptId = answer.Question.PromptId,
                         QuestionId = answer.Question.QuestionId,
+                        PartCode = answer.Question.Part.PartCode,
+
                         Prompt = answer.Question.Prompt != null ? new DataLayer.DTOs.Exam.PromptDTO()
                         {
                             PromptId = answer.Question.Prompt.PromptId,

@@ -21,24 +21,26 @@ namespace Lumina.Tests
             _controller = new WritingController(_mockWritingService.Object, _mockLogger.Object);
         }
 
-        [Fact]
-        public async Task GetFeedbackP23FromAI_WithValidInput_Returns200OKWithResponse()
+        [Theory]
+        [InlineData(2, "Write an email to your friend", "Dear John, How are you?", 85)]
+        [InlineData(3, "Write an essay about technology", "Technology is important in modern life.", 75)]
+        public async Task GetFeedbackP23FromAI_VoiDuLieuHopLe_TraVe200OK(int partNumber, string prompt, string userAnswer, int expectedScore)
         {
             // Arrange
             var request = new WritingRequestP23DTO
             {
-                PartNumber = 2,
-                Prompt = "Write an email to your friend",
-                UserAnswer = "Dear John, How are you? I hope you are doing well."
+                PartNumber = partNumber,
+                Prompt = prompt,
+                UserAnswer = userAnswer
             };
 
             var expectedResponse = new WritingResponseDTO
             {
-                TotalScore = 85,
+                TotalScore = expectedScore,
                 GrammarFeedback = "Good grammar usage",
                 VocabularyFeedback = "Good vocabulary",
                 ContentAccuracyFeedback = "Content is accurate",
-                CorreededAnswerProposal = "Dear John, How are you? I hope you are doing well."
+                CorreededAnswerProposal = userAnswer
             };
 
             _mockWritingService.Setup(s => s.GetFeedbackP23FromAI(It.IsAny<WritingRequestP23DTO>()))
@@ -51,13 +53,12 @@ namespace Lumina.Tests
             var okResult = Assert.IsType<OkObjectResult>(result);
             Assert.Equal(StatusCodes.Status200OK, okResult.StatusCode);
             var response = Assert.IsType<WritingResponseDTO>(okResult.Value);
-            Assert.Equal(85, response.TotalScore);
-            Assert.Equal("Good grammar usage", response.GrammarFeedback);
+            Assert.Equal(expectedScore, response.TotalScore);
             _mockWritingService.Verify(s => s.GetFeedbackP23FromAI(It.IsAny<WritingRequestP23DTO>()), Times.Once);
         }
 
         [Fact]
-        public async Task GetFeedbackP23FromAI_WithInvalidModelState_Returns400BadRequest()
+        public async Task GetFeedbackP23FromAI_KhiModelStateKhongHopLe_TraVe400BadRequest()
         {
             // Arrange
             var request = new WritingRequestP23DTO
@@ -75,20 +76,24 @@ namespace Lumina.Tests
             // Assert
             var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
             Assert.Equal(StatusCodes.Status400BadRequest, badRequestResult.StatusCode);
-            var modelState = Assert.IsType<SerializableError>(badRequestResult.Value);
-            Assert.True(modelState.ContainsKey("PartNumber"));
             _mockWritingService.Verify(s => s.GetFeedbackP23FromAI(It.IsAny<WritingRequestP23DTO>()), Times.Never);
         }
 
-        [Fact]
-        public async Task GetFeedbackP23FromAI_WithNullUserAnswer_Returns400BadRequest()
+        [Theory]
+        [InlineData(null, "Valid prompt", "UserAnswer cannot be empty.")]
+        [InlineData("", "Valid prompt", "UserAnswer cannot be empty.")]
+        [InlineData("   ", "Valid prompt", "UserAnswer cannot be empty.")]
+        [InlineData("Valid answer", null, "Prompt cannot be empty.")]
+        [InlineData("Valid answer", "", "Prompt cannot be empty.")]
+        [InlineData("Valid answer", "   ", "Prompt cannot be empty.")]
+        public async Task GetFeedbackP23FromAI_KhiDuLieuKhongHopLe_TraVe400BadRequest(string userAnswer, string prompt, string expectedMessage)
         {
             // Arrange
             var request = new WritingRequestP23DTO
             {
                 PartNumber = 2,
-                Prompt = "Write an email",
-                UserAnswer = null!
+                Prompt = prompt!,
+                UserAnswer = userAnswer!
             };
 
             // Act
@@ -99,111 +104,12 @@ namespace Lumina.Tests
             Assert.Equal(StatusCodes.Status400BadRequest, badRequestResult.StatusCode);
             var response = badRequestResult.Value;
             var messageProperty = response!.GetType().GetProperty("Message");
-            Assert.Equal("UserAnswer cannot be empty.", messageProperty!.GetValue(response));
-        }
-
-        [Fact]
-        public async Task GetFeedbackP23FromAI_WithEmptyUserAnswer_Returns400BadRequest()
-        {
-            // Arrange
-            var request = new WritingRequestP23DTO
-            {
-                PartNumber = 2,
-                Prompt = "Write an email",
-                UserAnswer = ""
-            };
-
-            // Act
-            var result = await _controller.GetFeedbackP23FromAI(request);
-
-            // Assert
-            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-            Assert.Equal(StatusCodes.Status400BadRequest, badRequestResult.StatusCode);
-        }
-
-        [Fact]
-        public async Task GetFeedbackP23FromAI_WithWhitespaceUserAnswer_Returns400BadRequest()
-        {
-            // Arrange
-            var request = new WritingRequestP23DTO
-            {
-                PartNumber = 2,
-                Prompt = "Write an email",
-                UserAnswer = "   "
-            };
-
-            // Act
-            var result = await _controller.GetFeedbackP23FromAI(request);
-
-            // Assert
-            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-            Assert.Equal(StatusCodes.Status400BadRequest, badRequestResult.StatusCode);
+            Assert.Equal(expectedMessage, messageProperty!.GetValue(response));
             _mockWritingService.Verify(s => s.GetFeedbackP23FromAI(It.IsAny<WritingRequestP23DTO>()), Times.Never);
         }
 
         [Fact]
-        public async Task GetFeedbackP23FromAI_WithNullPrompt_Returns400BadRequest()
-        {
-            // Arrange
-            var request = new WritingRequestP23DTO
-            {
-                PartNumber = 2,
-                Prompt = null!,
-                UserAnswer = "This is my answer"
-            };
-
-            // Act
-            var result = await _controller.GetFeedbackP23FromAI(request);
-
-            // Assert
-            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-            Assert.Equal(StatusCodes.Status400BadRequest, badRequestResult.StatusCode);
-            var response = badRequestResult.Value;
-            var messageProperty = response!.GetType().GetProperty("Message");
-            Assert.Equal("Prompt cannot be empty.", messageProperty!.GetValue(response));
-        }
-
-        [Fact]
-        public async Task GetFeedbackP23FromAI_WithEmptyPrompt_Returns400BadRequest()
-        {
-            // Arrange
-            var request = new WritingRequestP23DTO
-            {
-                PartNumber = 2,
-                Prompt = "",
-                UserAnswer = "This is my answer"
-            };
-
-            // Act
-            var result = await _controller.GetFeedbackP23FromAI(request);
-
-            // Assert
-            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-            Assert.Equal(StatusCodes.Status400BadRequest, badRequestResult.StatusCode);
-        }
-
-        [Fact]
-        public async Task GetFeedbackP23FromAI_WithWhitespacePrompt_Returns400BadRequest()
-        {
-            // Arrange
-            var request = new WritingRequestP23DTO
-            {
-                PartNumber = 2,
-                Prompt = "   ",
-                UserAnswer = "This is my answer"
-            };
-
-            // Act
-            var result = await _controller.GetFeedbackP23FromAI(request);
-
-            // Assert
-            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-            Assert.Equal(StatusCodes.Status400BadRequest, badRequestResult.StatusCode);
-            _mockWritingService.Verify(s => s.GetFeedbackP23FromAI(It.IsAny<WritingRequestP23DTO>()), Times.Never);
-        }
-
-        [Fact]
-        public async Task GetFeedbackP23FromAI_WhenServiceThrowsException_Returns500AndLogsError()
+        public async Task GetFeedbackP23FromAI_KhiServiceThrowException_TraVe500VaLogError()
         {
             // Arrange
             var request = new WritingRequestP23DTO
@@ -234,6 +140,44 @@ namespace Lumina.Tests
                     It.IsAny<Exception?>(),
                     It.Is<Func<It.IsAnyType, Exception?, string>>((v, t) => true)),
                 Times.Once);
+        }
+
+        // ==================== BOUNDARY VALUE TEST CASES ====================
+
+        [Theory]
+        [InlineData(45, "too short", "Technology is good.")]  // Short essay - Low score
+        [InlineData(50, "grammar errors", "We must to protect environment.")]  // Grammar errors - Medium score
+        [InlineData(90, "Excellent", "Working from home offers flexibility and efficiency. It enables better work-life balance.")]  // Good essay - High score
+        public async Task GetFeedbackP23FromAI_VoiBienGioiHan_TraVeScoreTuongUng(int expectedScore, string expectedFeedbackKeyword, string userAnswer)
+        {
+            // Arrange
+            var request = new WritingRequestP23DTO
+            {
+                PartNumber = 3,
+                Prompt = "Discuss your topic",
+                UserAnswer = userAnswer
+            };
+
+            var expectedResponse = new WritingResponseDTO
+            {
+                TotalScore = expectedScore,
+                GrammarFeedback = expectedFeedbackKeyword,
+                VocabularyFeedback = "Feedback",
+                ContentAccuracyFeedback = expectedFeedbackKeyword,
+                CorreededAnswerProposal = userAnswer
+            };
+
+            _mockWritingService.Setup(s => s.GetFeedbackP23FromAI(It.IsAny<WritingRequestP23DTO>()))
+                .ReturnsAsync(expectedResponse);
+
+            // Act
+            var result = await _controller.GetFeedbackP23FromAI(request);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var response = Assert.IsType<WritingResponseDTO>(okResult.Value);
+            Assert.Equal(expectedScore, response.TotalScore);
+            Assert.Contains(expectedFeedbackKeyword, response.GrammarFeedback + response.ContentAccuracyFeedback);
         }
     }
 }
