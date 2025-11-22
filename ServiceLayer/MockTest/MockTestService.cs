@@ -12,7 +12,7 @@ namespace ServiceLayer.MockTest
     public class MockTestService : IMockTestService
     {
         private readonly IMockTestRepository _mockTestRepository;
-
+        
         public MockTestService(IMockTestRepository mockTestRepository)
         {
             _mockTestRepository = mockTestRepository;
