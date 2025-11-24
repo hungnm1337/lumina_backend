@@ -1,6 +1,4 @@
-using DataLayer.DTOs;
-using DataLayer.DTOs.Auth;
-using DataLayer.DTOs.Report;
+using DataLayer.DTOs.UserReport;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RepositoryLayer.UnitOfWork;
@@ -32,7 +30,7 @@ public class ReportController : ControllerBase
     /// Create a new report
     /// </summary>
     [HttpPost]
-    public async Task<IActionResult> CreateReport([FromBody] ReportCreateRequestDTO request)
+    public async Task<IActionResult> CreateReport([FromBody] UserReportRequest request)
     {
         if (!ModelState.IsValid)
         {
@@ -45,26 +43,25 @@ public class ReportController : ControllerBase
             if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
             {
                 _logger.LogWarning("Invalid token: Claim 'NameIdentifier' not found or invalid.");
-                return Unauthorized(new ErrorResponse("Invalid token - User ID could not be determined."));
+                return Unauthorized(new { message = "Invalid token - User ID could not be determined." });
             }
 
-            var createdReport = await _reportService.CreateReportAsync(request, userId);
-            return CreatedAtAction(nameof(GetReportById), new { id = createdReport.ReportId }, createdReport);
-        }
-        catch (ArgumentException ex)
-        {
-            _logger.LogWarning(ex.Message);
-            return BadRequest(new ErrorResponse(ex.Message));
-        }
-        catch (KeyNotFoundException ex)
-        {
-            _logger.LogWarning(ex.Message);
-            return NotFound(new ErrorResponse(ex.Message));
+            // Set SendBy from authenticated user
+            request.SendBy = userId;
+
+            var result = await _reportService.AddAsync(request);
+            
+            if (result)
+            {
+                return Ok(new { message = "Report created successfully", success = true });
+            }
+            
+            return BadRequest(new { message = "Failed to create report", success = false });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "An unexpected error occurred while creating a report.");
-            return StatusCode(500, new ErrorResponse("An internal server error occurred. Please try again later."));
+            return StatusCode(500, new { message = "An internal server error occurred. Please try again later." });
         }
     }
 
@@ -76,86 +73,84 @@ public class ReportController : ControllerBase
     {
         try
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            int? userId = null;
-            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var parsedUserId))
-            {
-                userId = parsedUserId;
-            }
-
-            // Get user role
-            int? roleId = null;
-            if (userId.HasValue)
-            {
-                var user = await _unitOfWork.Users.GetUserByIdAsync(userId.Value);
-                if (user != null)
-                {
-                    roleId = user.RoleId;
-                }
-            }
-
-            var report = await _reportService.GetReportByIdAsync(id, userId, roleId);
+            var report = await _reportService.FindByIdAsync(id);
+            
             if (report == null)
             {
-                return NotFound(new ErrorResponse($"Report with ID {id} not found."));
+                return NotFound(new { message = $"Report with ID {id} not found." });
             }
 
             return Ok(report);
         }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning(ex.Message);
-            return Forbid(ex.Message);
-        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "An error occurred while retrieving report with ID {ReportId}.", id);
-            return StatusCode(500, new ErrorResponse("An internal server error occurred. Please try again later."));
+            return StatusCode(500, new { message = "An internal server error occurred. Please try again later." });
         }
     }
 
     /// <summary>
-    /// Get reports with query and pagination
+    /// Get all reports by role (Admin: System, Manager/Staff: Article/Exam)
     /// </summary>
-    [HttpGet]
-    public async Task<IActionResult> GetReports([FromQuery] ReportQueryParams query)
+    [HttpGet("by-role")]
+    [Authorize(Roles = "Admin,Manager,Staff")]
+    public async Task<IActionResult> GetReportsByRole()
     {
         try
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            int? userId = null;
-            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var parsedUserId))
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
             {
-                userId = parsedUserId;
+                return Unauthorized(new { message = "Invalid token - User ID could not be determined." });
             }
 
             // Get user role
-            int? roleId = null;
-            if (userId.HasValue)
+            var user = await _unitOfWork.Users.GetUserByIdAsync(userId);
+            if (user == null)
             {
-                var user = await _unitOfWork.Users.GetUserByIdAsync(userId.Value);
-                if (user != null)
-                {
-                    roleId = user.RoleId;
-                }
+                return Unauthorized(new { message = "User not found." });
             }
 
-            var result = await _reportService.GetReportsAsync(query, userId, roleId);
-            return Ok(result);
+            var reports = await _reportService.GetAllAsync(user.RoleId);
+            return Ok(reports);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "An error occurred while retrieving reports.");
-            return StatusCode(500, new ErrorResponse("An internal server error occurred. Please try again later."));
+            _logger.LogError(ex, "An error occurred while retrieving reports by role.");
+            return StatusCode(500, new { message = "An internal server error occurred. Please try again later." });
+        }
+    }
+
+    /// <summary>
+    /// Get all reports created by the current user
+    /// </summary>
+    [HttpGet("my-reports")]
+    public async Task<IActionResult> GetMyReports()
+    {
+        try
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
+            {
+                return Unauthorized(new { message = "Invalid token - User ID could not be determined." });
+            }
+
+            var reports = await _reportService.GetAllByUserIdAsync(userId);
+            return Ok(reports);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An error occurred while retrieving user reports.");
+            return StatusCode(500, new { message = "An internal server error occurred. Please try again later." });
         }
     }
 
     /// <summary>
     /// Reply to a report (Admin and Manager only)
     /// </summary>
-    [HttpPost("{id}/reply")]
+    [HttpPut("{id}/reply")]
     [Authorize(Roles = "Admin,Manager")]
-    public async Task<IActionResult> ReplyToReport(int id, [FromBody] ReportReplyRequestDTO request)
+    public async Task<IActionResult> ReplyToReport(int id, [FromBody] UserReportRequest request)
     {
         if (!ModelState.IsValid)
         {
@@ -167,33 +162,53 @@ public class ReportController : ControllerBase
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
             if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
             {
-                return Unauthorized(new ErrorResponse("Invalid token - User ID could not be determined."));
+                return Unauthorized(new { message = "Invalid token - User ID could not be determined." });
             }
 
-            // Get user role
+            // Get user role to validate permissions
             var user = await _unitOfWork.Users.GetUserByIdAsync(userId);
             if (user == null)
             {
-                return Unauthorized(new ErrorResponse("User not found."));
+                return Unauthorized(new { message = "User not found." });
             }
 
-            var updatedReport = await _reportService.ReplyToReportAsync(id, request, userId, user.RoleId);
-            if (updatedReport == null)
+            // Check if report exists first
+            var existingReport = await _reportService.FindByIdAsync(id);
+            if (existingReport == null)
             {
-                return NotFound(new ErrorResponse($"Report with ID {id} not found."));
+                return NotFound(new { message = $"Report with ID {id} not found." });
             }
 
-            return Ok(updatedReport);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning(ex.Message);
-            return Forbid(ex.Message);
+            // Validate role-based permissions
+            if (user.RoleId == 2) // Manager
+            {
+                // Manager can only reply to Article and Exam reports
+                if (existingReport.Type == "System")
+                {
+                    return Forbid("Manager can only reply to Article and Exam reports.");
+                }
+            }
+            // Admin (RoleId = 1) can reply to all reports
+
+            // Set required fields for update
+            request.ReportId = id;
+            request.ReplyBy = userId;
+
+            var result = await _reportService.UpdateAsync(request);
+            
+            if (result)
+            {
+                // Get updated report to return
+                var updatedReport = await _reportService.FindByIdAsync(id);
+                return Ok(updatedReport);
+            }
+            
+            return BadRequest(new { message = "Failed to update report", success = false });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "An error occurred while replying to report with ID {ReportId}.", id);
-            return StatusCode(500, new ErrorResponse("An internal server error occurred. Please try again later."));
+            return StatusCode(500, new { message = "An internal server error occurred. Please try again later." });
         }
     }
 }

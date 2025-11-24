@@ -1,13 +1,17 @@
 using DataLayer.DTOs;
 using DataLayer.DTOs.Report;
+using DataLayer.DTOs.UserReport;
 
 namespace ServiceLayer.Report;
 
 public interface IReportService
 {
-    Task<ReportResponseDTO> CreateReportAsync(ReportCreateRequestDTO request, int userId);
-    Task<ReportResponseDTO?> GetReportByIdAsync(int id, int? currentUserId, int? currentUserRoleId);
-    Task<PaginatedResultDTO<ReportResponseDTO>> GetReportsAsync(ReportQueryParams query, int? currentUserId, int? currentUserRoleId);
-    Task<ReportResponseDTO?> ReplyToReportAsync(int reportId, ReportReplyRequestDTO request, int userId, int userRoleId);
+    Task<bool> AddAsync(UserReportRequest report);
+    Task<UserReportResponse> FindByIdAsync(int id);
+    Task<List<UserReportResponse>> GetAllAsync(int roleid);
+
+    Task<List<UserReportResponse>> GetAllByUserIdAsync(int Userid);
+
+    Task<bool> UpdateAsync(UserReportRequest report);
 }
 

@@ -1,5 +1,10 @@
+using DataLayer.DTOs.UserReport;
 using DataLayer.Models;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace RepositoryLayer.Report;
 
@@ -12,135 +17,133 @@ public class ReportRepository : IReportRepository
         _context = context;
     }
 
-    public async Task AddAsync(Report report)
+    public async Task<bool> AddAsync(UserReportRequest report)
     {
-        await _context.Reports.AddAsync(report);
-    }
+        DataLayer.Models.Report newReport = new DataLayer.Models.Report
+        {
+            Title = report.Title,
+            Content = report.Content,
+            SendBy = report.SendBy,
+            SendAt = DateTime.UtcNow, // Ensure a date is set
+            ReplyBy = report.ReplyBy,
+            ReplyAt = report.ReplyAt,
+            ReplyContent = report.ReplyContent,
+            Type = report.Type
+        };
 
-    public async Task<Report?> FindByIdAsync(int id)
-    {
-        return await _context.Reports
-            .Include(r => r.SendByNavigation)
-            .FirstOrDefaultAsync(r => r.ReportId == id);
+        await _context.Reports.AddAsync(newReport);
+        int created = await _context.SaveChangesAsync();
+        return created > 0;
     }
-
-    public async Task<User?> GetUserByIdAsync(int userId)
+    
+    public async Task<UserReportResponse?> FindByIdAsync(int id)
     {
-        return await _context.Users.FindAsync(userId);
-    }
+        // Note: When using .Select(), .Include() is not strictly necessary 
+        // as EF Core infers the joins from the projection.
+        var report = await _context.Reports
+            .Where(r => r.ReportId == id)
+            .Select(r => new UserReportResponse
+            {
+                ReportId = r.ReportId,
+                Title = r.Title,
+                Content = r.Content,
+                SendBy = r.SendByNavigation.FullName,
+                SendAt = r.SendAt,
+                // Subquery to fetch ReplyBy name safely
+                ReplyBy = r.ReplyBy.HasValue
+                    ? _context.Users
+                        .Where(u => u.UserId == r.ReplyBy.Value)
+                        .Select(u => u.FullName)
+                        .FirstOrDefault()
+                    : null,
+                ReplyAt = r.ReplyAt,
+                ReplyContent = r.ReplyContent,
+                Type = r.Type
+            })
+            .FirstOrDefaultAsync();
 
-    public async Task<List<Report>> GetAllAsync()
-    {
-        return await _context.Reports
-            .Include(r => r.SendByNavigation)
-            .OrderByDescending(r => r.SendAt)
-            .ToListAsync();
-    }
-
-    public async Task<Report?> UpdateAsync(Report report)
-    {
-        _context.Reports.Update(report);
-        await _context.SaveChangesAsync();
         return report;
     }
 
-    public async Task<(List<Report> items, int total)> QueryAsync(
-        int page, 
-        int pageSize, 
-        string? search, 
-        string? type, 
-        int? articleId, 
-        int? examId, 
-        bool? isReplied, 
-        string sortBy, 
-        string sortDir,
-        int? sendBy = null,
-        bool excludeSystem = false)
+    public async Task<List<UserReportResponse>> GetAllAsync(int roleid)
     {
-        var query = _context.Reports
-            .Include(r => r.SendByNavigation)
-            .AsQueryable();
+        // 1. Start the query but do not execute it yet
+        var query = _context.Reports.AsQueryable();
 
-        // Search filter
-        if (!string.IsNullOrWhiteSpace(search))
+        // 2. Apply filtering logic BEFORE fetching data (Server-side evaluation)
+        // Admin (1) - System reports
+        if (roleid == 1)
         {
-            var s = search.Trim().ToLower();
-            query = query.Where(r => 
-                r.Title.ToLower().Contains(s) || 
-                r.Content.ToLower().Contains(s));
+            query = query.Where(r => r.Type == "System");
+        }
+        // Manager (2, 3) - Staff exams, articles reports
+        else if (roleid == 2 || roleid == 3)
+        {
+            query = query.Where(r => r.Type != null &&
+                                    (r.Type.Contains("Article") || r.Type.Contains("Exam")));
         }
 
-        // Type filter
-        if (!string.IsNullOrWhiteSpace(type))
-        {
-            if (type.Equals("System", StringComparison.OrdinalIgnoreCase))
+        // 3. Execute the query with projection
+        return await query
+            .Select(r => new UserReportResponse
             {
-                query = query.Where(r => r.Type == "System");
-            }
-            else if (type.Equals("Article", StringComparison.OrdinalIgnoreCase))
-            {
-                query = query.Where(r => r.Type.StartsWith("Article-"));
-            }
-            else if (type.Equals("Exam", StringComparison.OrdinalIgnoreCase))
-            {
-                query = query.Where(r => r.Type.StartsWith("Exam-"));
-            }
-        }
-
-        // Exclude System filter (for Staff/Manager)
-        if (excludeSystem)
-        {
-            query = query.Where(r => r.Type != "System" && (r.Type.StartsWith("Article-") || r.Type.StartsWith("Exam-")));
-        }
-
-        // ArticleId filter
-        if (articleId.HasValue)
-        {
-            var articleType = $"Article-{articleId.Value}";
-            query = query.Where(r => r.Type == articleType);
-        }
-
-        // ExamId filter
-        if (examId.HasValue)
-        {
-            var examType = $"Exam-{examId.Value}";
-            query = query.Where(r => r.Type == examType);
-        }
-
-        // IsReplied filter
-        if (isReplied.HasValue)
-        {
-            if (isReplied.Value)
-            {
-                query = query.Where(r => r.ReplyBy != null && r.ReplyAt != null);
-            }
-            else
-            {
-                query = query.Where(r => r.ReplyBy == null || r.ReplyAt == null);
-            }
-        }
-
-        // SendBy filter (for regular users to see only their own reports)
-        if (sendBy.HasValue)
-        {
-            query = query.Where(r => r.SendBy == sendBy.Value);
-        }
-
-        // Sorting
-        bool desc = string.Equals(sortDir, "desc", StringComparison.OrdinalIgnoreCase);
-        query = (sortBy?.ToLower()) switch
-        {
-            "title" => desc ? query.OrderByDescending(r => r.Title) : query.OrderBy(r => r.Title),
-            _ => desc ? query.OrderByDescending(r => r.SendAt) : query.OrderBy(r => r.SendAt)
-        };
-
-        var total = await query.CountAsync();
-        var items = await query
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
+                ReportId = r.ReportId,
+                Title = r.Title,
+                Content = r.Content,
+                SendBy = r.SendByNavigation.FullName,
+                SendAt = r.SendAt,
+                ReplyBy = r.ReplyBy.HasValue
+                    ? _context.Users
+                        .Where(u => u.UserId == r.ReplyBy.Value)
+                        .Select(u => u.FullName)
+                        .FirstOrDefault()
+                    : null,
+                ReplyAt = r.ReplyAt,
+                ReplyContent = r.ReplyContent,
+                Type = r.Type
+            })
             .ToListAsync();
+    }
 
-        return (items, total);
+    public async Task<List<UserReportResponse>> GetAllByUserIdAsync(int userId)
+    {
+        return await _context.Reports
+            .Where(r => r.SendBy == userId)
+            .Select(r => new UserReportResponse
+            {
+                ReportId = r.ReportId,
+                Title = r.Title,
+                Content = r.Content,
+                SendBy = r.SendByNavigation.FullName,
+                SendAt = r.SendAt,
+                ReplyBy = r.ReplyBy.HasValue
+                    ? _context.Users
+                        .Where(u => u.UserId == r.ReplyBy.Value)
+                        .Select(u => u.FullName)
+                        .FirstOrDefault()
+                    : null,
+                ReplyAt = r.ReplyAt,
+                ReplyContent = r.ReplyContent,
+                Type = r.Type
+            })
+            .ToListAsync();
+    }
+
+    public async Task<bool> UpdateAsync(UserReportRequest report)
+    {
+        var existingReport = await _context.Reports.FindAsync(report.ReportId);
+
+        if (existingReport == null)
+        {
+            return false;
+        }
+
+        existingReport.ReplyBy = report.ReplyBy;
+        existingReport.ReplyAt = DateTime.UtcNow; // Set reply time to now
+        existingReport.ReplyContent = report.ReplyContent;
+
+        _context.Reports.Update(existingReport);
+        int updated = await _context.SaveChangesAsync();
+        return updated > 0;
     }
 }
-
