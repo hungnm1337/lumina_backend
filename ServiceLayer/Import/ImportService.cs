@@ -23,27 +23,27 @@ namespace ServiceLayer.Import
         private readonly Dictionary<string, (int RequiredPrompts, int QuestionsPerPrompt)> PartConfigurations = new()
         {
             // LISTENING
-            { "LISTENING_PART1", (6, 1) },
-            { "LISTENING_PART2", (25, 1) },
-            { "LISTENING_PART3", (5, 3) },
-            { "LISTENING_PART4", (5, 3) },
+            { "LISTENING_PART_1", (6, 1) },
+            { "LISTENING_PART_2", (25, 1) },
+            { "LISTENING_PART_3", (5, 3) },
+            { "LISTENING_PART_4", (5, 3) },
             
             // READING
-            { "READING_PART5", (30, 1) },
-            { "READING_PART6", (4, 4) },
-            { "READING_PART7", (5, 3) },
+            { "READING_PART_5", (30, 1) },
+            { "READING_PART_6", (4, 4) },
+            { "READING_PART_7", (5, 3) },
             
             // SPEAKING
-            { "SPEAKING_PART1", (2, 1) },
-            { "SPEAKING_PART2", (1, 1) },
-            { "SPEAKING_PART3", (3, 3) },
-            { "SPEAKING_PART4", (4, 4) },
-            { "SPEAKING_PART5", (1, 1) },
+            { "SPEAKING_PART_1", (2, 1) },
+            { "SPEAKING_PART_2", (1, 1) },
+            { "SPEAKING_PART_3", (3, 3) },
+            { "SPEAKING_PART_4", (4, 4) },
+            { "SPEAKING_PART_5", (1, 1) },
             
             // WRITING
-            { "WRITING_PART1", (5, 1) },
-            { "WRITING_PART2", (2, 1) },
-            { "WRITING_PART3", (1, 1) }
+            { "WRITING_PART_1", (5, 1) },
+            { "WRITING_PART_2", (2, 1) },
+            { "WRITING_PART_3", (1, 1) }
         };
 
         public async Task ImportQuestionsFromExcelAsync(IFormFile file, int partId)
