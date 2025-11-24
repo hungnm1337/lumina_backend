@@ -352,7 +352,23 @@ public partial class LuminaSystemContext : DbContext
         {
             entity.HasKey(e => e.NotificationId).HasName("PK__Notifica__20CF2E12AAE7DD1E");
 
-            entity.Property(e => e.Title).HasMaxLength(255);
+            entity.ToTable("Notification");
+
+            entity.Property(e => e.Title)
+                .HasMaxLength(200)
+                .IsRequired();
+
+            entity.Property(e => e.Content)
+                .IsRequired();
+
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true);
+
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getutcdate())");
+
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("(getutcdate())");
         });
 
         modelBuilder.Entity<Option>(entity =>
@@ -617,6 +633,8 @@ public partial class LuminaSystemContext : DbContext
         {
             entity.HasKey(e => e.UniqueId).HasName("PK__UserNoti__A2A2BAAAD8BD5A4B");
 
+            entity.ToTable("UserNotification");
+
             entity.Property(e => e.UniqueId).HasColumnName("UniqueID");
             entity.Property(e => e.CreateAt)
                 .HasPrecision(3)
@@ -625,12 +643,13 @@ public partial class LuminaSystemContext : DbContext
 
             entity.HasOne(d => d.Notification).WithMany(p => p.UserNotifications)
                 .HasForeignKey(d => d.NotificationId)
-                .HasConstraintName("FK_UserNotifications_Notifications");
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_UserNotification_Notification");
 
             entity.HasOne(d => d.User).WithMany(p => p.UserNotifications)
                 .HasForeignKey(d => d.UserId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_UserNotifications_Users");
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_UserNotification_Users");
         });
 
         modelBuilder.Entity<UserSpacedRepetition>(entity =>
