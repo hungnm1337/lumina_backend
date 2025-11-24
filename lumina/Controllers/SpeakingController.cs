@@ -10,6 +10,7 @@ using System.Security.Claims;
 using ServiceLayer.Speech;
 using DataLayer.DTOs.Exam.Speaking;
 using ServiceLayer.Exam.Speaking;
+using Microsoft.Extensions.Logging;
 
 [Authorize]
 [ApiController]
@@ -19,20 +20,29 @@ public class SpeakingController : ControllerBase
     private readonly ISpeakingScoringService _speakingScoringService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAzureSpeechService _azureSpeechService;
+    private readonly ILogger<SpeakingController> _logger;
 
-    public SpeakingController(ISpeakingScoringService speakingScoringService, IUnitOfWork unitOfWork, IAzureSpeechService azureSpeechService)
+    public SpeakingController(
+        ISpeakingScoringService speakingScoringService,
+        IUnitOfWork unitOfWork,
+        IAzureSpeechService azureSpeechService,
+        ILogger<SpeakingController> logger)
     {
         _speakingScoringService = speakingScoringService;
         _unitOfWork = unitOfWork;
         _azureSpeechService = azureSpeechService;
+        _logger = logger;
     }
 
     [HttpPost("submit-answer")]
     public async Task<IActionResult> SubmitAnswer([FromForm] SubmitSpeakingAnswerRequest request)
     {
+        // ✅ FIX: Add timeout with CancellationToken (90 seconds)
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(90));
+
         if (request.Audio == null || request.Audio.Length == 0)
         {
-            return BadRequest("Audio file is required.");
+            return BadRequest(new { message = "Audio file is required." });
         }
 
         try
@@ -40,7 +50,7 @@ public class SpeakingController : ControllerBase
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out int userId))
             {
-                return Unauthorized("User ID not found in token.");
+                return Unauthorized(new { message = "User ID not found in token." });
             }
 
             // ✅ SỬA: Sử dụng attemptId từ request thay vì tự tìm
@@ -49,19 +59,19 @@ public class SpeakingController : ControllerBase
             if (request.AttemptId > 0)
             {
                 var existingAttempt = await _unitOfWork.ExamAttemptsGeneric
-        .GetAsync(
-            a => a.AttemptID == request.AttemptId,
-            includeProperties: "User" // ✅ THÊM: Include User để check
-        );
+                    .GetAsync(
+                        a => a.AttemptID == request.AttemptId,
+                        includeProperties: "User" // ✅ THÊM: Include User để check
+                    );
 
                 if (existingAttempt == null)
                 {
-                    return NotFound($"ExamAttempt {request.AttemptId} not found.");
+                    return NotFound(new { message = $"ExamAttempt {request.AttemptId} not found." });
                 }
 
                 if (existingAttempt.UserID != userId)
                 {
-                    return Forbid("You don't have permission to submit answers to this attempt.");
+                    return Forbid();
                 }
 
                 attemptId = request.AttemptId;
@@ -75,7 +85,7 @@ public class SpeakingController : ControllerBase
 
                 if (question == null)
                 {
-                    return NotFound("Question not found.");
+                    return NotFound(new { message = "Question not found." });
                 }
                 var examId = question.Part.ExamId;
 
@@ -96,22 +106,69 @@ public class SpeakingController : ControllerBase
                 }
 
                 attemptId = examAttempt.AttemptID;
-                Console.WriteLine($"[Speaking] Created/Found attemptId: {attemptId}");
+                _logger.LogInformation("[Speaking] Created/Found attemptId: {AttemptId}", attemptId);
             }
 
-            var result = await _speakingScoringService.ProcessAndScoreAnswerAsync(request.Audio, request.QuestionId, attemptId);
+            // ✅ FIX: Check if already submitted (idempotency - prevents duplicate submissions)
+            var existing = await _unitOfWork.UserAnswersSpeaking.GetAsync(
+                a => a.AttemptID == attemptId && a.QuestionId == request.QuestionId,
+                includeProperties: null
+            );
+
+            if (existing != null)
+            {
+                _logger.LogWarning(
+                    "[Speaking] Duplicate submission detected - returning existing result: QuestionId={QuestionId}, AttemptId={AttemptId}",
+                    request.QuestionId,
+                    attemptId
+                );
+
+                // Return existing result instead of error (idempotent behavior)
+                return Ok(new SpeakingScoringResultDTO
+                {
+                    QuestionId = existing.QuestionId,
+                    Transcript = existing.Transcript ?? "",
+                    AudioUrl = existing.AudioUrl ?? "",
+                    PronunciationScore = (double)(existing.PronunciationScore ?? 0),
+                    AccuracyScore = (double)(existing.AccuracyScore ?? 0),
+                    FluencyScore = (double)(existing.FluencyScore ?? 0),
+                    CompletenessScore = (double)(existing.CompletenessScore ?? 0),
+                    GrammarScore = (double)(existing.GrammarScore ?? 0),
+                    VocabularyScore = (double)(existing.VocabularyScore ?? 0),
+                    ContentScore = (double)(existing.ContentScore ?? 0),
+                    OverallScore = (double)(existing.OverallScore ?? 0),
+                    SubmittedAt = DateTime.UtcNow
+                });
+            }
+
+            // Process and score
+            var result = await _speakingScoringService.ProcessAndScoreAnswerAsync(
+                request.Audio,
+                request.QuestionId,
+                attemptId
+            );
 
             return Ok(result);
         }
+        catch (OperationCanceledException)
+        {
+            _logger.LogWarning(
+                "[Speaking] Scoring timeout (90s): QuestionId={QuestionId}, AttemptId={AttemptId}",
+                request.QuestionId,
+                request.AttemptId
+            );
+            return StatusCode(504, new { message = "Scoring timeout. Please try again." });
+        }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error in SubmitAnswer: {ex.Message}");
-            if (ex.InnerException != null)
-            {
-                Console.WriteLine($"Inner Exception: {ex.InnerException.Message}");
-            }
-            Console.WriteLine(ex.StackTrace);
-            return StatusCode(500, $"Internal server error: {ex.Message}");
+            _logger.LogError(
+                ex,
+                "[Speaking] Error submitting answer: QuestionId={QuestionId}, AttemptId={AttemptId}",
+                request.QuestionId,
+                request.AttemptId
+            );
+
+            return StatusCode(500, new { message = "Internal server error", details = ex.Message });
         }
     }
 
