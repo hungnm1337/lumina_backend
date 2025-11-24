@@ -8,11 +8,20 @@ using DataLayer.Models;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace Lumina.Tests
 {
     public class LeaderboardServiceTests
     {
+        private LuminaSystemContext GetInMemoryContext()
+        {
+            var options = new DbContextOptionsBuilder<LuminaSystemContext>()
+                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+                .Options;
+            return new LuminaSystemContext(options);
+        }
+
         #region GetAllPaginatedAsync Tests
 
         [Fact]
@@ -20,6 +29,7 @@ namespace Lumina.Tests
         {
             // Arrange
             var mockRepo = new Mock<ILeaderboardRepository>();
+            var context = GetInMemoryContext();
             mockRepo.Setup(r => r.GetAllPaginatedAsync(null, 1, 10))
                 .ReturnsAsync(new PaginatedResultDTO<LeaderboardDTO>
                 {
@@ -28,7 +38,7 @@ namespace Lumina.Tests
                     Page = 1,
                     PageSize = 10
                 });
-            var service = new LeaderboardService(mockRepo.Object);
+            var service = new LeaderboardService(mockRepo.Object, context);
 
             // Act
             await service.GetAllPaginatedAsync(page: 1, pageSize: 10);
@@ -46,9 +56,10 @@ namespace Lumina.Tests
         {
             // Arrange
             var mockRepo = new Mock<ILeaderboardRepository>();
+            var context = GetInMemoryContext();
             mockRepo.Setup(r => r.GetAllAsync(null))
                 .ReturnsAsync(new List<LeaderboardDTO>());
-            var service = new LeaderboardService(mockRepo.Object);
+            var service = new LeaderboardService(mockRepo.Object, GetInMemoryContext());
 
             // Act
             await service.GetAllAsync();
@@ -64,7 +75,7 @@ namespace Lumina.Tests
             var mockRepo = new Mock<ILeaderboardRepository>();
             mockRepo.Setup(r => r.GetAllAsync(true))
                 .ReturnsAsync(new List<LeaderboardDTO>());
-            var service = new LeaderboardService(mockRepo.Object);
+            var service = new LeaderboardService(mockRepo.Object, GetInMemoryContext());
 
             // Act
             await service.GetAllAsync(isActive: true);
@@ -84,7 +95,7 @@ namespace Lumina.Tests
             var mockRepo = new Mock<ILeaderboardRepository>();
             mockRepo.Setup(r => r.GetByIdAsync(1))
                 .ReturnsAsync(new LeaderboardDTO { LeaderboardId = 1 });
-            var service = new LeaderboardService(mockRepo.Object);
+            var service = new LeaderboardService(mockRepo.Object, GetInMemoryContext());
 
             // Act
             await service.GetByIdAsync(1);
@@ -104,7 +115,7 @@ namespace Lumina.Tests
             var mockRepo = new Mock<ILeaderboardRepository>();
             mockRepo.Setup(r => r.GetCurrentAsync())
                 .ReturnsAsync(new LeaderboardDTO { LeaderboardId = 1 });
-            var service = new LeaderboardService(mockRepo.Object);
+            var service = new LeaderboardService(mockRepo.Object, GetInMemoryContext());
 
             // Act
             await service.GetCurrentAsync();
@@ -122,7 +133,7 @@ namespace Lumina.Tests
         {
             // Arrange
             var mockRepo = new Mock<ILeaderboardRepository>();
-            var service = new LeaderboardService(mockRepo.Object);
+            var service = new LeaderboardService(mockRepo.Object, GetInMemoryContext());
 
             var dto = new CreateLeaderboardDTO
             {
@@ -140,7 +151,7 @@ namespace Lumina.Tests
         {
             // Arrange
             var mockRepo = new Mock<ILeaderboardRepository>();
-            var service = new LeaderboardService(mockRepo.Object);
+            var service = new LeaderboardService(mockRepo.Object, GetInMemoryContext());
 
             var dto = new CreateLeaderboardDTO
             {
@@ -158,7 +169,7 @@ namespace Lumina.Tests
         {
             // Arrange
             var mockRepo = new Mock<ILeaderboardRepository>();
-            var service = new LeaderboardService(mockRepo.Object);
+            var service = new LeaderboardService(mockRepo.Object, GetInMemoryContext());
 
             var dto = new CreateLeaderboardDTO
             {
@@ -180,7 +191,7 @@ namespace Lumina.Tests
             var mockRepo = new Mock<ILeaderboardRepository>();
             mockRepo.Setup(r => r.ExistsSeasonNumberAsync(5, null))
                 .ReturnsAsync(true);
-            var service = new LeaderboardService(mockRepo.Object);
+            var service = new LeaderboardService(mockRepo.Object, GetInMemoryContext());
 
             var dto = new CreateLeaderboardDTO
             {
@@ -202,7 +213,7 @@ namespace Lumina.Tests
                 .ReturnsAsync(false);
             mockRepo.Setup(r => r.ExistsDateOverlapAsync(It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), null))
                 .ReturnsAsync(true);
-            var service = new LeaderboardService(mockRepo.Object);
+            var service = new LeaderboardService(mockRepo.Object, GetInMemoryContext());
 
             var dto = new CreateLeaderboardDTO
             {
@@ -228,7 +239,7 @@ namespace Lumina.Tests
                 .ReturnsAsync(false);
             mockRepo.Setup(r => r.CreateAsync(It.IsAny<DataLayer.Models.Leaderboard>()))
                 .ReturnsAsync(10);
-            var service = new LeaderboardService(mockRepo.Object);
+            var service = new LeaderboardService(mockRepo.Object, GetInMemoryContext());
 
             var dto = new CreateLeaderboardDTO
             {
@@ -260,7 +271,7 @@ namespace Lumina.Tests
         {
             // Arrange
             var mockRepo = new Mock<ILeaderboardRepository>();
-            var service = new LeaderboardService(mockRepo.Object);
+            var service = new LeaderboardService(mockRepo.Object, GetInMemoryContext());
 
             var dto = new UpdateLeaderboardDTO
             {
@@ -279,7 +290,7 @@ namespace Lumina.Tests
             var mockRepo = new Mock<ILeaderboardRepository>();
             mockRepo.Setup(r => r.ExistsSeasonNumberAsync(5, 1))
                 .ReturnsAsync(true);
-            var service = new LeaderboardService(mockRepo.Object);
+            var service = new LeaderboardService(mockRepo.Object, GetInMemoryContext());
 
             var dto = new UpdateLeaderboardDTO
             {
@@ -302,7 +313,7 @@ namespace Lumina.Tests
                 .ReturnsAsync(false);
             mockRepo.Setup(r => r.UpdateAsync(It.IsAny<DataLayer.Models.Leaderboard>()))
                 .ReturnsAsync(true);
-            var service = new LeaderboardService(mockRepo.Object);
+            var service = new LeaderboardService(mockRepo.Object, GetInMemoryContext());
 
             var dto = new UpdateLeaderboardDTO
             {
@@ -336,7 +347,7 @@ namespace Lumina.Tests
             var mockRepo = new Mock<ILeaderboardRepository>();
             mockRepo.Setup(r => r.DeleteAsync(1))
                 .ReturnsAsync(true);
-            var service = new LeaderboardService(mockRepo.Object);
+            var service = new LeaderboardService(mockRepo.Object, GetInMemoryContext());
 
             // Act
             var result = await service.DeleteAsync(1);
@@ -357,7 +368,7 @@ namespace Lumina.Tests
             var mockRepo = new Mock<ILeaderboardRepository>();
             mockRepo.Setup(r => r.SetCurrentAsync(3))
                 .ReturnsAsync(true);
-            var service = new LeaderboardService(mockRepo.Object);
+            var service = new LeaderboardService(mockRepo.Object, GetInMemoryContext());
 
             // Act
             var result = await service.SetCurrentAsync(3);
@@ -378,7 +389,7 @@ namespace Lumina.Tests
             var mockRepo = new Mock<ILeaderboardRepository>();
             mockRepo.Setup(r => r.GetSeasonRankingAsync(1, 100))
                 .ReturnsAsync(new List<LeaderboardRankDTO>());
-            var service = new LeaderboardService(mockRepo.Object);
+            var service = new LeaderboardService(mockRepo.Object, GetInMemoryContext());
 
             // Act
             await service.GetSeasonRankingAsync(1);
@@ -394,7 +405,7 @@ namespace Lumina.Tests
             var mockRepo = new Mock<ILeaderboardRepository>();
             mockRepo.Setup(r => r.GetSeasonRankingAsync(1, 50))
                 .ReturnsAsync(new List<LeaderboardRankDTO>());
-            var service = new LeaderboardService(mockRepo.Object);
+            var service = new LeaderboardService(mockRepo.Object, GetInMemoryContext());
 
             // Act
             await service.GetSeasonRankingAsync(1, top: 50);
@@ -414,7 +425,7 @@ namespace Lumina.Tests
             var mockRepo = new Mock<ILeaderboardRepository>();
             mockRepo.Setup(r => r.RecalculateSeasonScoresAsync(1))
                 .ReturnsAsync(10);
-            var service = new LeaderboardService(mockRepo.Object);
+            var service = new LeaderboardService(mockRepo.Object, GetInMemoryContext());
 
             // Act
             var result = await service.RecalculateSeasonScoresAsync(1);
@@ -435,7 +446,7 @@ namespace Lumina.Tests
             var mockRepo = new Mock<ILeaderboardRepository>();
             mockRepo.Setup(r => r.ResetSeasonScoresAsync(1, true))
                 .ReturnsAsync(5);
-            var service = new LeaderboardService(mockRepo.Object);
+            var service = new LeaderboardService(mockRepo.Object, GetInMemoryContext());
 
             // Act
             var result = await service.ResetSeasonAsync(1, archiveScores: true);
@@ -452,7 +463,7 @@ namespace Lumina.Tests
             var mockRepo = new Mock<ILeaderboardRepository>();
             mockRepo.Setup(r => r.ResetSeasonScoresAsync(1, false))
                 .ReturnsAsync(5);
-            var service = new LeaderboardService(mockRepo.Object);
+            var service = new LeaderboardService(mockRepo.Object, GetInMemoryContext());
 
             // Act
             var result = await service.ResetSeasonAsync(1, archiveScores: false);
@@ -473,7 +484,7 @@ namespace Lumina.Tests
             var mockRepo = new Mock<ILeaderboardRepository>();
             mockRepo.Setup(r => r.GetUserSeasonStatsAsync(10, 5))
                 .ReturnsAsync(new UserSeasonStatsDTO { UserId = 10 });
-            var service = new LeaderboardService(mockRepo.Object);
+            var service = new LeaderboardService(mockRepo.Object, GetInMemoryContext());
 
             // Act
             await service.GetUserStatsAsync(userId: 10, leaderboardId: 5);
@@ -492,7 +503,7 @@ namespace Lumina.Tests
                 .ReturnsAsync(new LeaderboardDTO { LeaderboardId = 3 });
             mockRepo.Setup(r => r.GetUserSeasonStatsAsync(10, 3))
                 .ReturnsAsync(new UserSeasonStatsDTO { UserId = 10 });
-            var service = new LeaderboardService(mockRepo.Object);
+            var service = new LeaderboardService(mockRepo.Object, GetInMemoryContext());
 
             // Act
             await service.GetUserStatsAsync(userId: 10);
@@ -509,7 +520,7 @@ namespace Lumina.Tests
             var mockRepo = new Mock<ILeaderboardRepository>();
             mockRepo.Setup(r => r.GetCurrentAsync())
                 .ReturnsAsync((LeaderboardDTO?)null);
-            var service = new LeaderboardService(mockRepo.Object);
+            var service = new LeaderboardService(mockRepo.Object, GetInMemoryContext());
 
             // Act
             var result = await service.GetUserStatsAsync(userId: 10);
@@ -530,7 +541,7 @@ namespace Lumina.Tests
             var mockRepo = new Mock<ILeaderboardRepository>();
             mockRepo.Setup(r => r.GetUserTOEICCalculationAsync(10, 5))
                 .ReturnsAsync(new TOEICScoreCalculationDTO { UserId = 10 });
-            var service = new LeaderboardService(mockRepo.Object);
+            var service = new LeaderboardService(mockRepo.Object, GetInMemoryContext());
 
             // Act
             await service.GetUserTOEICCalculationAsync(userId: 10, leaderboardId: 5);
@@ -549,7 +560,7 @@ namespace Lumina.Tests
                 .ReturnsAsync(new LeaderboardDTO { LeaderboardId = 3 });
             mockRepo.Setup(r => r.GetUserTOEICCalculationAsync(10, 3))
                 .ReturnsAsync(new TOEICScoreCalculationDTO { UserId = 10 });
-            var service = new LeaderboardService(mockRepo.Object);
+            var service = new LeaderboardService(mockRepo.Object, GetInMemoryContext());
 
             // Act
             await service.GetUserTOEICCalculationAsync(userId: 10);
@@ -566,7 +577,7 @@ namespace Lumina.Tests
             var mockRepo = new Mock<ILeaderboardRepository>();
             mockRepo.Setup(r => r.GetCurrentAsync())
                 .ReturnsAsync((LeaderboardDTO?)null);
-            var service = new LeaderboardService(mockRepo.Object);
+            var service = new LeaderboardService(mockRepo.Object, GetInMemoryContext());
 
             // Act
             var result = await service.GetUserTOEICCalculationAsync(userId: 10);
@@ -587,7 +598,7 @@ namespace Lumina.Tests
             var mockRepo = new Mock<ILeaderboardRepository>();
             mockRepo.Setup(r => r.GetUserRankInSeasonAsync(10, 5))
                 .ReturnsAsync(3);
-            var service = new LeaderboardService(mockRepo.Object);
+            var service = new LeaderboardService(mockRepo.Object, GetInMemoryContext());
 
             // Act
             var result = await service.GetUserRankAsync(userId: 10, leaderboardId: 5);
@@ -607,7 +618,7 @@ namespace Lumina.Tests
                 .ReturnsAsync(new LeaderboardDTO { LeaderboardId = 3 });
             mockRepo.Setup(r => r.GetUserRankInSeasonAsync(10, 3))
                 .ReturnsAsync(1);
-            var service = new LeaderboardService(mockRepo.Object);
+            var service = new LeaderboardService(mockRepo.Object, GetInMemoryContext());
 
             // Act
             var result = await service.GetUserRankAsync(userId: 10);
@@ -625,7 +636,7 @@ namespace Lumina.Tests
             var mockRepo = new Mock<ILeaderboardRepository>();
             mockRepo.Setup(r => r.GetCurrentAsync())
                 .ReturnsAsync((LeaderboardDTO?)null);
-            var service = new LeaderboardService(mockRepo.Object);
+            var service = new LeaderboardService(mockRepo.Object, GetInMemoryContext());
 
             // Act
             var result = await service.GetUserRankAsync(userId: 10);
@@ -648,7 +659,7 @@ namespace Lumina.Tests
                 .Returns(Task.CompletedTask);
             mockRepo.Setup(r => r.AutoEndSeasonAsync())
                 .Returns(Task.CompletedTask);
-            var service = new LeaderboardService(mockRepo.Object);
+            var service = new LeaderboardService(mockRepo.Object, GetInMemoryContext());
 
             // Act
             await service.AutoManageSeasonsAsync();

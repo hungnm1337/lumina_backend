@@ -567,6 +567,11 @@ public partial class LuminaSystemContext : DbContext
             entity.Property(e => e.UserLeaderboardId).HasColumnName("UserLeaderboardID");
             entity.Property(e => e.LeaderboardId).HasColumnName("LeaderboardID");
             entity.Property(e => e.UserId).HasColumnName("UserID");
+            entity.Property(e => e.EstimatedTOEICScore).HasColumnName("EstimatedTOEICScore");
+            entity.Property(e => e.FirstAttemptDate)
+                .HasColumnName("FirstAttemptDate")
+                .HasColumnType("datetime")
+                .HasPrecision(3);
 
             entity.HasOne(d => d.Leaderboard).WithMany(p => p.UserLeaderboards)
                 .HasForeignKey(d => d.LeaderboardId)
