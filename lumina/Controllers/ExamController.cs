@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using DataLayer.DTOs.Exam;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace lumina.Controllers
 {
@@ -93,6 +94,59 @@ namespace lumina.Controllers
             if (!success)
                 return BadRequest(new { message = "Không đủ câu hỏi. Không thể mở khóa bài thi!" });
             return Ok(new { message = "Đổi trạng thái thành công." });
+        }
+
+        // ============ COMPLETION STATUS ENDPOINTS ============
+
+        /// <summary>
+        /// GET: api/exam/completion-status
+        /// Get completion status for all exams for the authenticated user
+        /// </summary>
+        [HttpGet("completion-status")]
+        [Authorize]
+        public async Task<ActionResult<List<ExamCompletionStatusDTO>>> GetUserExamCompletionStatuses()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null)
+                return Unauthorized(new { message = "Không tìm thấy thông tin người dùng" });
+
+            var userId = int.Parse(userIdClaim.Value);
+            var statuses = await _examService.GetUserExamCompletionStatusesAsync(userId);
+            return Ok(statuses);
+        }
+
+        /// <summary>
+        /// GET: api/exam/{examId}/completion-status
+        /// Get completion status for a specific exam for the authenticated user
+        /// </summary>
+        [HttpGet("{examId:int}/completion-status")]
+        [Authorize]
+        public async Task<ActionResult<ExamCompletionStatusDTO>> GetExamCompletionStatus(int examId)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null)
+                return Unauthorized(new { message = "Không tìm thấy thông tin người dùng" });
+
+            var userId = int.Parse(userIdClaim.Value);
+            var status = await _examService.GetExamCompletionStatusAsync(userId, examId);
+            return Ok(status);
+        }
+
+        /// <summary>
+        /// GET: api/exam/{examId}/parts/completion-status
+        /// Get completion status for all parts of a specific exam for the authenticated user
+        /// </summary>
+        [HttpGet("{examId:int}/parts/completion-status")]
+        [Authorize]
+        public async Task<ActionResult<List<PartCompletionStatusDTO>>> GetPartCompletionStatus(int examId)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null)
+                return Unauthorized(new { message = "Không tìm thấy thông tin người dùng" });
+
+            var userId = int.Parse(userIdClaim.Value);
+            var statuses = await _examService.GetPartCompletionStatusAsync(userId, examId);
+            return Ok(statuses);
         }
     }
 }

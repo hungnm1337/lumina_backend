@@ -56,6 +56,8 @@ namespace DataLayer.DTOs.Exam
 
         public int PartId { get; set; }
 
+        public string? PartCode { get; set; }
+
         public string QuestionType { get; set; } = null!;
 
         public string StemText { get; set; } = null!;

@@ -34,5 +34,8 @@ namespace ServiceLayer.Streak
 
         /// Tạo nội dung thông báo nhắc nhở
         string GenerateReminderMessage(int currentStreak, int freezeTokens);
+
+        /// top10 bxh
+        Task<List<StreakUserDTO>> GetTopStreakUsersAsync(int topN);
     }
 }

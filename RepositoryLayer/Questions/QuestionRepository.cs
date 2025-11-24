@@ -169,26 +169,33 @@ namespace RepositoryLayer.Questions
             question.QuestionExplain = dto.QuestionExplain;
             question.SampleAnswer = dto.SampleAnswer;
 
-            // Chỉ xử lý Option nếu có
-            if (dto.Options != null && dto.Options.Any())
+            // Xử lý Option nếu có
+            if (dto.Options != null)
             {
-                // Xóa hết và tạo lại
-                _context.Options.RemoveRange(question.Options);
-                question.Options = dto.Options.Select(o => new Option
+                foreach (var optionDto in dto.Options)
                 {
-                    Content = o.Content,
-                    IsCorrect = o.IsCorrect
-                }).ToList();
-            }
-            else
-            {
-                // Nếu không có options, xóa hết option liên kết (nếu muốn: nếu kỹ năng không cần đáp án)
-                if (question.Options.Any())
-                {
-                    _context.Options.RemoveRange(question.Options);
-                    question.Options.Clear();
+                    var existingOption = question.Options.FirstOrDefault(o => o.OptionId == optionDto.OptionId);
+                    if (existingOption != null)
+                    {
+                        // Chỉ cập nhật nội dung option cũ
+                        existingOption.Content = optionDto.Content;
+                        existingOption.IsCorrect = optionDto.IsCorrect;
+                    }
+                    else
+                    {
+                        // Thêm mới option nếu chưa tồn tại
+                        var newOption = new Option
+                        {
+                            Content = optionDto.Content,
+                            IsCorrect = optionDto.IsCorrect
+                        };
+                        question.Options.Add(newOption);
+                    }
                 }
+                // KHÔNG xóa option nào cả!
             }
+            // KHÔNG xóa hết option nếu dto.Options == null
+
             await _context.SaveChangesAsync();
             return true;
         }
