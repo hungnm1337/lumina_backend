@@ -93,7 +93,7 @@ public class ReportController : ControllerBase
     /// Get all reports by role (Admin: System, Manager/Staff: Article/Exam)
     /// </summary>
     [HttpGet("by-role")]
-    [Authorize(Roles = "Admin,Manager,Staff")]
+    //[Authorize(Roles = "Admin,Manager,Staff")]
     public async Task<IActionResult> GetReportsByRole()
     {
         try
