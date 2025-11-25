@@ -24,5 +24,8 @@ namespace ServiceLayer.Leaderboard
         Task<TOEICScoreCalculationDTO?> GetUserTOEICCalculationAsync(int userId, int? leaderboardId = null);
         Task<int> GetUserRankAsync(int userId, int? leaderboardId = null);
         Task AutoManageSeasonsAsync(); // Tự động kích hoạt và kết thúc seasons
+        
+        // New method for calculating season score
+        Task<CalculateScoreResponseDTO> CalculateSeasonScoreAsync(int userId, CalculateScoreRequestDTO request);
     }
 }

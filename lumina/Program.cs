@@ -200,6 +200,12 @@ namespace lumina
             builder.Services.AddScoped<StreakBackgroundJob>();
             builder.Services.AddScoped<StreakReminderJob>();
 
+            // ✅ Notification Services
+            builder.Services.AddScoped<RepositoryLayer.Notification.INotificationRepository, RepositoryLayer.Notification.NotificationRepository>();
+            builder.Services.AddScoped<RepositoryLayer.Notification.IUserNotificationRepository, RepositoryLayer.Notification.UserNotificationRepository>();
+            builder.Services.AddScoped<ServiceLayer.Notification.INotificationService, ServiceLayer.Notification.NotificationService>();
+            builder.Services.AddScoped<ServiceLayer.Notification.IUserNotificationService, ServiceLayer.Notification.UserNotificationService>();
+
             // ✅ Quota and Payment services
             builder.Services.AddScoped<RepositoryLayer.Quota.IQuotaRepository, RepositoryLayer.Quota.QuotaRepository>();
             builder.Services.AddScoped<ServiceLayer.Quota.IQuotaService, ServiceLayer.Quota.QuotaService>();
@@ -240,9 +246,10 @@ namespace lumina
             {
                 options.AddDefaultPolicy(policy =>
                 {
-                    policy.AllowAnyOrigin()
+                    policy.WithOrigins("http://localhost:4200")
                         .AllowAnyHeader()
-                        .AllowAnyMethod();
+                        .AllowAnyMethod()
+                        .AllowCredentials(); // ✅ Quan trọng cho SignalR
                 });
             });
 
@@ -321,6 +328,17 @@ namespace lumina
             });
 
             // ========================================
+            // 9. SIGNALR
+            // ========================================
+            builder.Services.AddSignalR(options =>
+            {
+                options.EnableDetailedErrors = true;
+                options.KeepAliveInterval = TimeSpan.FromSeconds(10);
+                options.ClientTimeoutInterval = TimeSpan.FromSeconds(30);
+                options.HandshakeTimeout = TimeSpan.FromSeconds(15);
+            });
+
+            // ========================================
             // ✅ BUILD APP (ĐIỂM CHIA)
             // ========================================
             var app = builder.Build();
@@ -379,6 +397,11 @@ namespace lumina
                     MisfireHandling = MisfireHandlingMode.Ignorable // ✅ THÊM
                 }
             );
+
+            // ========================================
+            // 11. MAP SIGNALR HUB
+            // ========================================
+            app.MapHub<ServiceLayer.Hubs.NotificationHub>("/notificationHub");
 
             app.MapControllers();
             app.Run();
