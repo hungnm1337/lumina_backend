@@ -314,7 +314,7 @@ namespace Lumina.Tests
                 .ReturnsAsync((prompts, 1));
 
             // Act
-            var result = await _controller.GetPaged(1, 10, null);
+            var result = await _controller.GetQuestionByPage(1, 10, null);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
@@ -341,7 +341,7 @@ namespace Lumina.Tests
                 .ReturnsAsync((prompts, 0));
 
             // Act
-            var result = await _controller.GetPaged(0, 10, null);
+            var result = await _controller.GetQuestionByPage(0, 10, null);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
@@ -356,7 +356,7 @@ namespace Lumina.Tests
                 .ThrowsAsync(new Exception("Database error"));
 
             // Act & Assert
-            await Assert.ThrowsAsync<Exception>(() => _controller.GetPaged(1, 10, null));
+            await Assert.ThrowsAsync<Exception>(() => _controller.GetQuestionByPage(1, 10, null));
         }
 
         #endregion
