@@ -42,7 +42,6 @@ namespace ServiceLayer.UploadFile
                 {
                     File = new FileDescription(file.FileName, file.OpenReadStream()),
                     PublicId = $"lumina/audio/{Path.GetFileNameWithoutExtension(file.FileName)}_{Guid.NewGuid()}",
-                    ResourceType = ResourceType.Video // Cloudinary xử lý audio như video
                 };
 
                 uploadResult = await _cloudinary.UploadAsync(audioParams);
@@ -57,7 +56,6 @@ namespace ServiceLayer.UploadFile
                 {
                     File = new FileDescription(file.FileName, file.OpenReadStream()),
                     PublicId = $"lumina/videos/{Path.GetFileNameWithoutExtension(file.FileName)}_{Guid.NewGuid()}",
-                    ResourceType = ResourceType.Video,
                     EagerTransforms = new List<Transformation>()
                     {
                         new Transformation().Width(1280).Height(720).Crop("limit").Quality("auto"),
@@ -113,7 +111,6 @@ namespace ServiceLayer.UploadFile
                 {
                     File = new FileDescription(fileUrl),
                     PublicId = $"lumina/audio_{Guid.NewGuid()}",
-                    ResourceType = ResourceType.Video
                 };
                 uploadResult = await _cloudinary.UploadAsync(audioParams);
             }
@@ -123,7 +120,6 @@ namespace ServiceLayer.UploadFile
                 {
                     File = new FileDescription(fileUrl),
                     PublicId = $"lumina/videos_{Guid.NewGuid()}",
-                    ResourceType = ResourceType.Video
                 };
                 uploadResult = await _cloudinary.UploadAsync(videoParams);
             }
