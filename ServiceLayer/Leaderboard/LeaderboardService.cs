@@ -1,8 +1,11 @@
 ﻿using DataLayer.DTOs;
 using DataLayer.DTOs.Leaderboard;
 using RepositoryLayer.Leaderboard;
+using DataLayer.Models;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace ServiceLayer.Leaderboard
@@ -10,10 +13,12 @@ namespace ServiceLayer.Leaderboard
     public class LeaderboardService : ILeaderboardService
     {
         private readonly ILeaderboardRepository _repository;
+        private readonly LuminaSystemContext _context;
 
-        public LeaderboardService(ILeaderboardRepository repository)
+        public LeaderboardService(ILeaderboardRepository repository, LuminaSystemContext context)
         {
             _repository = repository;
+            _context = context;
         }
 
         public Task<PaginatedResultDTO<LeaderboardDTO>> GetAllPaginatedAsync(string? keyword = null, int page = 1, int pageSize = 10)
@@ -131,6 +136,318 @@ namespace ServiceLayer.Leaderboard
             
             // Tự động kết thúc seasons đã hết hạn
             await _repository.AutoEndSeasonAsync();
+        }
+
+        // ============================================
+        // CALCULATE SEASON SCORE - TOEIC SCORING SYSTEM
+        // ============================================
+        
+        private static readonly List<TOEICLevelConfig> LevelConfigs = new()
+        {
+            new() { 
+                Level = "Beginner", 
+                MinScore = 0, 
+                MaxScore = 200, 
+                BasePointsPerCorrect = 15,
+                TimeBonusPercent = 0.15,
+                AccuracyBonusPercent = 0.75
+            },
+            new() { 
+                Level = "Elementary", 
+                MinScore = 201, 
+                MaxScore = 400, 
+                BasePointsPerCorrect = 12,
+                TimeBonusPercent = 0.12,
+                AccuracyBonusPercent = 0.60
+            },
+            new() { 
+                Level = "Intermediate", 
+                MinScore = 401, 
+                MaxScore = 600, 
+                BasePointsPerCorrect = 8,
+                TimeBonusPercent = 0.10,
+                AccuracyBonusPercent = 0.40
+            },
+            new() { 
+                Level = "Upper-Intermediate", 
+                MinScore = 601, 
+                MaxScore = 750, 
+                BasePointsPerCorrect = 5,
+                TimeBonusPercent = 0.07,
+                AccuracyBonusPercent = 0.25
+            },
+            new() { 
+                Level = "Advanced", 
+                MinScore = 751, 
+                MaxScore = 850, 
+                BasePointsPerCorrect = 3,
+                TimeBonusPercent = 0.05,
+                AccuracyBonusPercent = 0.15
+            },
+            new() { 
+                Level = "Proficient", 
+                MinScore = 851, 
+                MaxScore = 990, 
+                BasePointsPerCorrect = 2,
+                TimeBonusPercent = 0.05,
+                AccuracyBonusPercent = 0.10
+            }
+        };
+
+        public async Task<CalculateScoreResponseDTO> CalculateSeasonScoreAsync(int userId, CalculateScoreRequestDTO request)
+        {
+            // Validate: Chỉ tính điểm cho Listening (1) và Reading (2)
+            if (request.ExamPartId != 1 && request.ExamPartId != 2)
+            {
+                throw new ArgumentException("Chỉ tính điểm cho Listening (ExamPartId=1) và Reading (ExamPartId=2)");
+            }
+
+            // Validate: Không cộng điểm nếu không có câu nào đúng
+            if (request.CorrectAnswers <= 0)
+            {
+                throw new ArgumentException("Không thể tính điểm khi không có câu trả lời đúng nào");
+            }
+
+            // 1. Kiểm tra xem đã làm ĐỀ NÀY chưa (theo ExamId + ExamPartId)
+            var examAttempt = await _context.ExamAttempts
+                .FirstOrDefaultAsync(ea => ea.AttemptID == request.ExamAttemptId);
+            
+            if (examAttempt == null)
+            {
+                throw new ArgumentException("ExamAttempt không tồn tại");
+            }
+
+            // Kiểm tra xem đã làm đề này (ExamId + ExamPartId) lần đầu chưa
+            var isFirstTimeDoingThisExam = !await _context.ExamAttempts
+                .AnyAsync(ea => 
+                    ea.UserID == userId
+                    && ea.ExamID == examAttempt.ExamID
+                    && ea.ExamPartId == examAttempt.ExamPartId
+                    && ea.Status == "Completed"
+                    && ea.AttemptID < request.ExamAttemptId); // Có attempt nào trước đó đã hoàn thành không
+
+            // 2. Kiểm tra season
+            var currentSeason = await _context.Leaderboards
+                .FirstOrDefaultAsync(l => l.IsActive);
+            
+            if (currentSeason == null)
+            {
+                throw new InvalidOperationException("Không có season nào đang active");
+            }
+
+            var userLeaderboard = await _context.UserLeaderboards
+                .FirstOrDefaultAsync(ul => 
+                    ul.LeaderboardId == currentSeason.LeaderboardId 
+                    && ul.UserId == userId);
+
+            bool isFirstAttemptInSeason = userLeaderboard == null || userLeaderboard.FirstAttemptDate == null;
+
+            // 3. LẤY ESTIMATED TOEIC (CHỈ LISTENING + READING)
+            var estimatedTOEIC = await GetEstimatedTOEICScore(userId);
+            
+            // 4. XÁC ĐỊNH LEVEL CONFIG
+            var levelConfig = GetLevelConfig(estimatedTOEIC);
+            
+            // 5. TÍNH BASE POINTS
+            var basePoints = request.CorrectAnswers * levelConfig.BasePointsPerCorrect;
+            
+            // 6. TIME BONUS
+            var timeBonus = CalculateTimeBonus(
+                request.TimeSpentSeconds, 
+                request.ExpectedTimeSeconds,
+                levelConfig.TimeBonusPercent
+            );
+            
+            // 7. ACCURACY BONUS (chỉ khi >= 80%)
+            var accuracyRate = (double)request.CorrectAnswers / request.TotalQuestions;
+            var accuracyBonus = accuracyRate >= 0.8 
+                ? CalculateAccuracyBonus(accuracyRate, basePoints, levelConfig.AccuracyBonusPercent)
+                : 0;
+            
+            // 8. TỔNG ĐIỂM TÍCH LŨY CHO LẦN NÀY
+            var totalScore = basePoints + timeBonus + accuracyBonus;
+            
+            // 9. CẬP NHẬT LEADERBOARD
+            int totalAccumulatedScore = totalScore;
+
+            if (userLeaderboard == null)
+            {
+                // Tạo mới - Lần đầu tiên trong season
+                userLeaderboard = new DataLayer.Models.UserLeaderboard
+                {
+                    LeaderboardId = currentSeason.LeaderboardId,
+                    UserId = userId,
+                    Score = totalScore, // ĐIỂM TÍCH LŨY
+                    EstimatedTOEICScore = Math.Min(estimatedTOEIC, 990), // TOEIC lần đầu
+                    FirstAttemptDate = DateTime.UtcNow
+                };
+                _context.UserLeaderboards.Add(userLeaderboard);
+                
+                totalAccumulatedScore = totalScore;
+            }
+            else
+            {
+                // Đã có bản ghi - CỘNG DỒN ĐIỂM TÍCH LŨY
+                userLeaderboard.Score += totalScore;
+                totalAccumulatedScore = userLeaderboard.Score;
+
+                // CHỈ CẬP NHẬT TOEIC NẾU LÀM ĐỀ LẦN ĐẦU
+                if (isFirstTimeDoingThisExam)
+                {
+                    userLeaderboard.EstimatedTOEICScore = Math.Min(estimatedTOEIC, 990);
+                }
+                
+                // Chỉ set FirstAttemptDate lần đầu trong season
+                if (isFirstAttemptInSeason)
+                {
+                    userLeaderboard.FirstAttemptDate = DateTime.UtcNow;
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            
+            // Luôn tạo thông báo TOEIC
+            var currentTOEICMessage = GetTOEICLevelMessage(levelConfig.Level, estimatedTOEIC);
+            
+            return new CalculateScoreResponseDTO
+            {
+                SeasonScore = totalScore,
+                EstimatedTOEIC = estimatedTOEIC,
+                TOEICLevel = levelConfig.Level,
+                BasePoints = basePoints,
+                TimeBonus = timeBonus,
+                AccuracyBonus = accuracyBonus,
+                IsFirstAttempt = isFirstTimeDoingThisExam, // True nếu làm đề này lần đầu
+                TOEICMessage = currentTOEICMessage,
+                TotalAccumulatedScore = totalAccumulatedScore
+            };
+        }
+
+        private async Task<int> GetEstimatedTOEICScore(int userId)
+        {
+            // CHỈ LẤY LISTENING (PartId=1) VÀ READING (PartId=2)
+            // CHỈ LẤY LẦN ĐẦU TIÊN của mỗi đề (theo ExamID + ExamPartId)
+            var allAttempts = await _context.ExamAttempts
+                .Include(ea => ea.Exam)
+                    .ThenInclude(e => e.ExamParts)
+                .Where(ea => ea.UserID == userId 
+                    && ea.Status == "Completed"
+                    && ea.ExamPartId != null
+                    && (ea.ExamPartId == 1 || ea.ExamPartId == 2)) // Listening & Reading only
+                .OrderBy(ea => ea.EndTime) // Sắp xếp từ cũ đến mới
+                .ToListAsync();
+
+            if (!allAttempts.Any()) return 0;
+
+            // Lấy LẦN ĐẦU TIÊN của mỗi (ExamID, ExamPartId)
+            var firstAttempts = allAttempts
+                .GroupBy(ea => new { ea.ExamID, ea.ExamPartId })
+                .Select(g => g.First()) // Lấy lần đầu tiên (EndTime nhỏ nhất)
+                .OrderByDescending(ea => ea.EndTime) // Sắp xếp lại theo mới nhất
+                .Take(10) // Lấy 10 đề gần nhất
+                .ToList();
+
+            // Tính điểm trung bình Listening
+            var listeningAttempts = firstAttempts
+                .Where(ea => ea.ExamPartId == 1)
+                .ToList();
+            var avgListening = listeningAttempts.Any() 
+                ? listeningAttempts.Average(ea => ea.Score ?? 0) 
+                : 0;
+
+            // Tính điểm trung bình Reading
+            var readingAttempts = firstAttempts
+                .Where(ea => ea.ExamPartId == 2)
+                .ToList();
+            var avgReading = readingAttempts.Any() 
+                ? readingAttempts.Average(ea => ea.Score ?? 0) 
+                : 0;
+
+            // CHUYỂN ĐỔI: Score 0-100 → TOEIC 0-495 (mỗi phần)
+            var estimatedListening = (int)(avgListening * 4.95);
+            var estimatedReading = (int)(avgReading * 4.95);
+
+            // Tổng TOEIC = Listening + Reading (0-990)
+            return estimatedListening + estimatedReading;
+        }
+
+        private TOEICLevelConfig GetLevelConfig(int toeicScore)
+        {
+            return LevelConfigs
+                .OrderByDescending(c => c.MinScore)
+                .First(c => toeicScore >= c.MinScore);
+        }
+
+        private int CalculateTimeBonus(int timeSpentSeconds, int expectedTimeSeconds, double timeBonusPercent)
+        {
+            if (timeSpentSeconds >= expectedTimeSeconds) return 0;
+
+            var timeSavedPercent = (expectedTimeSeconds - timeSpentSeconds) / (double)expectedTimeSeconds;
+            
+            return (int)(timeSavedPercent * timeBonusPercent * 100);
+        }
+
+        private int CalculateAccuracyBonus(double accuracyRate, int basePoints, double accuracyBonusPercent)
+        {
+            // Chỉ áp dụng khi accuracy >= 80%
+            if (accuracyRate < 0.8) return 0;
+
+            // Bonus tăng dần từ 80% → 100%
+            var bonusRatio = (accuracyRate - 0.8) / 0.2; // 0.0 → 1.0
+            return (int)(basePoints * accuracyBonusPercent * bonusRatio);
+        }
+
+        private async Task UpdateLeaderboardScore(int userId, int seasonScore)
+        {
+            var currentSeason = await _context.Leaderboards
+                .FirstOrDefaultAsync(l => l.IsActive);
+            
+            if (currentSeason == null) return;
+
+            var ranking = await _context.UserLeaderboards
+                .FirstOrDefaultAsync(lr => 
+                    lr.LeaderboardId == currentSeason.LeaderboardId 
+                    && lr.UserId == userId);
+
+            if (ranking == null)
+            {
+                // Tạo mới - CHỈ lưu Score
+                ranking = new DataLayer.Models.UserLeaderboard
+                {
+                    LeaderboardId = currentSeason.LeaderboardId,
+                    UserId = userId,
+                    Score = seasonScore
+                };
+                _context.UserLeaderboards.Add(ranking);
+            }
+            else
+            {
+                // Cộng dồn điểm - CHỈ cập nhật Score
+                ranking.Score += seasonScore;
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
+        private int GetTOEICFromLevel(string level)
+        {
+            var config = LevelConfigs.FirstOrDefault(c => c.Level == level);
+            return config?.MinScore ?? 0;
+        }
+
+        private string GetTOEICLevelMessage(string level, int score)
+        {
+            var messages = new Dictionary<string, string>
+            {
+                ["Beginner"] = $"🎯 Chúc mừng! Bạn đang ở trình độ Beginner với ước tính {score} điểm TOEIC. Hãy tiếp tục luyện tập để đạt 200+ điểm!",
+                ["Elementary"] = $"📚 Tuyệt vời! Bạn đã đạt trình độ Elementary với ước tính {score} điểm TOEIC. Mục tiêu tiếp theo: 400+ điểm!",
+                ["Intermediate"] = $"⭐ Xuất sắc! Bạn đang ở trình độ Intermediate với ước tính {score} điểm TOEIC. Tiếp tục phấn đấu để đạt 600+ điểm!",
+                ["Upper-Intermediate"] = $"🎓 Thật ấn tượng! Bạn đã đạt Upper-Intermediate với ước tính {score} điểm TOEIC. Chỉ còn một bước nữa đến Advanced!",
+                ["Advanced"] = $"🏆 Rất xuất sắc! Bạn đang ở trình độ Advanced với ước tính {score} điểm TOEIC. Hãy hướng tới đỉnh cao 850+ điểm!",
+                ["Proficient"] = $"💎 Đỉnh cao! Bạn đã đạt trình độ Proficient với ước tính {score} điểm TOEIC. Bạn đang ở top đầu người học!"
+            };
+
+            return messages.TryGetValue(level, out var message) ? message : $"Trình độ TOEIC ước tính của bạn: {score} điểm";
         }
     }
 }
