@@ -26,13 +26,15 @@ namespace ServiceLayer.Vocabulary
             {
                 UserSpacedRepetitionId = item.UserSpacedRepetitionId,
                 UserId = item.UserId,
+                VocabularyId = item.VocabularyId,
                 VocabularyListId = item.VocabularyListId,
                 VocabularyListName = item.VocabularyList?.Name ?? "Unknown",
+                VocabularyWord = item.Vocabulary?.Word,
                 LastReviewedAt = item.LastReviewedAt,
                 NextReviewAt = item.NextReviewAt,
                 ReviewCount = item.ReviewCount ?? 0,
                 Intervals = item.Intervals ?? 1,
-                Status = item.Status ?? "New",
+                Status = CalculateStatus(item),
                 IsDue = true,
                 DaysUntilReview = item.NextReviewAt.HasValue 
                     ? Math.Max(0, (int)(item.NextReviewAt.Value - now).TotalDays)
@@ -53,13 +55,15 @@ namespace ServiceLayer.Vocabulary
             {
                 UserSpacedRepetitionId = item.UserSpacedRepetitionId,
                 UserId = item.UserId,
+                VocabularyId = item.VocabularyId,
                 VocabularyListId = item.VocabularyListId,
                 VocabularyListName = item.VocabularyList?.Name ?? "Unknown",
+                VocabularyWord = item.Vocabulary?.Word,
                 LastReviewedAt = item.LastReviewedAt,
                 NextReviewAt = item.NextReviewAt,
                 ReviewCount = item.ReviewCount ?? 0,
                 Intervals = item.Intervals ?? 1,
-                Status = item.Status ?? "New",
+                Status = CalculateStatus(item),
                 IsDue = item.NextReviewAt.HasValue && item.NextReviewAt.Value <= now,
                 DaysUntilReview = item.NextReviewAt.HasValue 
                     ? Math.Max(0, (int)(item.NextReviewAt.Value - now).TotalDays)
@@ -73,14 +77,63 @@ namespace ServiceLayer.Vocabulary
 
         public async Task<ReviewVocabularyResponseDTO> ReviewVocabularyAsync(int userId, ReviewVocabularyRequestDTO request)
         {
-            var repetition = await _unitOfWork.UserSpacedRepetitions.GetByIdAsync(request.UserSpacedRepetitionId);
-            
-            if (repetition == null || repetition.UserId != userId)
+            UserSpacedRepetition? repetition = null;
+
+            // Option 1: Use existing UserSpacedRepetitionId (backward compatible)
+            if (request.UserSpacedRepetitionId.HasValue)
+            {
+                repetition = await _unitOfWork.UserSpacedRepetitions.GetByIdAsync(request.UserSpacedRepetitionId.Value);
+                
+                if (repetition == null || repetition.UserId != userId)
+                {
+                    return new ReviewVocabularyResponseDTO
+                    {
+                        Success = false,
+                        Message = "Không tìm thấy bản ghi lặp lại"
+                    };
+                }
+            }
+            // Option 2: Create or get by VocabularyId (new way - word level)
+            else if (request.VocabularyId.HasValue && request.VocabularyListId.HasValue)
+            {
+                // Tìm record theo VocabularyId
+                repetition = await _unitOfWork.UserSpacedRepetitions.GetByUserAndVocabularyAsync(userId, request.VocabularyId.Value);
+                
+                // Nếu chưa có, tạo mới
+                if (repetition == null)
+                {
+                    var vocabulary = await _unitOfWork.VocabularyLists.FindByIdAsync(request.VocabularyListId.Value);
+                    if (vocabulary == null)
+                    {
+                        return new ReviewVocabularyResponseDTO
+                        {
+                            Success = false,
+                            Message = "Không tìm thấy vocabulary list"
+                        };
+                    }
+
+                    repetition = new UserSpacedRepetition
+                    {
+                        UserId = userId,
+                        VocabularyId = request.VocabularyId.Value,
+                        VocabularyListId = request.VocabularyListId.Value,
+                        LastReviewedAt = DateTime.UtcNow,
+                        NextReviewAt = DateTime.UtcNow.AddDays(1),
+                        ReviewCount = 0,
+                        Intervals = 1,
+                        Status = "New"
+                    };
+
+                    await _unitOfWork.UserSpacedRepetitions.AddAsync(repetition);
+                    await _unitOfWork.CompleteAsync();
+                }
+            }
+            else
             {
                 return new ReviewVocabularyResponseDTO
                 {
                     Success = false,
-                    Message = "Không tìm thấy bản ghi lặp lại"
+                    Message = "Thiếu thông tin: cần UserSpacedRepetitionId hoặc (VocabularyId và VocabularyListId)"
                 };
             }
 
@@ -106,13 +159,15 @@ namespace ServiceLayer.Vocabulary
                 {
                     UserSpacedRepetitionId = repetition.UserSpacedRepetitionId,
                     UserId = repetition.UserId,
+                    VocabularyId = repetition.VocabularyId,
                     VocabularyListId = repetition.VocabularyListId,
                     VocabularyListName = repetition.VocabularyList?.Name ?? "Unknown",
+                    VocabularyWord = repetition.Vocabulary?.Word,
                     LastReviewedAt = repetition.LastReviewedAt,
                     NextReviewAt = repetition.NextReviewAt,
                     ReviewCount = repetition.ReviewCount ?? 0,
                     Intervals = repetition.Intervals ?? 1,
-                    Status = repetition.Status ?? "New",
+                    Status = CalculateStatus(repetition),
                     IsDue = false,
                     DaysUntilReview = newIntervals,
                     BestQuizScore = repetition.BestQuizScore,
@@ -137,13 +192,15 @@ namespace ServiceLayer.Vocabulary
             {
                 UserSpacedRepetitionId = item.UserSpacedRepetitionId,
                 UserId = item.UserId,
+                VocabularyId = item.VocabularyId,
                 VocabularyListId = item.VocabularyListId,
                 VocabularyListName = item.VocabularyList?.Name ?? "Unknown",
+                VocabularyWord = item.Vocabulary?.Word,
                 LastReviewedAt = item.LastReviewedAt,
                 NextReviewAt = item.NextReviewAt,
                 ReviewCount = item.ReviewCount ?? 0,
                 Intervals = item.Intervals ?? 1,
-                Status = item.Status ?? "New",
+                Status = CalculateStatus(item),
                 IsDue = item.NextReviewAt.HasValue && item.NextReviewAt.Value <= now,
                 DaysUntilReview = item.NextReviewAt.HasValue 
                     ? Math.Max(0, (int)(item.NextReviewAt.Value - now).TotalDays)
@@ -193,8 +250,10 @@ namespace ServiceLayer.Vocabulary
             {
                 UserSpacedRepetitionId = repetition.UserSpacedRepetitionId,
                 UserId = repetition.UserId,
+                VocabularyId = repetition.VocabularyId,
                 VocabularyListId = repetition.VocabularyListId,
                 VocabularyListName = vocabularyList.Name,
+                VocabularyWord = repetition.Vocabulary?.Word,
                 LastReviewedAt = repetition.LastReviewedAt,
                 NextReviewAt = repetition.NextReviewAt,
                 ReviewCount = 0,
@@ -207,6 +266,28 @@ namespace ServiceLayer.Vocabulary
                 LastQuizCompletedAt = null,
                 TotalQuizAttempts = null
             };
+        }
+
+        // Tính toán status động dựa trên dữ liệu hiện có
+        private string CalculateStatus(UserSpacedRepetition item)
+        {
+            // Nếu intervals >= 30, coi như đã Mastered
+            if (item.Intervals.HasValue && item.Intervals.Value >= 30)
+            {
+                return "Mastered";
+            }
+
+            // Nếu có reviewCount > 0 hoặc có quiz scores, coi như đang Learning
+            bool hasProgress = (item.ReviewCount.HasValue && item.ReviewCount.Value > 0) ||
+                              (item.BestQuizScore.HasValue || item.LastQuizScore.HasValue);
+
+            if (hasProgress)
+            {
+                return "Learning";
+            }
+
+            // Nếu chưa có tiến độ nào, coi như New
+            return "New";
         }
 
         // Thuật toán SM-2 (Simplified) để tính khoảng thời gian review tiếp theo
@@ -283,6 +364,9 @@ namespace ServiceLayer.Vocabulary
             {
                 repetition.BestQuizScore = request.Score;
             }
+
+            // Cập nhật status dựa trên dữ liệu hiện có
+            repetition.Status = CalculateStatus(repetition);
 
             await _unitOfWork.UserSpacedRepetitions.UpdateAsync(repetition);
             await _unitOfWork.CompleteAsync();

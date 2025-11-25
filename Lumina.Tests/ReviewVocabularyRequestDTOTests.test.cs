@@ -14,7 +14,7 @@ namespace Lumina.Tests
             var dto = new ReviewVocabularyRequestDTO();
 
             // Assert
-            Assert.Equal(0, dto.UserSpacedRepetitionId);
+            Assert.Null(dto.UserSpacedRepetitionId);
             Assert.Equal(0, dto.Quality);
         }
 
@@ -117,7 +117,7 @@ namespace Lumina.Tests
             var quality3 = dto.Quality;
 
             // Assert
-            Assert.Equal(0, id1);
+            Assert.Null(id1);
             Assert.Equal(0, quality1);
             Assert.Equal(10, id2);
             Assert.Equal(1, quality2);

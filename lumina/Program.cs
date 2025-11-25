@@ -140,6 +140,10 @@ namespace lumina
             builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
             builder.Services.AddScoped<IArticleService, ArticleService>();
 
+            // Report Services
+            builder.Services.AddScoped<RepositoryLayer.Report.IReportRepository, RepositoryLayer.Report.ReportRepository>();
+            builder.Services.AddScoped<ServiceLayer.Report.IReportService, ServiceLayer.Report.ReportService>();
+
             // Question Services
             builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
             builder.Services.AddScoped<IQuestionService, QuestionService>();
@@ -182,6 +186,10 @@ namespace lumina
             builder.Services.AddScoped<IStatisticRepository, StatisticRepository>();
             builder.Services.AddScoped<IStatisticService, StatisticService>();
             builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
+
+            // Manager Analytics Services
+            builder.Services.AddScoped<RepositoryLayer.ManagerAnalytics.IManagerAnalyticsRepository, RepositoryLayer.ManagerAnalytics.ManagerAnalyticsRepository>();
+            builder.Services.AddScoped<ServiceLayer.ManagerAnalytics.IManagerAnalyticsService, ServiceLayer.ManagerAnalytics.ManagerAnalyticsService>();
 
             // Unit of Work
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
