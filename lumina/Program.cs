@@ -140,6 +140,10 @@ namespace lumina
             builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
             builder.Services.AddScoped<IArticleService, ArticleService>();
 
+            // Report Services
+            builder.Services.AddScoped<RepositoryLayer.Report.IReportRepository, RepositoryLayer.Report.ReportRepository>();
+            builder.Services.AddScoped<ServiceLayer.Report.IReportService, ServiceLayer.Report.ReportService>();
+
             // Question Services
             builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
             builder.Services.AddScoped<IQuestionService, QuestionService>();
