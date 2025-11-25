@@ -2,6 +2,7 @@
 using ServiceLayer.Streak;
 using Hangfire;
 using Microsoft.AspNetCore.Authorization;
+using DataLayer.DTOs.Streak;
 
 namespace lumina.Controllers
 {
@@ -217,8 +218,5 @@ namespace lumina.Controllers
     }
 
     // DTO cho request body
-    public class UpdateStreakRequest
-    {
-        public int UserId { get; set; }
-    }
+   
 }
