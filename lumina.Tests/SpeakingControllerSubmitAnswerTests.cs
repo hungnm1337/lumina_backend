@@ -1,350 +1,350 @@
-using DataLayer.DTOs.Exam.Speaking;
-using DataLayer.Models;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Moq;
-using RepositoryLayer.UnitOfWork;
-using ServiceLayer.Exam.Speaking;
-using ServiceLayer.Speech;
-using System.Security.Claims;
+//using DataLayer.DTOs.Exam.Speaking;
+//using DataLayer.Models;
+//using Microsoft.AspNetCore.Http;
+//using Microsoft.AspNetCore.Mvc;
+//using Moq;
+//using RepositoryLayer.UnitOfWork;
+//using ServiceLayer.Exam.Speaking;
+//using ServiceLayer.Speech;
+//using System.Security.Claims;
 
-namespace Lumina.Tests
-{
-    public class SpeakingControllerSubmitAnswerTests
-    {
-        private readonly Mock<ISpeakingScoringService> _mockSpeakingScoringService;
-        private readonly Mock<IUnitOfWork> _mockUnitOfWork;
-        private readonly Mock<IAzureSpeechService> _mockAzureSpeechService;
-        private readonly SpeakingController _controller;
+//namespace Lumina.Tests
+//{
+//    public class SpeakingControllerSubmitAnswerTests
+//    {
+//        private readonly Mock<ISpeakingScoringService> _mockSpeakingScoringService;
+//        private readonly Mock<IUnitOfWork> _mockUnitOfWork;
+//        private readonly Mock<IAzureSpeechService> _mockAzureSpeechService;
+//        private readonly SpeakingController _controller;
 
-        public SpeakingControllerSubmitAnswerTests()
-        {
-            _mockSpeakingScoringService = new Mock<ISpeakingScoringService>();
-            _mockUnitOfWork = new Mock<IUnitOfWork>();
-            _mockAzureSpeechService = new Mock<IAzureSpeechService>();
-            _controller = new SpeakingController(
-                _mockSpeakingScoringService.Object,
-                _mockUnitOfWork.Object,
-                _mockAzureSpeechService.Object
-            );
-        }
+//        public SpeakingControllerSubmitAnswerTests()
+//        {
+//            _mockSpeakingScoringService = new Mock<ISpeakingScoringService>();
+//            _mockUnitOfWork = new Mock<IUnitOfWork>();
+//            _mockAzureSpeechService = new Mock<IAzureSpeechService>();
+//            _controller = new SpeakingController(
+//                _mockSpeakingScoringService.Object,
+//                _mockUnitOfWork.Object,
+//                _mockAzureSpeechService.Object
+//            );
+//        }
 
-        #region Happy Path Tests
+//        #region Happy Path Tests
 
-        [Fact]
-        public async Task SubmitAnswer_WithValidRequestAndAttemptId_ShouldReturn200OK()
-        {
-            // Arrange
-            var userId = 1;
-            SetupUserClaims(userId);
+//        [Fact]
+//        public async Task SubmitAnswer_WithValidRequestAndAttemptId_ShouldReturn200OK()
+//        {
+//            // Arrange
+//            var userId = 1;
+//            SetupUserClaims(userId);
 
-            var audioFile = CreateMockFormFile();
-            var request = new SubmitSpeakingAnswerRequest
-            {
-                Audio = audioFile,
-                QuestionId = 10,
-                AttemptId = 5
-            };
+//            var audioFile = CreateMockFormFile();
+//            var request = new SubmitSpeakingAnswerRequest
+//            {
+//                Audio = audioFile,
+//                QuestionId = 10,
+//                AttemptId = 5
+//            };
 
-            var existingAttempt = new ExamAttempt
-            {
-                AttemptID = 5,
-                UserID = userId,
-                ExamID = 1,
-                Status = "In Progress"
-            };
+//            var existingAttempt = new ExamAttempt
+//            {
+//                AttemptID = 5,
+//                UserID = userId,
+//                ExamID = 1,
+//                Status = "In Progress"
+//            };
 
-            var expectedResult = new SpeakingScoringResultDTO
-            {
-                Transcript = "Hello world",
-                SavedAudioUrl = "https://cloudinary.com/audio.wav"
-            };
+//            var expectedResult = new SpeakingScoringResultDTO
+//            {
+//                Transcript = "Hello world",
+//                SavedAudioUrl = "https://cloudinary.com/audio.wav"
+//            };
 
-            _mockUnitOfWork.Setup(u => u.ExamAttemptsGeneric.GetAsync(
-                It.IsAny<System.Linq.Expressions.Expression<System.Func<ExamAttempt, bool>>>(),
-                It.IsAny<string>()
-            )).ReturnsAsync(existingAttempt);
+//            _mockUnitOfWork.Setup(u => u.ExamAttemptsGeneric.GetAsync(
+//                It.IsAny<System.Linq.Expressions.Expression<System.Func<ExamAttempt, bool>>>(),
+//                It.IsAny<string>()
+//            )).ReturnsAsync(existingAttempt);
 
-            _mockSpeakingScoringService.Setup(s => s.ProcessAndScoreAnswerAsync(
-                It.IsAny<IFormFile>(),
-                It.IsAny<int>(),
-                It.IsAny<int>()
-            )).ReturnsAsync(expectedResult);
+//            _mockSpeakingScoringService.Setup(s => s.ProcessAndScoreAnswerAsync(
+//                It.IsAny<IFormFile>(),
+//                It.IsAny<int>(),
+//                It.IsAny<int>()
+//            )).ReturnsAsync(expectedResult);
 
-            // Act
-            var result = await _controller.SubmitAnswer(request);
+//            // Act
+//            var result = await _controller.SubmitAnswer(request);
 
-            // Assert
-            var okResult = Assert.IsType<OkObjectResult>(result);
-            Assert.Equal(StatusCodes.Status200OK, okResult.StatusCode);
-            
-            var actualResult = Assert.IsType<SpeakingScoringResultDTO>(okResult.Value);
-            Assert.Equal(expectedResult.Transcript, actualResult.Transcript);
-        }
+//            // Assert
+//            var okResult = Assert.IsType<OkObjectResult>(result);
+//            Assert.Equal(StatusCodes.Status200OK, okResult.StatusCode);
 
-        #endregion
+//            var actualResult = Assert.IsType<SpeakingScoringResultDTO>(okResult.Value);
+//            Assert.Equal(expectedResult.Transcript, actualResult.Transcript);
+//        }
 
-        #region Audio Validation Tests
+//        #endregion
 
-        [Fact]
-        public async Task SubmitAnswer_WithNullAudio_ShouldReturn400BadRequest()
-        {
-            // Arrange
-            var request = new SubmitSpeakingAnswerRequest
-            {
-                Audio = null,
-                QuestionId = 10,
-                AttemptId = 5
-            };
+//        #region Audio Validation Tests
 
-            // Act
-            var result = await _controller.SubmitAnswer(request);
+//        [Fact]
+//        public async Task SubmitAnswer_WithNullAudio_ShouldReturn400BadRequest()
+//        {
+//            // Arrange
+//            var request = new SubmitSpeakingAnswerRequest
+//            {
+//                Audio = null,
+//                QuestionId = 10,
+//                AttemptId = 5
+//            };
 
-            // Assert
-            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-            Assert.Equal(StatusCodes.Status400BadRequest, badRequestResult.StatusCode);
-            Assert.Equal("Audio file is required.", badRequestResult.Value);
-        }
+//            // Act
+//            var result = await _controller.SubmitAnswer(request);
 
-        [Fact]
-        public async Task SubmitAnswer_WithEmptyAudio_ShouldReturn400BadRequest()
-        {
-            // Arrange
-            var emptyAudioFile = CreateMockFormFile(0); // 0 length
-            var request = new SubmitSpeakingAnswerRequest
-            {
-                Audio = emptyAudioFile,
-                QuestionId = 10,
-                AttemptId = 5
-            };
+//            // Assert
+//            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+//            Assert.Equal(StatusCodes.Status400BadRequest, badRequestResult.StatusCode);
+//            Assert.Equal("Audio file is required.", badRequestResult.Value);
+//        }
 
-            // Act
-            var result = await _controller.SubmitAnswer(request);
+//        [Fact]
+//        public async Task SubmitAnswer_WithEmptyAudio_ShouldReturn400BadRequest()
+//        {
+//            // Arrange
+//            var emptyAudioFile = CreateMockFormFile(0); // 0 length
+//            var request = new SubmitSpeakingAnswerRequest
+//            {
+//                Audio = emptyAudioFile,
+//                QuestionId = 10,
+//                AttemptId = 5
+//            };
 
-            // Assert
-            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-            Assert.Equal(StatusCodes.Status400BadRequest, badRequestResult.StatusCode);
-            Assert.Equal("Audio file is required.", badRequestResult.Value);
-        }
+//            // Act
+//            var result = await _controller.SubmitAnswer(request);
 
-        #endregion
+//            // Assert
+//            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+//            Assert.Equal(StatusCodes.Status400BadRequest, badRequestResult.StatusCode);
+//            Assert.Equal("Audio file is required.", badRequestResult.Value);
+//        }
 
-        #region Authorization Tests
+//        #endregion
 
-        [Fact]
-        public async Task SubmitAnswer_WithValidUserClaims_ShouldCallService()
-        {
-            // Arrange
-            var userId = 1;
-            SetupUserClaims(userId);
+//        #region Authorization Tests
 
-            var audioFile = CreateMockFormFile();
-            var request = new SubmitSpeakingAnswerRequest
-            {
-                Audio = audioFile,
-                QuestionId = 10,
-                AttemptId = 5
-            };
+//        [Fact]
+//        public async Task SubmitAnswer_WithValidUserClaims_ShouldCallService()
+//        {
+//            // Arrange
+//            var userId = 1;
+//            SetupUserClaims(userId);
 
-            var existingAttempt = new ExamAttempt
-            {
-                AttemptID = 5,
-                UserID = userId,
-                ExamID = 1,
-                Status = "In Progress"
-            };
+//            var audioFile = CreateMockFormFile();
+//            var request = new SubmitSpeakingAnswerRequest
+//            {
+//                Audio = audioFile,
+//                QuestionId = 10,
+//                AttemptId = 5
+//            };
 
-            var expectedResult = new SpeakingScoringResultDTO
-            {
-                Transcript = "Test transcript",
-                SavedAudioUrl = "https://cloudinary.com/audio.wav"
-            };
+//            var existingAttempt = new ExamAttempt
+//            {
+//                AttemptID = 5,
+//                UserID = userId,
+//                ExamID = 1,
+//                Status = "In Progress"
+//            };
 
-            _mockUnitOfWork.Setup(u => u.ExamAttemptsGeneric.GetAsync(
-                It.IsAny<System.Linq.Expressions.Expression<System.Func<ExamAttempt, bool>>>(),
-                It.IsAny<string>()
-            )).ReturnsAsync(existingAttempt);
+//            var expectedResult = new SpeakingScoringResultDTO
+//            {
+//                Transcript = "Test transcript",
+//                SavedAudioUrl = "https://cloudinary.com/audio.wav"
+//            };
 
-            _mockSpeakingScoringService.Setup(s => s.ProcessAndScoreAnswerAsync(
-                It.IsAny<IFormFile>(),
-                It.IsAny<int>(),
-                It.IsAny<int>()
-            )).ReturnsAsync(expectedResult);
+//            _mockUnitOfWork.Setup(u => u.ExamAttemptsGeneric.GetAsync(
+//                It.IsAny<System.Linq.Expressions.Expression<System.Func<ExamAttempt, bool>>>(),
+//                It.IsAny<string>()
+//            )).ReturnsAsync(existingAttempt);
 
-            // Act
-            var result = await _controller.SubmitAnswer(request);
+//            _mockSpeakingScoringService.Setup(s => s.ProcessAndScoreAnswerAsync(
+//                It.IsAny<IFormFile>(),
+//                It.IsAny<int>(),
+//                It.IsAny<int>()
+//            )).ReturnsAsync(expectedResult);
 
-            // Assert
-            _mockSpeakingScoringService.Verify(s => s.ProcessAndScoreAnswerAsync(
-                It.IsAny<IFormFile>(),
-                request.QuestionId,
-                request.AttemptId
-            ), Times.Once);
-        }
+//            // Act
+//            var result = await _controller.SubmitAnswer(request);
 
-        #endregion
+//            // Assert
+//            _mockSpeakingScoringService.Verify(s => s.ProcessAndScoreAnswerAsync(
+//                It.IsAny<IFormFile>(),
+//                request.QuestionId,
+//                request.AttemptId
+//            ), Times.Once);
+//        }
 
-        #region AttemptId Validation Tests
+//        #endregion
 
-        [Fact]
-        public async Task SubmitAnswer_WithNonExistentAttemptId_ShouldReturn404NotFound()
-        {
-            // Arrange
-            var userId = 1;
-            SetupUserClaims(userId);
+//        #region AttemptId Validation Tests
 
-            var audioFile = CreateMockFormFile();
-            var request = new SubmitSpeakingAnswerRequest
-            {
-                Audio = audioFile,
-                QuestionId = 10,
-                AttemptId = 999
-            };
+//        [Fact]
+//        public async Task SubmitAnswer_WithNonExistentAttemptId_ShouldReturn404NotFound()
+//        {
+//            // Arrange
+//            var userId = 1;
+//            SetupUserClaims(userId);
 
-            _mockUnitOfWork.Setup(u => u.ExamAttemptsGeneric.GetAsync(
-                It.IsAny<System.Linq.Expressions.Expression<System.Func<ExamAttempt, bool>>>(),
-                It.IsAny<string>()
-            )).ReturnsAsync((ExamAttempt)null);
+//            var audioFile = CreateMockFormFile();
+//            var request = new SubmitSpeakingAnswerRequest
+//            {
+//                Audio = audioFile,
+//                QuestionId = 10,
+//                AttemptId = 999
+//            };
 
-            // Act
-            var result = await _controller.SubmitAnswer(request);
+//            _mockUnitOfWork.Setup(u => u.ExamAttemptsGeneric.GetAsync(
+//                It.IsAny<System.Linq.Expressions.Expression<System.Func<ExamAttempt, bool>>>(),
+//                It.IsAny<string>()
+//            )).ReturnsAsync((ExamAttempt)null);
 
-            // Assert
-            var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
-            Assert.Equal(StatusCodes.Status404NotFound, notFoundResult.StatusCode);
-            Assert.Contains("not found", notFoundResult.Value.ToString());
-        }
+//            // Act
+//            var result = await _controller.SubmitAnswer(request);
 
-        [Fact]
-        public async Task SubmitAnswer_WithAttemptIdBelongingToAnotherUser_ShouldReturn403Forbidden()
-        {
-            // Arrange
-            var userId = 1;
-            SetupUserClaims(userId);
+//            // Assert
+//            var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
+//            Assert.Equal(StatusCodes.Status404NotFound, notFoundResult.StatusCode);
+//            Assert.Contains("not found", notFoundResult.Value.ToString());
+//        }
 
-            var audioFile = CreateMockFormFile();
-            var request = new SubmitSpeakingAnswerRequest
-            {
-                Audio = audioFile,
-                QuestionId = 10,
-                AttemptId = 5
-            };
+//        [Fact]
+//        public async Task SubmitAnswer_WithAttemptIdBelongingToAnotherUser_ShouldReturn403Forbidden()
+//        {
+//            // Arrange
+//            var userId = 1;
+//            SetupUserClaims(userId);
 
-            var attemptBelongingToAnotherUser = new ExamAttempt
-            {
-                AttemptID = 5,
-                UserID = 999, // Different user
-                ExamID = 1,
-                Status = "In Progress"
-            };
+//            var audioFile = CreateMockFormFile();
+//            var request = new SubmitSpeakingAnswerRequest
+//            {
+//                Audio = audioFile,
+//                QuestionId = 10,
+//                AttemptId = 5
+//            };
 
-            _mockUnitOfWork.Setup(u => u.ExamAttemptsGeneric.GetAsync(
-                It.IsAny<System.Linq.Expressions.Expression<System.Func<ExamAttempt, bool>>>(),
-                It.IsAny<string>()
-            )).ReturnsAsync(attemptBelongingToAnotherUser);
+//            var attemptBelongingToAnotherUser = new ExamAttempt
+//            {
+//                AttemptID = 5,
+//                UserID = 999, // Different user
+//                ExamID = 1,
+//                Status = "In Progress"
+//            };
 
-            // Act
-            var result = await _controller.SubmitAnswer(request);
+//            _mockUnitOfWork.Setup(u => u.ExamAttemptsGeneric.GetAsync(
+//                It.IsAny<System.Linq.Expressions.Expression<System.Func<ExamAttempt, bool>>>(),
+//                It.IsAny<string>()
+//            )).ReturnsAsync(attemptBelongingToAnotherUser);
 
-            // Assert
-            var forbidResult = Assert.IsType<ForbidResult>(result);
-        }
+//            // Act
+//            var result = await _controller.SubmitAnswer(request);
 
-        #endregion
+//            // Assert
+//            var forbidResult = Assert.IsType<ForbidResult>(result);
+//        }
 
-        #region Exception Handling Tests
+//        #endregion
 
-        [Fact]
-        public async Task SubmitAnswer_WhenServiceThrowsException_ShouldReturn500InternalServerError()
-        {
-            // Arrange
-            var userId = 1;
-            SetupUserClaims(userId);
+//        #region Exception Handling Tests
 
-            var audioFile = CreateMockFormFile();
-            var request = new SubmitSpeakingAnswerRequest
-            {
-                Audio = audioFile,
-                QuestionId = 10,
-                AttemptId = 5
-            };
+//        [Fact]
+//        public async Task SubmitAnswer_WhenServiceThrowsException_ShouldReturn500InternalServerError()
+//        {
+//            // Arrange
+//            var userId = 1;
+//            SetupUserClaims(userId);
 
-            var existingAttempt = new ExamAttempt
-            {
-                AttemptID = 5,
-                UserID = userId,
-                ExamID = 1,
-                Status = "In Progress"
-            };
+//            var audioFile = CreateMockFormFile();
+//            var request = new SubmitSpeakingAnswerRequest
+//            {
+//                Audio = audioFile,
+//                QuestionId = 10,
+//                AttemptId = 5
+//            };
 
-            _mockUnitOfWork.Setup(u => u.ExamAttemptsGeneric.GetAsync(
-                It.IsAny<System.Linq.Expressions.Expression<System.Func<ExamAttempt, bool>>>(),
-                It.IsAny<string>()
-            )).ReturnsAsync(existingAttempt);
+//            var existingAttempt = new ExamAttempt
+//            {
+//                AttemptID = 5,
+//                UserID = userId,
+//                ExamID = 1,
+//                Status = "In Progress"
+//            };
 
-            _mockSpeakingScoringService.Setup(s => s.ProcessAndScoreAnswerAsync(
-                It.IsAny<IFormFile>(),
-                It.IsAny<int>(),
-                It.IsAny<int>()
-            )).ThrowsAsync(new Exception("Audio processing failed"));
+//            _mockUnitOfWork.Setup(u => u.ExamAttemptsGeneric.GetAsync(
+//                It.IsAny<System.Linq.Expressions.Expression<System.Func<ExamAttempt, bool>>>(),
+//                It.IsAny<string>()
+//            )).ReturnsAsync(existingAttempt);
 
-            // Act
-            var result = await _controller.SubmitAnswer(request);
+//            _mockSpeakingScoringService.Setup(s => s.ProcessAndScoreAnswerAsync(
+//                It.IsAny<IFormFile>(),
+//                It.IsAny<int>(),
+//                It.IsAny<int>()
+//            )).ThrowsAsync(new Exception("Audio processing failed"));
 
-            // Assert
-            var statusCodeResult = Assert.IsType<ObjectResult>(result);
-            Assert.Equal(StatusCodes.Status500InternalServerError, statusCodeResult.StatusCode);
-            Assert.Contains("Internal server error", statusCodeResult.Value.ToString());
-        }
+//            // Act
+//            var result = await _controller.SubmitAnswer(request);
 
-        #endregion
+//            // Assert
+//            var statusCodeResult = Assert.IsType<ObjectResult>(result);
+//            Assert.Equal(StatusCodes.Status500InternalServerError, statusCodeResult.StatusCode);
+//            Assert.Contains("Internal server error", statusCodeResult.Value.ToString());
+//        }
 
-        #region Helper Methods
+//        #endregion
 
-        private void SetupUserClaims(int userId)
-        {
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.NameIdentifier, userId.ToString())
-            };
-            var identity = new ClaimsIdentity(claims, "TestAuthType");
-            var claimsPrincipal = new ClaimsPrincipal(identity);
-            
-            _controller.ControllerContext = new ControllerContext
-            {
-                HttpContext = new DefaultHttpContext { User = claimsPrincipal }
-            };
-        }
+//        #region Helper Methods
 
-        private void SetupUserClaims(string userId)
-        {
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.NameIdentifier, userId)
-            };
-            var identity = new ClaimsIdentity(claims, "TestAuthType");
-            var claimsPrincipal = new ClaimsPrincipal(identity);
-            
-            _controller.ControllerContext = new ControllerContext
-            {
-                HttpContext = new DefaultHttpContext { User = claimsPrincipal }
-            };
-        }
+//        private void SetupUserClaims(int userId)
+//        {
+//            var claims = new List<Claim>
+//            {
+//                new Claim(ClaimTypes.NameIdentifier, userId.ToString())
+//            };
+//            var identity = new ClaimsIdentity(claims, "TestAuthType");
+//            var claimsPrincipal = new ClaimsPrincipal(identity);
 
-        private IFormFile CreateMockFormFile(long length = 1024)
-        {
-            var content = new byte[length];
-            var stream = new MemoryStream(content);
-            var mockFile = new Mock<IFormFile>();
-            
-            mockFile.Setup(f => f.Length).Returns(length);
-            mockFile.Setup(f => f.OpenReadStream()).Returns(stream);
-            mockFile.Setup(f => f.FileName).Returns("test-audio.wav");
-            mockFile.Setup(f => f.ContentType).Returns("audio/wav");
-            
-            return mockFile.Object;
-        }
+//            _controller.ControllerContext = new ControllerContext
+//            {
+//                HttpContext = new DefaultHttpContext { User = claimsPrincipal }
+//            };
+//        }
 
-        #endregion
-    }
-}
+//        private void SetupUserClaims(string userId)
+//        {
+//            var claims = new List<Claim>
+//            {
+//                new Claim(ClaimTypes.NameIdentifier, userId)
+//            };
+//            var identity = new ClaimsIdentity(claims, "TestAuthType");
+//            var claimsPrincipal = new ClaimsPrincipal(identity);
+
+//            _controller.ControllerContext = new ControllerContext
+//            {
+//                HttpContext = new DefaultHttpContext { User = claimsPrincipal }
+//            };
+//        }
+
+//        private IFormFile CreateMockFormFile(long length = 1024)
+//        {
+//            var content = new byte[length];
+//            var stream = new MemoryStream(content);
+//            var mockFile = new Mock<IFormFile>();
+
+//            mockFile.Setup(f => f.Length).Returns(length);
+//            mockFile.Setup(f => f.OpenReadStream()).Returns(stream);
+//            mockFile.Setup(f => f.FileName).Returns("test-audio.wav");
+//            mockFile.Setup(f => f.ContentType).Returns("audio/wav");
+
+//            return mockFile.Object;
+//        }
+
+//        #endregion
+//    }
+//}

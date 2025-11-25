@@ -149,7 +149,7 @@ public class ReportController : ControllerBase
     /// Reply to a report (Admin and Manager only)
     /// </summary>
     [HttpPut("{id}/reply")]
-    [Authorize(Roles = "Admin,Manager")]
+    //[Authorize(Roles = "Admin,Manager")]
     public async Task<IActionResult> ReplyToReport(int id, [FromBody] UserReportRequest request)
     {
         if (!ModelState.IsValid)

@@ -231,9 +231,11 @@ namespace Lumina.Tests
                     VocabularyList = new VocabularyList { Name = "Test" },
                     LastReviewedAt = now,
                     NextReviewAt = now.AddDays(1),
-                    ReviewCount = 1,
+                    ReviewCount = 0, // ReviewCount = 0 để trả về "New"
                     Intervals = 1,
-                    Status = null // Null Status
+                    Status = null, // Null Status
+                    BestQuizScore = null, // Không có quiz scores
+                    LastQuizScore = null
                 }
             };
 

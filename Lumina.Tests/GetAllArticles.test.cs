@@ -158,15 +158,44 @@ namespace Lumina.Tests
                 HttpContext = new DefaultHttpContext { User = principal }
             };
 
+            var expectedArticles = new List<ArticleResponseDTO>
+            {
+                new ArticleResponseDTO
+                {
+                    ArticleId = 1,
+                    Title = "Published Article",
+                    Summary = "Summary",
+                    IsPublished = true,
+                    Status = "Published"
+                }
+            };
+
+            var queryResult = new PagedResponse<ArticleResponseDTO>
+            {
+                Items = expectedArticles,
+                Total = 1,
+                Page = 1,
+                PageSize = 1000
+            };
+
+            _mockArticleService.Setup(s => s.QueryAsync(It.Is<ArticleQueryParams>(q =>
+                q.IsPublished == true &&
+                q.Status == "Published"
+            ))).ReturnsAsync(queryResult);
+
             // Act
             var result = await _controller.GetAllArticles();
 
             // Assert
             var actionResult = Assert.IsType<ActionResult<List<ArticleResponseDTO>>>(result);
-            var unauthorizedResult = Assert.IsType<UnauthorizedObjectResult>(actionResult.Result);
-            Assert.Equal(StatusCodes.Status401Unauthorized, unauthorizedResult.StatusCode);
-            var errorResponse = Assert.IsType<ErrorResponse>(unauthorizedResult.Value);
-            Assert.Equal("Invalid token - User ID could not be determined.", errorResponse.Error);
+            var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
+            Assert.Equal(StatusCodes.Status200OK, okResult.StatusCode);
+            var articles = Assert.IsType<List<ArticleResponseDTO>>(okResult.Value);
+            Assert.NotNull(articles);
+            _mockArticleService.Verify(s => s.QueryAsync(It.Is<ArticleQueryParams>(q =>
+                q.IsPublished == true &&
+                q.Status == "Published"
+            )), Times.Once);
         }
 
         [Fact]
@@ -184,15 +213,44 @@ namespace Lumina.Tests
                 HttpContext = new DefaultHttpContext { User = principal }
             };
 
+            var expectedArticles = new List<ArticleResponseDTO>
+            {
+                new ArticleResponseDTO
+                {
+                    ArticleId = 1,
+                    Title = "Published Article",
+                    Summary = "Summary",
+                    IsPublished = true,
+                    Status = "Published"
+                }
+            };
+
+            var queryResult = new PagedResponse<ArticleResponseDTO>
+            {
+                Items = expectedArticles,
+                Total = 1,
+                Page = 1,
+                PageSize = 1000
+            };
+
+            _mockArticleService.Setup(s => s.QueryAsync(It.Is<ArticleQueryParams>(q =>
+                q.IsPublished == true &&
+                q.Status == "Published"
+            ))).ReturnsAsync(queryResult);
+
             // Act
             var result = await _controller.GetAllArticles();
 
             // Assert
             var actionResult = Assert.IsType<ActionResult<List<ArticleResponseDTO>>>(result);
-            var unauthorizedResult = Assert.IsType<UnauthorizedObjectResult>(actionResult.Result);
-            Assert.Equal(StatusCodes.Status401Unauthorized, unauthorizedResult.StatusCode);
-            var errorResponse = Assert.IsType<ErrorResponse>(unauthorizedResult.Value);
-            Assert.Equal("Invalid token - User ID could not be determined.", errorResponse.Error);
+            var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
+            Assert.Equal(StatusCodes.Status200OK, okResult.StatusCode);
+            var articles = Assert.IsType<List<ArticleResponseDTO>>(okResult.Value);
+            Assert.NotNull(articles);
+            _mockArticleService.Verify(s => s.QueryAsync(It.Is<ArticleQueryParams>(q =>
+                q.IsPublished == true &&
+                q.Status == "Published"
+            )), Times.Once);
         }
 
         [Fact]
@@ -203,15 +261,44 @@ namespace Lumina.Tests
             SetupUserClaims(userId);
             _mockUserRepository.Setup(r => r.GetUserByIdAsync(userId)).ReturnsAsync((User?)null);
 
+            var expectedArticles = new List<ArticleResponseDTO>
+            {
+                new ArticleResponseDTO
+                {
+                    ArticleId = 1,
+                    Title = "Published Article",
+                    Summary = "Summary",
+                    IsPublished = true,
+                    Status = "Published"
+                }
+            };
+
+            var queryResult = new PagedResponse<ArticleResponseDTO>
+            {
+                Items = expectedArticles,
+                Total = 1,
+                Page = 1,
+                PageSize = 1000
+            };
+
+            _mockArticleService.Setup(s => s.QueryAsync(It.Is<ArticleQueryParams>(q =>
+                q.IsPublished == true &&
+                q.Status == "Published"
+            ))).ReturnsAsync(queryResult);
+
             // Act
             var result = await _controller.GetAllArticles();
 
             // Assert
             var actionResult = Assert.IsType<ActionResult<List<ArticleResponseDTO>>>(result);
-            var unauthorizedResult = Assert.IsType<UnauthorizedObjectResult>(actionResult.Result);
-            Assert.Equal(StatusCodes.Status401Unauthorized, unauthorizedResult.StatusCode);
-            var errorResponse = Assert.IsType<ErrorResponse>(unauthorizedResult.Value);
-            Assert.Equal("User not found.", errorResponse.Error);
+            var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
+            Assert.Equal(StatusCodes.Status200OK, okResult.StatusCode);
+            var articles = Assert.IsType<List<ArticleResponseDTO>>(okResult.Value);
+            Assert.NotNull(articles);
+            _mockArticleService.Verify(s => s.QueryAsync(It.Is<ArticleQueryParams>(q =>
+                q.IsPublished == true &&
+                q.Status == "Published"
+            )), Times.Once);
         }
 
         #endregion

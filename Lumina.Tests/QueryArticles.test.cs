@@ -174,15 +174,42 @@ namespace Lumina.Tests
                 HttpContext = new DefaultHttpContext { User = principal }
             };
 
+            var expectedResult = new PagedResponse<ArticleResponseDTO>
+            {
+                Items = new List<ArticleResponseDTO>
+                {
+                    new ArticleResponseDTO
+                    {
+                        ArticleId = 1,
+                        Title = "Published Article",
+                        Summary = "Summary",
+                        IsPublished = true,
+                        Status = "Published"
+                    }
+                },
+                Total = 1,
+                Page = 1,
+                PageSize = 10
+            };
+
+            _mockArticleService.Setup(s => s.QueryAsync(It.Is<ArticleQueryParams>(q =>
+                q.IsPublished == true &&
+                q.Status == "Published"
+            ))).ReturnsAsync(expectedResult);
+
             // Act
             var result = await _controller.Query(query);
 
             // Assert
             var actionResult = Assert.IsType<ActionResult<PagedResponse<ArticleResponseDTO>>>(result);
-            var unauthorizedResult = Assert.IsType<UnauthorizedObjectResult>(actionResult.Result);
-            Assert.Equal(StatusCodes.Status401Unauthorized, unauthorizedResult.StatusCode);
-            var errorResponse = Assert.IsType<ErrorResponse>(unauthorizedResult.Value);
-            Assert.Equal("Invalid token - User ID could not be determined.", errorResponse.Error);
+            var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
+            Assert.Equal(StatusCodes.Status200OK, okResult.StatusCode);
+            var pagedResponse = Assert.IsType<PagedResponse<ArticleResponseDTO>>(okResult.Value);
+            Assert.NotNull(pagedResponse);
+            _mockArticleService.Verify(s => s.QueryAsync(It.Is<ArticleQueryParams>(q =>
+                q.IsPublished == true &&
+                q.Status == "Published"
+            )), Times.Once);
         }
 
         [Fact]
@@ -194,15 +221,42 @@ namespace Lumina.Tests
             SetupUserClaims(userId);
             _mockUserRepository.Setup(r => r.GetUserByIdAsync(userId)).ReturnsAsync((User?)null);
 
+            var expectedResult = new PagedResponse<ArticleResponseDTO>
+            {
+                Items = new List<ArticleResponseDTO>
+                {
+                    new ArticleResponseDTO
+                    {
+                        ArticleId = 1,
+                        Title = "Published Article",
+                        Summary = "Summary",
+                        IsPublished = true,
+                        Status = "Published"
+                    }
+                },
+                Total = 1,
+                Page = 1,
+                PageSize = 10
+            };
+
+            _mockArticleService.Setup(s => s.QueryAsync(It.Is<ArticleQueryParams>(q =>
+                q.IsPublished == true &&
+                q.Status == "Published"
+            ))).ReturnsAsync(expectedResult);
+
             // Act
             var result = await _controller.Query(query);
 
             // Assert
             var actionResult = Assert.IsType<ActionResult<PagedResponse<ArticleResponseDTO>>>(result);
-            var unauthorizedResult = Assert.IsType<UnauthorizedObjectResult>(actionResult.Result);
-            Assert.Equal(StatusCodes.Status401Unauthorized, unauthorizedResult.StatusCode);
-            var errorResponse = Assert.IsType<ErrorResponse>(unauthorizedResult.Value);
-            Assert.Equal("User not found.", errorResponse.Error);
+            var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
+            Assert.Equal(StatusCodes.Status200OK, okResult.StatusCode);
+            var pagedResponse = Assert.IsType<PagedResponse<ArticleResponseDTO>>(okResult.Value);
+            Assert.NotNull(pagedResponse);
+            _mockArticleService.Verify(s => s.QueryAsync(It.Is<ArticleQueryParams>(q =>
+                q.IsPublished == true &&
+                q.Status == "Published"
+            )), Times.Once);
         }
 
         #endregion
