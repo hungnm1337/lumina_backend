@@ -1,4 +1,4 @@
-using DataLayer.DTOs.Prompt;
+﻿using DataLayer.DTOs.Prompt;
 using DataLayer.DTOs.Questions;
 using DataLayer.DTOs.Exam;
 using lumina.Controllers;
@@ -361,162 +361,76 @@ namespace Lumina.Tests
 
         #endregion
 
-        #region EditPassage Tests (7 test cases)
+        #region EditPassage Tests (5 test cases)
+        // EditPassage Tests
 
         [Fact]
-        public async Task EditPassage_ValidDto_ReturnsOkWithSuccessMessage()
+        public async Task EditPassage_ValidDto_ReturnsOk()
         {
             // Arrange
-            var dto = new PromptEditDto
-            {
-                PromptId = 1,
-                Title = "Updated Title",
-                ContentText = "Updated Content",
-                Skill = "Reading",
-                ReferenceImageUrl = "image.jpg",
-                ReferenceAudioUrl = "audio.mp3"
-            };
-
-            _mockQuestionService.Setup(s => s.EditPromptWithQuestionsAsync(dto))
-                .ReturnsAsync(true);
+            var dto = new PromptEditDto { PromptId = 1 };
+            _mockQuestionService.Setup(s => s.EditPromptWithQuestionsAsync(dto)).ReturnsAsync(true);
 
             // Act
             var result = await _controller.EditPassage(dto);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
-            var response = okResult.Value;
-            var messageProperty = response.GetType().GetProperty("message");
-            Assert.Equal("Cập nhật thành công", messageProperty.GetValue(response));
+            var messageProp = okResult.Value.GetType().GetProperty("message");
+            Assert.Equal("Cập nhật thành công", messageProp.GetValue(okResult.Value));
         }
 
         [Fact]
         public async Task EditPassage_NullDto_ReturnsBadRequest()
         {
-            // Arrange
-            PromptEditDto dto = null;
-
             // Act
-            var result = await _controller.EditPassage(dto);
+            var result = await _controller.EditPassage(null);
 
             // Assert
-            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-            Assert.Equal("Dữ liệu không hợp lệ", badRequestResult.Value);
+            var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.Equal("Dữ liệu không hợp lệ", badRequest.Value);
         }
 
-        [Fact]
-        public async Task EditPassage_InvalidPromptId_ReturnsBadRequest()
+        [Theory]
+        [InlineData(0)]
+        [InlineData(-1)]
+        public async Task EditPassage_InvalidPromptId_ReturnsBadRequest(int promptId)
         {
-            // Arrange - Test cả PromptId = 0 và âm
-            var dto = new PromptEditDto 
-            { 
-                PromptId = 0,
-                Skill = "Reading",
-                ContentText = "Content",
-                Title = "Title"
-            };
+            // Arrange
+            var dto = new PromptEditDto { PromptId = promptId };
 
             // Act
             var result = await _controller.EditPassage(dto);
 
             // Assert
-            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-            Assert.Equal("Dữ liệu không hợp lệ", badRequestResult.Value);
+            var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.Equal("Dữ liệu không hợp lệ", badRequest.Value);
         }
 
         [Fact]
         public async Task EditPassage_PromptNotFound_ReturnsNotFound()
         {
             // Arrange
-            var dto = new PromptEditDto
-            {
-                PromptId = 999,
-                Title = "Test",
-                ContentText = "Content",
-                Skill = "Reading"
-            };
-
-            _mockQuestionService.Setup(s => s.EditPromptWithQuestionsAsync(dto))
-                .ReturnsAsync(false);
+            var dto = new PromptEditDto { PromptId = 2 };
+            _mockQuestionService.Setup(s => s.EditPromptWithQuestionsAsync(dto)).ReturnsAsync(false);
 
             // Act
             var result = await _controller.EditPassage(dto);
 
             // Assert
-            var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
-            Assert.Equal("Prompt không tồn tại", notFoundResult.Value);
+            var notFound = Assert.IsType<NotFoundObjectResult>(result);
+            Assert.Equal("Prompt không tồn tại", notFound.Value);
         }
 
         [Fact]
-        public async Task EditPassage_ValidDtoWithOnlyRequiredFields_ReturnsOk()
+        public async Task EditPassage_ServiceThrowsException_PropagatesException()
         {
             // Arrange
-            var dto = new PromptEditDto 
-            { 
-                PromptId = 2,
-                Skill = "Reading",
-                ContentText = "Required content",
-                Title = "Required Title",
-                ReferenceImageUrl = null,
-                ReferenceAudioUrl = null
-            };
-            _mockQuestionService.Setup(s => s.EditPromptWithQuestionsAsync(dto))
-                .ReturnsAsync(true);
+            var dto = new PromptEditDto { PromptId = 3 };
+            _mockQuestionService.Setup(s => s.EditPromptWithQuestionsAsync(dto)).ThrowsAsync(new Exception("Service error"));
 
-            // Act
-            var result = await _controller.EditPassage(dto);
-
-            // Assert
-            Assert.IsType<OkObjectResult>(result);
-            _mockQuestionService.Verify(s => s.EditPromptWithQuestionsAsync(It.Is<PromptEditDto>(d => 
-                d.ReferenceImageUrl == null && d.ReferenceAudioUrl == null
-            )), Times.Once);
-        }
-
-        [Fact]
-        public async Task EditPassage_ValidDtoWithEmptyStrings_ReturnsOk()
-        {
-            // Arrange
-            var dto = new PromptEditDto 
-            { 
-                PromptId = 5,
-                Skill = "",
-                ContentText = "",
-                Title = ""
-            };
-            _mockQuestionService.Setup(s => s.EditPromptWithQuestionsAsync(dto))
-                .ReturnsAsync(true);
-
-            // Act
-            var result = await _controller.EditPassage(dto);
-
-            // Assert
-            Assert.IsType<OkObjectResult>(result);
-        }
-
-        [Fact]
-        public async Task EditPassage_ValidDtoWithBoundaryValues_ReturnsOk()
-        {
-            // Arrange - Test cả long string và int.MaxValue
-            var longText = new string('A', 10000);
-            var dto = new PromptEditDto 
-            { 
-                PromptId = int.MaxValue,
-                Skill = longText,
-                ContentText = longText,
-                Title = longText
-            };
-            _mockQuestionService.Setup(s => s.EditPromptWithQuestionsAsync(dto))
-                .ReturnsAsync(true);
-
-            // Act
-            var result = await _controller.EditPassage(dto);
-
-            // Assert
-            Assert.IsType<OkObjectResult>(result);
-            _mockQuestionService.Verify(s => s.EditPromptWithQuestionsAsync(It.Is<PromptEditDto>(d => 
-                d.PromptId == int.MaxValue && d.Skill.Length == 10000
-            )), Times.Once);
+            // Act & Assert
+            await Assert.ThrowsAsync<Exception>(() => _controller.EditPassage(dto));
         }
 
         #endregion
