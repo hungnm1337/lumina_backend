@@ -232,6 +232,50 @@ namespace lumina.Controllers
         }
 
         /// <summary>
+        /// Tính điểm season cho user sau khi hoàn thành bài thi
+        /// </summary>
+        [Authorize]
+        [HttpPost("calculate-score")]
+        public async Task<ActionResult<CalculateScoreResponseDTO>> CalculateScore([FromBody] CalculateScoreRequestDTO request)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new { message = "Không thể xác định user" });
+            }
+
+            try
+            {
+                Console.WriteLine($"🎯 [LeaderboardController] Calculate score request:");
+                Console.WriteLine($"   UserId: {userId}");
+                Console.WriteLine($"   ExamAttemptId: {request.ExamAttemptId}");
+                Console.WriteLine($"   ExamPartId: {request.ExamPartId}");
+                Console.WriteLine($"   CorrectAnswers: {request.CorrectAnswers}/{request.TotalQuestions}");
+                
+                var result = await _service.CalculateSeasonScoreAsync(userId, request);
+                
+                Console.WriteLine($"✅ [LeaderboardController] Score calculated:");
+                Console.WriteLine($"   SeasonScore: {result.SeasonScore}");
+                Console.WriteLine($"   TotalAccumulatedScore: {result.TotalAccumulatedScore}");
+                Console.WriteLine($"   EstimatedTOEIC: {result.EstimatedTOEIC}");
+                Console.WriteLine($"   IsFirstAttempt: {result.IsFirstAttempt}");
+                
+                return Ok(result);
+            }
+            catch (ArgumentException ex)
+            {
+                Console.WriteLine($"❌ [LeaderboardController] ArgumentException: {ex.Message}");
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ [LeaderboardController] Exception: {ex.Message}");
+                Console.WriteLine($"   StackTrace: {ex.StackTrace}");
+                return StatusCode(500, new { message = "Lỗi khi tính điểm: " + ex.Message });
+            }
+        }
+
+        /// <summary>
         /// Tự động quản lý mùa giải (kích hoạt và kết thúc) (Chỉ Staff)
         /// Endpoint này nên được gọi định kỳ bởi background job
         /// </summary>

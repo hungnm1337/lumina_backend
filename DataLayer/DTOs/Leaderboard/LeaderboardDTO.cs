@@ -81,4 +81,40 @@ namespace DataLayer.DTOs.Leaderboard
         public decimal AccuracyRate { get; set; }
         public bool IsReadyForTOEIC { get; set; } // >= 600 điểm
     }
+
+    // DTO cho request tính điểm season
+    public class CalculateScoreRequestDTO
+    {
+        public int ExamAttemptId { get; set; }
+        public int ExamPartId { get; set; } // 1=Listening, 2=Reading
+        public int CorrectAnswers { get; set; }
+        public int TotalQuestions { get; set; }
+        public int TimeSpentSeconds { get; set; }
+        public int ExpectedTimeSeconds { get; set; }
+    }
+
+    // DTO cho response tính điểm season
+    public class CalculateScoreResponseDTO
+    {
+        public int SeasonScore { get; set; } // Điểm tích lũy mỗi lần làm bài
+        public int EstimatedTOEIC { get; set; } // Điểm TOEIC ước tính (0-990) - chỉ cập nhật khi làm đề lần đầu
+        public string TOEICLevel { get; set; } = string.Empty; // Trình độ: Beginner, Elementary, Intermediate, Upper-Intermediate, Advanced, Proficient
+        public int BasePoints { get; set; }
+        public int TimeBonus { get; set; }
+        public int AccuracyBonus { get; set; }
+        public bool IsFirstAttempt { get; set; } // True nếu là lần đầu tiên làm ĐỀ này (Exam + Part)
+        public string? TOEICMessage { get; set; } // Thông báo trình độ - hiển thị mỗi lần
+        public int TotalAccumulatedScore { get; set; } // Tổng điểm tích lũy hiện tại
+    }
+
+    // DTO cho cấu hình level TOEIC
+    public class TOEICLevelConfig
+    {
+        public string Level { get; set; } = string.Empty;
+        public int MinScore { get; set; }
+        public int MaxScore { get; set; }
+        public int BasePointsPerCorrect { get; set; }
+        public double TimeBonusPercent { get; set; }
+        public double AccuracyBonusPercent { get; set; }
+    }
 }

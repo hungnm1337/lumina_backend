@@ -1,11 +1,13 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ServiceLayer.Slide;
+using ServiceLayer.UploadFile;
 using DataLayer.DTOs;
 using System.Security.Claims;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 
 namespace lumina.Controllers
 {
@@ -14,10 +16,12 @@ namespace lumina.Controllers
     public class SlideController : ControllerBase
     {
         private readonly ISlideService _slideService;
+        private readonly IUploadService _uploadService;
 
-        public SlideController(ISlideService slideService)
+        public SlideController(ISlideService slideService, IUploadService uploadService)
         {
             _slideService = slideService;
+            _uploadService = uploadService;
         }
 
         [HttpGet]
@@ -37,26 +41,96 @@ namespace lumina.Controllers
 
         [Authorize]
         [HttpPost]
-        public async Task<ActionResult<int>> Create([FromBody] SlideDTO dto)
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult<int>> Create([FromForm] CreateSlideRequest request)
         {
             int userId = GetUserId();
-            // Ensure server controls audit fields
-            dto.CreateBy = userId;
+            
+            if (request == null || string.IsNullOrEmpty(request.SlideName))
+            {
+                return BadRequest("Tên slide không được để trống.");
+            }
+
+            string slideUrl = string.Empty;
+
+            // Nếu có file ảnh, upload lên Cloudinary
+            if (request.ImageFile != null && request.ImageFile.Length > 0)
+            {
+                try
+                {
+                    var uploadResult = await _uploadService.UploadFileAsync(request.ImageFile);
+                    slideUrl = uploadResult.Url;
+                }
+                catch (Exception ex)
+                {
+                    return StatusCode(500, $"Lỗi khi upload ảnh: {ex.Message}");
+                }
+            }
+            else
+            {
+                return BadRequest("Vui lòng chọn ảnh để upload.");
+            }
+
+            var dto = new SlideDTO
+            {
+                SlideName = request.SlideName,
+                SlideUrl = slideUrl,
+                IsActive = request.IsActive ?? true,
+                CreateBy = userId,
+                CreateAt = DateTime.UtcNow
+            };
+
             var id = await _slideService.CreateAsync(dto);
             return CreatedAtAction(nameof(GetById), new { slideId = id }, id);
         }
 
         [Authorize]
         [HttpPut("{slideId:int}")]
-        public async Task<ActionResult> Update(int slideId, [FromBody] SlideDTO dto)
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult> Update(int slideId, [FromForm] UpdateSlideRequest request)
         {
-            if(slideId != dto.SlideId)
-            {
-                return BadRequest("Slide ID mismatch");
-            }
             int userId = GetUserId();
-            // Ensure server controls audit fields
-            dto.UpdateBy = userId;
+            
+            // Lấy slide hiện tại
+            var existingSlide = await _slideService.GetByIdAsync(slideId);
+            if (existingSlide == null)
+            {
+                return NotFound();
+            }
+
+            if (request == null || string.IsNullOrEmpty(request.SlideName))
+            {
+                return BadRequest("Tên slide không được để trống.");
+            }
+
+            string slideUrl = existingSlide.SlideUrl;
+
+            // Nếu có file ảnh mới, upload lên Cloudinary
+            if (request.ImageFile != null && request.ImageFile.Length > 0)
+            {
+                try
+                {
+                    var uploadResult = await _uploadService.UploadFileAsync(request.ImageFile);
+                    slideUrl = uploadResult.Url;
+                }
+                catch (Exception ex)
+                {
+                    return StatusCode(500, $"Lỗi khi upload ảnh: {ex.Message}");
+                }
+            }
+
+            var dto = new SlideDTO
+            {
+                SlideId = slideId,
+                SlideName = request.SlideName,
+                SlideUrl = slideUrl,
+                IsActive = request.IsActive ?? true,
+                UpdateBy = userId,
+                UpdateAt = DateTime.UtcNow,
+                CreateBy = existingSlide.CreateBy,
+                CreateAt = existingSlide.CreateAt
+            };
+
             var ok = await _slideService.UpdateAsync(dto);
             if (!ok) return NotFound();
             return NoContent();
