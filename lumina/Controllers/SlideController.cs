@@ -42,11 +42,11 @@ namespace lumina.Controllers
         [Authorize]
         [HttpPost]
         [Consumes("multipart/form-data")]
-        public async Task<ActionResult<int>> Create([FromForm] string slideName, [FromForm] bool? isActive, [FromForm] IFormFile? imageFile)
+        public async Task<ActionResult<int>> Create([FromForm] CreateSlideRequest request)
         {
             int userId = GetUserId();
             
-            if (string.IsNullOrEmpty(slideName))
+            if (request == null || string.IsNullOrEmpty(request.SlideName))
             {
                 return BadRequest("Tên slide không được để trống.");
             }
@@ -54,11 +54,11 @@ namespace lumina.Controllers
             string slideUrl = string.Empty;
 
             // Nếu có file ảnh, upload lên Cloudinary
-            if (imageFile != null && imageFile.Length > 0)
+            if (request.ImageFile != null && request.ImageFile.Length > 0)
             {
                 try
                 {
-                    var uploadResult = await _uploadService.UploadFileAsync(imageFile);
+                    var uploadResult = await _uploadService.UploadFileAsync(request.ImageFile);
                     slideUrl = uploadResult.Url;
                 }
                 catch (Exception ex)
@@ -73,9 +73,9 @@ namespace lumina.Controllers
 
             var dto = new SlideDTO
             {
-                SlideName = slideName,
+                SlideName = request.SlideName,
                 SlideUrl = slideUrl,
-                IsActive = isActive ?? true,
+                IsActive = request.IsActive ?? true,
                 CreateBy = userId,
                 CreateAt = DateTime.UtcNow
             };
@@ -87,7 +87,7 @@ namespace lumina.Controllers
         [Authorize]
         [HttpPut("{slideId:int}")]
         [Consumes("multipart/form-data")]
-        public async Task<ActionResult> Update(int slideId, [FromForm] string slideName, [FromForm] bool? isActive, [FromForm] IFormFile? imageFile)
+        public async Task<ActionResult> Update(int slideId, [FromForm] UpdateSlideRequest request)
         {
             int userId = GetUserId();
             
@@ -98,7 +98,7 @@ namespace lumina.Controllers
                 return NotFound();
             }
 
-            if (string.IsNullOrEmpty(slideName))
+            if (request == null || string.IsNullOrEmpty(request.SlideName))
             {
                 return BadRequest("Tên slide không được để trống.");
             }
@@ -106,11 +106,11 @@ namespace lumina.Controllers
             string slideUrl = existingSlide.SlideUrl;
 
             // Nếu có file ảnh mới, upload lên Cloudinary
-            if (imageFile != null && imageFile.Length > 0)
+            if (request.ImageFile != null && request.ImageFile.Length > 0)
             {
                 try
                 {
-                    var uploadResult = await _uploadService.UploadFileAsync(imageFile);
+                    var uploadResult = await _uploadService.UploadFileAsync(request.ImageFile);
                     slideUrl = uploadResult.Url;
                 }
                 catch (Exception ex)
@@ -122,9 +122,9 @@ namespace lumina.Controllers
             var dto = new SlideDTO
             {
                 SlideId = slideId,
-                SlideName = slideName,
+                SlideName = request.SlideName,
                 SlideUrl = slideUrl,
-                IsActive = isActive ?? true,
+                IsActive = request.IsActive ?? true,
                 UpdateBy = userId,
                 UpdateAt = DateTime.UtcNow,
                 CreateBy = existingSlide.CreateBy,
