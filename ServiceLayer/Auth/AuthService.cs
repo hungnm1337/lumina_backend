@@ -29,6 +29,7 @@ public sealed class AuthService : IAuthService
     private readonly int _defaultRoleId = 4;
     private readonly int _registrationOtpLength = 6;
     private readonly int _registrationOtpExpiryMinutes = 10;
+    private readonly int _refreshTokenExpirationDays = 7;
 
 
 
@@ -73,7 +74,7 @@ public sealed class AuthService : IAuthService
         }
 
         _logger.LogInformation("User {Username} logged in successfully", account.Username);
-        return CreateLoginResponse(account.User, account.Username);
+        return await CreateLoginResponseAsync(account.User, account.Username);
     }
 
     public async Task<LoginResponse> GoogleLoginAsync(GoogleLoginRequest request)
@@ -107,7 +108,7 @@ public sealed class AuthService : IAuthService
         }
 
         _logger.LogInformation("User {Email} logged in via Google successfully", normalizedEmail);
-        return CreateLoginResponse(account.User, account.Username);
+        return await CreateLoginResponseAsync(account.User, account.Username);
     }
 
     public async Task<SendRegistrationOtpResponse> SendRegistrationOtpAsync(SendRegistrationOtpRequest request)
@@ -310,14 +311,29 @@ public sealed class AuthService : IAuthService
             _logger.LogInformation("User registration completed successfully: {Username} ({Email})", 
                 normalizedUsername, normalizedEmail);
 
-            // Tạo JWT token luôn để user có thể login ngay
+            // Tạo JWT token và refresh token để user có thể login ngay
             var tokenResult = _jwtTokenService.GenerateToken(tempUser);
+            var refreshToken = _jwtTokenService.GenerateRefreshToken();
+            
+            // Create refresh token entity
+            var refreshTokenEntity = new RefreshToken
+            {
+                UserId = tempUser.UserId,
+                Token = refreshToken,
+                CreatedAt = DateTime.UtcNow,
+                ExpiresAt = DateTime.UtcNow.AddDays(_refreshTokenExpirationDays)
+            };
+            
+            await _context.RefreshTokens.AddAsync(refreshTokenEntity);
+            await _context.SaveChangesAsync();
 
             return new VerifyRegistrationResponse
             {
                 Message = "Đăng ký thành công!",
                 Token = tokenResult.Token,
+                RefreshToken = refreshToken,
                 ExpiresIn = tokenResult.ExpiresInSeconds,
+                RefreshExpiresIn = (int)TimeSpan.FromDays(_refreshTokenExpirationDays).TotalSeconds,
                 User = new AuthUserResponse
                 {
                     Id = tempUser.UserId.ToString(CultureInfo.InvariantCulture),
@@ -647,6 +663,104 @@ public sealed class AuthService : IAuthService
 
 
     private static string NormalizeEmail(string email) => email.Trim().ToLowerInvariant();
+
+    // Helper method to create LoginResponse with refresh token
+    private async Task<LoginResponse> CreateLoginResponseAsync(DataLayer.Models.User user, string username)
+    {
+        var tokenResult = _jwtTokenService.GenerateToken(user);
+        var refreshToken = _jwtTokenService.GenerateRefreshToken();
+        
+        // Revoke old refresh tokens for this user
+        var now = DateTime.UtcNow;
+        var existingTokens = await _context.RefreshTokens
+            .Where(rt => rt.UserId == user.UserId 
+                      && !rt.IsRevoked 
+                      && rt.ExpiresAt > now)
+            .ToListAsync();
+        
+        foreach (var token in existingTokens)
+        {
+            token.IsRevoked = true;
+            token.RevokedAt = DateTime.UtcNow;
+            token.RevokedReason = "Replaced by new token";
+        }
+        
+        // Create new refresh token
+        var refreshTokenEntity = new RefreshToken
+        {
+            UserId = user.UserId,
+            Token = refreshToken,
+            CreatedAt = DateTime.UtcNow,
+            ExpiresAt = DateTime.UtcNow.AddDays(_refreshTokenExpirationDays)
+        };
+        
+        await _context.RefreshTokens.AddAsync(refreshTokenEntity);
+        await _context.SaveChangesAsync();
+        
+        return new LoginResponse
+        {
+            Token = tokenResult.Token,
+            RefreshToken = refreshToken,
+            ExpiresIn = tokenResult.ExpiresInSeconds,
+            RefreshExpiresIn = (int)TimeSpan.FromDays(_refreshTokenExpirationDays).TotalSeconds,
+            User = new AuthUserResponse
+            {
+                Id = user.UserId.ToString(CultureInfo.InvariantCulture),
+                Username = username,
+                Email = user.Email,
+                Name = user.FullName
+            }
+        };
+    }
+    
+    public async Task<LoginResponse> RefreshTokenAsync(RefreshTokenRequest request)
+    {
+        var now = DateTime.UtcNow;
+        var refreshTokenEntity = await _context.RefreshTokens
+            .Include(rt => rt.User)
+                .ThenInclude(u => u.Role)
+            .Include(rt => rt.User.Accounts)
+            .FirstOrDefaultAsync(rt => rt.Token == request.RefreshToken);
+        
+        if (refreshTokenEntity == null)
+        {
+            _logger.LogWarning("Refresh token not found");
+            throw AuthServiceException.Unauthorized("Invalid refresh token");
+        }
+        
+        if (refreshTokenEntity.IsRevoked)
+        {
+            _logger.LogWarning("Refresh token is revoked. UserId: {UserId}", refreshTokenEntity.UserId);
+            throw AuthServiceException.Unauthorized("Refresh token has been revoked");
+        }
+        
+        if (refreshTokenEntity.ExpiresAt <= now)
+        {
+            _logger.LogWarning("Refresh token is expired. UserId: {UserId}, ExpiresAt: {ExpiresAt}",
+                refreshTokenEntity.UserId, refreshTokenEntity.ExpiresAt);
+            throw AuthServiceException.Unauthorized("Refresh token has expired");
+        }
+        
+        if (refreshTokenEntity.User.IsActive is false)
+        {
+            _logger.LogWarning("Refresh token attempt for inactive user: {UserId}", refreshTokenEntity.UserId);
+            throw AuthServiceException.Unauthorized("User account is inactive");
+        }
+        
+        // Revoke the used refresh token
+        refreshTokenEntity.IsRevoked = true;
+        refreshTokenEntity.RevokedAt = DateTime.UtcNow;
+        refreshTokenEntity.RevokedReason = "Token refreshed";
+        
+        // Get username from account
+        var account = refreshTokenEntity.User.Accounts.FirstOrDefault();
+        var username = account?.Username ?? refreshTokenEntity.User.Email;
+        
+        _logger.LogInformation("Refresh token used successfully for user: {UserId}", refreshTokenEntity.UserId);
+        
+        // Generate new tokens
+        return await CreateLoginResponseAsync(refreshTokenEntity.User, username);
+    }
 
 }
 

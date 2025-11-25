@@ -2,6 +2,7 @@
 using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using DataLayer.Models;
 using Microsoft.Extensions.Configuration;
@@ -12,6 +13,7 @@ namespace ServiceLayer.Auth;
 public interface IJwtTokenService
 {
     JwtTokenResult GenerateToken(DataLayer.Models.User user);
+    string GenerateRefreshToken();
 }
 
 public sealed class JwtTokenService : IJwtTokenService
@@ -53,7 +55,8 @@ public sealed class JwtTokenService : IJwtTokenService
             new(ClaimTypes.NameIdentifier, user.UserId.ToString(CultureInfo.InvariantCulture)),
             new(ClaimTypes.Email, user.Email),
             new(ClaimTypes.Name, user.FullName),
-            new Claim(ClaimTypes.Role, user.Role.RoleName)
+            new(ClaimTypes.Role, user.Role.RoleName),
+            new("RoleId", user.RoleId.ToString(CultureInfo.InvariantCulture))
         };
 
         var credentials = new SigningCredentials(_signingKey, SecurityAlgorithms.HmacSha256);
@@ -70,6 +73,15 @@ public sealed class JwtTokenService : IJwtTokenService
 
         return new JwtTokenResult(token, (int)TimeSpan.FromMinutes(_accessTokenExpirationMinutes).TotalSeconds, expiresAtUtc);
     }
+
+    public string GenerateRefreshToken()
+    {
+        var randomNumber = new byte[64];
+        using var rng = RandomNumberGenerator.Create();
+        rng.GetBytes(randomNumber);
+        return Convert.ToBase64String(randomNumber);
+    }
 }
+
 
 public sealed record JwtTokenResult(string Token, int ExpiresInSeconds, DateTime ExpiresAtUtc);

@@ -3,7 +3,8 @@
     "allow": [
       "Bash(find:*)",
       "Bash(dotnet ef migrations add:*)",
-      "Bash(nul)"
+      "Bash(nul)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []

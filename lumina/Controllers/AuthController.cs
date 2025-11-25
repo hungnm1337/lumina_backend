@@ -123,6 +123,19 @@ public sealed class AuthController : ControllerBase
     }
 
     
+    [HttpPost("refresh")]
+    [AllowAnonymous]
+    public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(new ErrorResponse("Invalid refresh token request"));
+        }
+
+        return await ExecuteAsync(() => _authService.RefreshTokenAsync(request));
+    }
+
+    
     private async Task<IActionResult> ExecuteAsync<T>(Func<Task<T>> action, int successStatusCode = StatusCodes.Status200OK)
     {
         try

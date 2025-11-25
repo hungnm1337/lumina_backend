@@ -7,6 +7,7 @@ using DataLayer.DTOs.Streak;
 using DataLayer.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using RepositoryLayer.Streak;
 
 namespace ServiceLayer.Streak
 {
@@ -14,6 +15,7 @@ namespace ServiceLayer.Streak
     {
         private readonly LuminaSystemContext _context;
         private readonly ILogger<StreakService> _logger;
+        private readonly IStreakRepository _streakRepository;
 
         // Múi giờ GMT+7 (Việt Nam)
         private static readonly TimeZoneInfo GMT7 = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
@@ -21,10 +23,11 @@ namespace ServiceLayer.Streak
         // Danh sách milestone (có thể config từ DB sau)
         private static readonly int[] MILESTONES = { 3, 7, 14, 30, 60, 100, 180, 365 };
 
-        public StreakService(LuminaSystemContext context, ILogger<StreakService> logger)
+        public StreakService(LuminaSystemContext context, ILogger<StreakService> logger, IStreakRepository streakRepository)
         {
             _context = context;
             _logger = logger;
+            _streakRepository = streakRepository;
         }
 
         #region Public Methods
@@ -59,7 +62,7 @@ namespace ServiceLayer.Streak
 
                 var todayLocal = GetTodayGMT7();
 
-                // ✅ FIX: Convert DateTime? → DateOnly
+                // Convert DateTime? → DateOnly
                 DateOnly? lastPracticeDateOnly = user.LastPracticeDate.HasValue 
                     ? DateOnly.FromDateTime(user.LastPracticeDate.Value) 
                     : null;
@@ -67,17 +70,17 @@ namespace ServiceLayer.Streak
                 var todayCompleted = lastPracticeDateOnly.HasValue 
                     && lastPracticeDateOnly.Value == todayLocal;
 
-                // ✅ FIX: Handle NULL với ?? 0
+                // Handle NULL với ?? 0
                 var currentStreak = user.CurrentStreak ?? 0;
                 var lastMilestone = GetLastMilestone(currentStreak);
                 var nextMilestone = GetNextMilestone(currentStreak);
 
                 return new StreakSummaryDTO
                 {
-                    CurrentStreak = currentStreak,  // ✅ FIX
-                    LongestStreak = user.LongestStreak ?? 0,  // ✅ FIX
+                    CurrentStreak = currentStreak, 
+                    LongestStreak = user.LongestStreak ?? 0,  
                     TodayCompleted = todayCompleted,
-                    FreezeTokens = user.StreakFreezesAvailable ?? 0,  // ✅ FIX
+                    FreezeTokens = user.StreakFreezesAvailable ?? 0,  
                     LastMilestone = lastMilestone,
                     LastPracticeDate = lastPracticeDateOnly,
                     NextMilestone = nextMilestone,
@@ -109,7 +112,6 @@ namespace ServiceLayer.Streak
 
                 var todayLocal = GetTodayGMT7();
 
-                // Validate: không cho phép practiceDate trong quá khứ xa hoặc tương lai
                 if (practiceDateLocal > todayLocal)
                 {
                     _logger.LogWarning("Invalid practiceDate {Date} for user {UserId} (future date)", 
@@ -121,7 +123,6 @@ namespace ServiceLayer.Streak
                     };
                 }
 
-                // Nếu practiceDate < todayLocal quá xa (> 2 ngày) → bỏ qua
                 if (practiceDateLocal < todayLocal.AddDays(-2))
                 {
                     _logger.LogWarning("Invalid practiceDate {Date} for user {UserId} (too old)", 
@@ -133,7 +134,6 @@ namespace ServiceLayer.Streak
                     };
                 }
 
-                // ✅ FIX: Convert DateTime? → DateOnly
                 DateOnly? lastPracticeDateOnly = user.LastPracticeDate.HasValue 
                     ? DateOnly.FromDateTime(user.LastPracticeDate.Value) 
                     : null;
@@ -141,41 +141,48 @@ namespace ServiceLayer.Streak
                 var eventType = StreakEventType.MaintainDay;
                 var message = "";
 
-                // Case 1: Chưa có LastPracticeDate (user mới hoặc chưa học lần nào)
+                // Case 1: Chưa có LastPracticeDate
                 if (!lastPracticeDateOnly.HasValue)
                 {
                     user.CurrentStreak = 1;
-                    user.LongestStreak = 1;  // ✅ FIX: Set luôn
+                    user.LongestStreak = 1;
                     user.LastPracticeDate = practiceDateLocal.ToDateTime(TimeOnly.MinValue);
-                    user.StreakFreezesAvailable = (user.StreakFreezesAvailable ?? 0) + 1;  // ✅ FIX NULL
+                    user.StreakFreezesAvailable = (user.StreakFreezesAvailable ?? 0) + 1;
                     eventType = StreakEventType.CompleteDay;
                     message = "Bắt đầu chuỗi học tập!";
                 }
                 // Case 2: Học lại trong cùng ngày
                 else if (practiceDateLocal == lastPracticeDateOnly.Value)
                 {
-                    // Không tăng streak, chỉ confirm
                     eventType = StreakEventType.MaintainDay;
                     message = "Bạn đã hoàn thành mục tiêu hôm nay rồi!";
                 }
                 // Case 3: Ngày kế tiếp (streak +1)
                 else if (practiceDateLocal == lastPracticeDateOnly.Value.AddDays(1))
                 {
-                    user.CurrentStreak = (user.CurrentStreak ?? 0) + 1;  // ✅ FIX NULL
+                    user.CurrentStreak = (user.CurrentStreak ?? 0) + 1;
                     user.LastPracticeDate = practiceDateLocal.ToDateTime(TimeOnly.MinValue);
                     eventType = StreakEventType.CompleteDay;
                     message = $"Tuyệt vời! Chuỗi {user.CurrentStreak} ngày 🔥";
                 }
-                // Case 4: Gap > 1 ngày → Reset về 1 (bắt đầu chuỗi mới)
-                else // practiceDateLocal > lastPracticeDateOnly.Value.AddDays(1)
+                // Case 4: Học lại sau nhiều ngày, nhưng streak vẫn còn (được bảo vệ bởi freeze)
+                else if ((user.CurrentStreak ?? 0) > 0 && practiceDateLocal > lastPracticeDateOnly.Value)
+                {
+                    user.CurrentStreak = (user.CurrentStreak ?? 0) + 1;
+                    user.LastPracticeDate = practiceDateLocal.ToDateTime(TimeOnly.MinValue);
+                    eventType = StreakEventType.CompleteDay;
+                    message = $"Tuyệt vời! Chuỗi {user.CurrentStreak} ngày 🔥";
+                }
+                // Nếu streak đã bị reset về 0 (do không còn freeze), thì bắt đầu lại từ 1
+                else if ((user.CurrentStreak ?? 0) == 0)
                 {
                     user.CurrentStreak = 1;
+                    user.LongestStreak = Math.Max(user.LongestStreak ?? 0, 1);
                     user.LastPracticeDate = practiceDateLocal.ToDateTime(TimeOnly.MinValue);
                     eventType = StreakEventType.ResetStreak;
                     message = "Chuỗi đã bị ngắt, bắt đầu lại từ đầu!";
                 }
 
-                // ✅ FIX: Update LongestStreak nếu cần (handle NULL)
                 var currentStreak = user.CurrentStreak ?? 0;
                 var longestStreak = user.LongestStreak ?? 0;
                 if (currentStreak > longestStreak)
@@ -185,7 +192,6 @@ namespace ServiceLayer.Streak
 
                 await _context.SaveChangesAsync();
 
-                // Kiểm tra milestone
                 int? milestoneReached = null;
                 if (eventType == StreakEventType.CompleteDay)
                 {
@@ -486,6 +492,11 @@ namespace ServiceLayer.Streak
 
             await _context.SaveChangesAsync();
         }
+
+        public async Task<List<StreakUserDTO>> GetTopStreakUsersAsync(int topN)
+{
+    return await _streakRepository.GetTopStreakUsersAsync(topN);
+}
 
         #endregion
     }

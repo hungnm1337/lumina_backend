@@ -26,5 +26,10 @@ namespace ServiceLayer.Exam
 
 
         Task<bool> ToggleExamStatusAsync(int examId);
+
+        // Completion status methods
+        Task<List<ExamCompletionStatusDTO>> GetUserExamCompletionStatusesAsync(int userId);
+        Task<ExamCompletionStatusDTO> GetExamCompletionStatusAsync(int userId, int examId);
+        Task<List<PartCompletionStatusDTO>> GetPartCompletionStatusAsync(int userId, int examId);
     }
 }
