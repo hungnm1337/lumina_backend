@@ -183,6 +183,10 @@ namespace lumina
             builder.Services.AddScoped<IStatisticService, StatisticService>();
             builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
 
+            // Manager Analytics Services
+            builder.Services.AddScoped<RepositoryLayer.ManagerAnalytics.IManagerAnalyticsRepository, RepositoryLayer.ManagerAnalytics.ManagerAnalyticsRepository>();
+            builder.Services.AddScoped<ServiceLayer.ManagerAnalytics.IManagerAnalyticsService, ServiceLayer.ManagerAnalytics.ManagerAnalyticsService>();
+
             // Unit of Work
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
