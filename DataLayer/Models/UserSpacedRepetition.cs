@@ -9,6 +9,11 @@ public partial class UserSpacedRepetition
 
     public int UserId { get; set; }
 
+    // VocabularyId (nullable)
+    // Nếu null → track theo folder (cho quiz scores)
+    // Nếu có giá trị → track theo từng word (cho spaced repetition)
+    public int? VocabularyId { get; set; }
+
     public int VocabularyListId { get; set; }
 
     public DateTime LastReviewedAt { get; set; }
@@ -30,4 +35,6 @@ public partial class UserSpacedRepetition
     public virtual User User { get; set; } = null!;
 
     public virtual VocabularyList VocabularyList { get; set; } = null!;
+
+    public virtual Vocabulary? Vocabulary { get; set; }
 }
