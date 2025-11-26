@@ -47,6 +47,7 @@ public class VocabularyListRepository : IVocabularyListRepository
                 Name = vl.Name,
                 IsPublic = vl.IsPublic,
                 MakeByName = vl.MakeByNavigation.FullName, // Lấy tên người tạo
+                MakeByRoleId = vl.MakeByNavigation.RoleId, // Lấy role ID của người tạo
                 CreateAt = vl.CreateAt,
                 VocabularyCount = vl.Vocabularies.Count(v => v.IsDeleted != true), // Đếm số từ
                 Status = vl.Status,
@@ -74,6 +75,7 @@ public class VocabularyListRepository : IVocabularyListRepository
                 Name = vl.Name,
                 IsPublic = vl.IsPublic,
                 MakeByName = vl.MakeByNavigation.FullName, // Lấy tên người tạo
+                MakeByRoleId = vl.MakeByNavigation.RoleId, // Lấy role ID của người tạo
                 CreateAt = vl.CreateAt,
                 VocabularyCount = vl.Vocabularies.Count(v => v.IsDeleted != true), // Đếm số từ
                 Status = vl.Status,
@@ -103,6 +105,7 @@ public class VocabularyListRepository : IVocabularyListRepository
                 Name = vl.Name,
                 IsPublic = vl.IsPublic,
                 MakeByName = vl.MakeByNavigation.FullName, // Lấy tên người tạo
+                MakeByRoleId = vl.MakeByNavigation.RoleId, // Lấy role ID của người tạo
                 CreateAt = vl.CreateAt,
                 VocabularyCount = vl.Vocabularies.Count(v => v.IsDeleted != true), // Đếm số từ
                 Status = vl.Status,
@@ -131,6 +134,7 @@ public class VocabularyListRepository : IVocabularyListRepository
                 Name = vl.Name,
                 IsPublic = vl.IsPublic,
                 MakeByName = vl.MakeByNavigation.FullName,
+                MakeByRoleId = vl.MakeByNavigation.RoleId,
                 CreateAt = vl.CreateAt,
                 VocabularyCount = vl.Vocabularies.Count(v => v.IsDeleted != true),
                 Status = vl.Status,
