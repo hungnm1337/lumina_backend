@@ -108,3 +108,24 @@ public class ArticleReviewRequest
     public bool IsApproved { get; set; }
     public string? Comment { get; set; }
 }
+
+// DTO cho việc tạo category mới
+public class CategoryCreateDTO
+{
+    [Required]
+    [MaxLength(255)]
+    [MinLength(2)]
+    public string Name { get; set; } = string.Empty;
+
+    public string? Description { get; set; }
+}
+
+// DTO cho response category
+public class CategoryResponseDTO
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public int? CreatedByUserId { get; set; }
+    public DateTime CreateAt { get; set; }
+}
