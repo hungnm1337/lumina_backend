@@ -36,6 +36,29 @@ namespace lumina.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
+
+        [HttpGet("feedback/{examAttemptId}")]
+        public async Task<ActionResult<MocktestFeedbackDTO>> GetMocktestFeedback(int examAttemptId)
+        {
+            try
+            {
+                if (examAttemptId <= 0)
+                {
+                    return BadRequest("Invalid exam attempt ID. It must be greater than 0.");
+                }
+
+                var result = await _mockTestService.GetMocktestFeedbackAsync(examAttemptId);
+                if (result == null)
+                {
+                    return NotFound($"No feedback found for exam attempt ID: {examAttemptId}");
+                }
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
        
     }
 }

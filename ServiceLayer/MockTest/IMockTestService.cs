@@ -8,6 +8,6 @@ namespace ServiceLayer.MockTest
     public interface IMockTestService
     {
         Task<List<ExamPartDTO>> GetMocktestAsync();
-
+        Task<MocktestFeedbackDTO> GetMocktestFeedbackAsync(int examAttemptId);
     }
 }

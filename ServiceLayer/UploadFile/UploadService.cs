@@ -41,7 +41,8 @@ namespace ServiceLayer.UploadFile
                 var audioParams = new VideoUploadParams()
                 {
                     File = new FileDescription(file.FileName, file.OpenReadStream()),
-                    PublicId = $"lumina/audio/{Path.GetFileNameWithoutExtension(file.FileName)}_{Guid.NewGuid()}",
+                    PublicId = $"lumina/audio/{Path.GetFileNameWithoutExtension(file.FileName)}_{Guid.NewGuid()}"
+                    // ResourceType is automatically set to Video by VideoUploadParams
                 };
 
                 uploadResult = await _cloudinary.UploadAsync(audioParams);
@@ -56,6 +57,7 @@ namespace ServiceLayer.UploadFile
                 {
                     File = new FileDescription(file.FileName, file.OpenReadStream()),
                     PublicId = $"lumina/videos/{Path.GetFileNameWithoutExtension(file.FileName)}_{Guid.NewGuid()}",
+                    // ResourceType is automatically set to Video by VideoUploadParams
                     EagerTransforms = new List<Transformation>()
                     {
                         new Transformation().Width(1280).Height(720).Crop("limit").Quality("auto"),
@@ -110,7 +112,8 @@ namespace ServiceLayer.UploadFile
                 var audioParams = new VideoUploadParams
                 {
                     File = new FileDescription(fileUrl),
-                    PublicId = $"lumina/audio_{Guid.NewGuid()}",
+                    PublicId = $"lumina/audio_{Guid.NewGuid()}"
+                    // ResourceType is automatically set to Video by VideoUploadParams
                 };
                 uploadResult = await _cloudinary.UploadAsync(audioParams);
             }
@@ -119,7 +122,8 @@ namespace ServiceLayer.UploadFile
                 var videoParams = new VideoUploadParams
                 {
                     File = new FileDescription(fileUrl),
-                    PublicId = $"lumina/videos_{Guid.NewGuid()}",
+                    PublicId = $"lumina/videos_{Guid.NewGuid()}"
+                    // ResourceType is automatically set to Video by VideoUploadParams
                 };
                 uploadResult = await _cloudinary.UploadAsync(videoParams);
             }

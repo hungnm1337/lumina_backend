@@ -157,4 +157,13 @@ public class ArticleRepository : IArticleRepository
             throw;
         }
     }
+
+    public Task<List<string>> GetArticleName()
+    {
+        var aticleNames = _context.Articles
+            .Where(a => a.IsPublished == true)
+            .Select(a => a.Title)
+            .ToListAsync();
+        return aticleNames;
+    }
 }

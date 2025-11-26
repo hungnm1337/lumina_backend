@@ -40,6 +40,7 @@ namespace ServiceLayer.Vocabulary
                 Name = newList.Name,
                 IsPublic = newList.IsPublic,
                 MakeByName = creator.FullName,
+                MakeByRoleId = creator.RoleId,
                 CreateAt = newList.CreateAt,
                 VocabularyCount = 0,
                 Status = newList.Status,

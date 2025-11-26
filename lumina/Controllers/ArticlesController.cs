@@ -243,6 +243,63 @@ public class ArticlesController : ControllerBase
         return Ok(list.Select(c => new { id = c.CategoryId, name = c.CategoryName }));
     }
 
+    [HttpPost("categories")]
+    [Authorize(Roles = "Staff")]
+    public async Task<IActionResult> CreateCategory([FromBody] CategoryCreateDTO request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        try
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var creatorUserId))
+            {
+                _logger.LogWarning("Invalid token: Claim 'NameIdentifier' not found or invalid.");
+                return Unauthorized(new ErrorResponse("Invalid token - User ID could not be determined."));
+            }
+
+            // Check if category name already exists
+            var categoryExists = await _unitOfWork.Categories.ExistsByNameAsync(request.Name);
+            if (categoryExists)
+            {
+                return Conflict(new ErrorResponse($"Category with name '{request.Name}' already exists."));
+            }
+
+            // Create new category
+            var category = new DataLayer.Models.ArticleCategory
+            {
+                CategoryName = request.Name.Trim(),
+                Description = request.Description?.Trim() ?? string.Empty,
+                CreatedByUserId = creatorUserId,
+                CreateAt = DateTime.UtcNow
+            };
+
+            await _unitOfWork.Categories.AddAsync(category);
+            await _unitOfWork.CompleteAsync();
+
+            _logger.LogInformation("Category '{CategoryName}' created successfully by User {UserId}", category.CategoryName, creatorUserId);
+
+            var response = new CategoryResponseDTO
+            {
+                Id = category.CategoryId,
+                Name = category.CategoryName,
+                Description = category.Description,
+                CreatedByUserId = category.CreatedByUserId,
+                CreateAt = category.CreateAt
+            };
+
+            return CreatedAtAction(nameof(GetCategories), new { }, response);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An error occurred while creating category '{CategoryName}'.", request.Name);
+            return StatusCode(500, new ErrorResponse("An internal server error occurred. Please try again later."));
+        }
+    }
+
     [HttpGet]
     [AllowAnonymous]
     public async Task<ActionResult<List<ArticleResponseDTO>>> GetAllArticles()
