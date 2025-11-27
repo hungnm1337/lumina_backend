@@ -308,4 +308,85 @@ public class ArticleService : IArticleService
                 }).ToList()
         };
     }
+
+    public async Task<ArticleResponseDTO?> GetArticleByIdForManagerAsync(int id)
+    {
+        var article = await _unitOfWork.Articles.FindByIdAsync(id);
+        if (article == null) // Manager can view any article regardless of status
+        {
+            return null;
+        }
+
+        var category = await _unitOfWork.Categories.FindByIdAsync(article.CategoryId);
+        var author = await _unitOfWork.Users.GetUserByIdAsync(article.CreatedBy);
+
+        return new ArticleResponseDTO
+        {
+            ArticleId = article.ArticleId,
+            Title = article.Title,
+            Summary = article.Summary,
+            IsPublished = article.IsPublished,
+            Status = article.Status,
+            CreatedAt = article.CreatedAt,
+            AuthorName = author?.FullName ?? "Unknown",
+            CategoryName = category?.CategoryName ?? "Unknown",
+            RejectionReason = article.RejectionReason,
+            Sections = article.ArticleSections
+                .OrderBy(s => s.OrderIndex)
+                .Select(s => new ArticleSectionResponseDTO
+                {
+                    SectionId = s.SectionId,
+                    SectionTitle = s.SectionTitle,
+                    SectionContent = s.SectionContent,
+                    OrderIndex = s.OrderIndex
+                }).ToList()
+        };
+    }
+
+    public async Task<ArticleProgressResponseDTO> SaveArticleProgressAsync(int userId, int articleId, ArticleProgressRequestDTO request)
+    {
+        var progress = await _unitOfWork.UserArticleProgresses.SaveOrUpdateProgressAsync(
+            userId, 
+            articleId, 
+            request.ProgressPercent, 
+            request.Status
+        );
+
+        return new ArticleProgressResponseDTO
+        {
+            ArticleId = progress.ArticleId,
+            ProgressPercent = progress.ProgressPercent ?? 0,
+            Status = progress.Status ?? "not_started",
+            LastAccessedAt = progress.LastAccessedAt,
+            CompletedAt = progress.CompletedAt
+        };
+    }
+
+    public async Task<List<ArticleProgressResponseDTO>> GetUserArticleProgressesAsync(int userId, List<int> articleIds)
+    {
+        var progresses = await _unitOfWork.UserArticleProgresses.GetUserArticleProgressesAsync(userId, articleIds);
+        
+        return progresses.Select(p => new ArticleProgressResponseDTO
+        {
+            ArticleId = p.ArticleId,
+            ProgressPercent = p.ProgressPercent ?? 0,
+            Status = p.Status ?? "not_started",
+            LastAccessedAt = p.LastAccessedAt,
+            CompletedAt = p.CompletedAt
+        }).ToList();
+    }
+
+    public async Task<bool> MarkArticleAsDoneAsync(int userId, int articleId)
+    {
+        try
+        {
+            await _unitOfWork.UserArticleProgresses.MarkArticleAsDoneAsync(userId, articleId);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error marking article {ArticleId} as done for user {UserId}", articleId, userId);
+            return false;
+        }
+    }
 }

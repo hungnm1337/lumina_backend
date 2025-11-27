@@ -4,6 +4,7 @@ using RepositoryLayer.Questions;
 using RepositoryLayer.Speaking;
 using RepositoryLayer.User;
 using RepositoryLayer.UserSpacedRepetition;
+using RepositoryLayer.UserArticleProgress;
 using RepositoryLayer.Generic;
 using DataLayer.Models;
 
@@ -27,6 +28,7 @@ public interface IUnitOfWork : IDisposable
     IUserAnswerRepository UserAnswers { get; }
     IUserAnswerSpeakingRepository UserAnswersSpeaking { get; }
     IUserSpacedRepetitionRepository UserSpacedRepetitions { get; }
+    IUserArticleProgressRepository UserArticleProgresses { get; }
 
     // Generic repositories for direct entity access
     IRepository<ExamAttempt> ExamAttemptsGeneric { get; }

@@ -57,6 +57,20 @@ public class ArticlesController : ControllerBase
         }
     }
 
+    // Endpoint for manager to view any article (including pending/draft)
+    // Must be before {id} route to avoid conflict
+    [HttpGet("manager/{id}")]
+    [Authorize(Roles = "Manager")]
+    public async Task<IActionResult> GetArticleByIdForManager(int id)
+    {
+        var article = await _articleService.GetArticleByIdForManagerAsync(id);
+        if (article == null)
+        {
+            return NotFound(new ErrorResponse($"Article with ID {id} not found."));
+        }
+        return Ok(article);
+    }
+
     [HttpGet("{id}", Name = "GetArticleById")]
     [AllowAnonymous]
     public async Task<IActionResult> GetArticleById(int id)
@@ -558,6 +572,110 @@ public class ArticlesController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "An error occurred while deleting article with ID {ArticleId}.", id);
+            return StatusCode(500, new ErrorResponse("An internal server error occurred. Please try again later."));
+        }
+    }
+
+    // POST api/articles/{id}/progress - Save article progress
+    [HttpPost("{id}/progress")]
+    [Authorize]
+    public async Task<ActionResult<ArticleProgressResponseDTO>> SaveArticleProgress(int id, [FromBody] ArticleProgressRequestDTO request)
+    {
+        try
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
+            {
+                return Unauthorized(new ErrorResponse("Invalid token - User ID could not be determined."));
+            }
+
+            // Verify article exists
+            var article = await _unitOfWork.Articles.FindByIdAsync(id);
+            if (article == null)
+            {
+                return NotFound(new ErrorResponse($"Article with ID {id} not found."));
+            }
+
+            var progress = await _articleService.SaveArticleProgressAsync(userId, id, request);
+            return Ok(progress);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An error occurred while saving progress for article {ArticleId}.", id);
+            return StatusCode(500, new ErrorResponse("An internal server error occurred. Please try again later."));
+        }
+    }
+
+    // GET api/articles/progress?articleIds=1,2,3 - Get user article progress
+    [HttpGet("progress")]
+    [Authorize]
+    public async Task<ActionResult<List<ArticleProgressResponseDTO>>> GetUserArticleProgress([FromQuery] string articleIds)
+    {
+        try
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
+            {
+                return Unauthorized(new ErrorResponse("Invalid token - User ID could not be determined."));
+            }
+
+            if (string.IsNullOrWhiteSpace(articleIds))
+            {
+                return BadRequest(new ErrorResponse("articleIds parameter is required."));
+            }
+
+            var articleIdList = articleIds.Split(',')
+                .Select(id => int.TryParse(id.Trim(), out var parsedId) ? parsedId : (int?)null)
+                .Where(id => id.HasValue)
+                .Select(id => id!.Value)
+                .ToList();
+
+            if (articleIdList.Count == 0)
+            {
+                return BadRequest(new ErrorResponse("Invalid articleIds format."));
+            }
+
+            var progresses = await _articleService.GetUserArticleProgressesAsync(userId, articleIdList);
+            return Ok(progresses);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An error occurred while retrieving article progress.");
+            return StatusCode(500, new ErrorResponse("An internal server error occurred. Please try again later."));
+        }
+    }
+
+    // POST api/articles/{id}/mark-as-done - Mark article as done
+    [HttpPost("{id}/mark-as-done")]
+    [Authorize]
+    public async Task<ActionResult> MarkArticleAsDone(int id)
+    {
+        try
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
+            {
+                return Unauthorized(new ErrorResponse("Invalid token - User ID could not be determined."));
+            }
+
+            // Verify article exists
+            var article = await _unitOfWork.Articles.FindByIdAsync(id);
+            if (article == null)
+            {
+                return NotFound(new ErrorResponse($"Article with ID {id} not found."));
+            }
+
+            var result = await _articleService.MarkArticleAsDoneAsync(userId, id);
+            if (!result)
+            {
+                return StatusCode(500, new ErrorResponse("Failed to mark article as done."));
+            }
+
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An error occurred while marking article {ArticleId} as done.", id);
             return StatusCode(500, new ErrorResponse("An internal server error occurred. Please try again later."));
         }
     }
