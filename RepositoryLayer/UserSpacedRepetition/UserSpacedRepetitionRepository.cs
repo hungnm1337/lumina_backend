@@ -41,10 +41,9 @@ namespace RepositoryLayer.UserSpacedRepetition
                 .Where(usr => usr.UserId == userId 
                     && usr.VocabularyId != null  // Chỉ lấy word-level records
                     && usr.NextReviewAt.HasValue 
-                    && usr.NextReviewAt.Value <= now
+                    && usr.NextReviewAt.Value <= now  // Đủ điều kiện: đã đến hạn review
                     && (usr.Status == "New" || usr.Status == "Learning")
-                    && usr.ReviewCount > 0  // Chỉ lấy những từ đã được review
-                    && (usr.Intervals == 1 || usr.Intervals == null))  // Chỉ lấy những từ đánh giá thấp (intervals = 1)
+                    && usr.ReviewCount > 0)  // Chỉ lấy những từ đã được review
                 .Include(usr => usr.VocabularyList)
                 .Include(usr => usr.Vocabulary)
                 .OrderBy(usr => usr.NextReviewAt)
