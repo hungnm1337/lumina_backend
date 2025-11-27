@@ -168,7 +168,8 @@ namespace RepositoryLayer.Questions
             question.StemText = dto.StemText;
             question.QuestionExplain = dto.QuestionExplain;
             question.SampleAnswer = dto.SampleAnswer;
-
+            question.ScoreWeight = dto.ScoreWeight;
+            question.Time = dto.Time;
             // Xử lý Option nếu có
             if (dto.Options != null)
             {
