@@ -512,6 +512,34 @@ public class ArticlesController : ControllerBase
         return NoContent();
     }
 
+    // Toggle hide/show article (Manager only) - Uses IsPublished field
+    [HttpPut("{id}/toggle-hide")]
+    [Authorize(Roles = "Manager")]
+    public async Task<IActionResult> ToggleHideArticle(int id, [FromBody] ToggleHideRequest request)
+    {
+        try
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var managerUserId))
+            {
+                return Unauthorized(new ErrorResponse("Invalid token - User ID could not be determined."));
+            }
+
+            var success = await _articleService.ToggleHideArticleAsync(id, request.IsPublished, managerUserId);
+            if (!success)
+            {
+                return NotFound(new ErrorResponse($"Article with ID {id} not found or is not published."));
+            }
+
+            return Ok(new { message = request.IsPublished ? "Article has been shown" : "Article has been hidden", isPublished = request.IsPublished });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An error occurred while toggling hide status for article {ArticleId}.", id);
+            return StatusCode(500, new ErrorResponse("An internal server error occurred. Please try again later."));
+        }
+    }
+
     [HttpPost("{id}/review")]
     [Authorize(Roles = "Manager")] // <-- Chỉ Manager mới có quyền này
     public async Task<IActionResult> ReviewArticle(int id, [FromBody] ArticleReviewRequest request)

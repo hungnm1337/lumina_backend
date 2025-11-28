@@ -17,4 +17,7 @@ public interface IArticleService
     Task<ArticleProgressResponseDTO> SaveArticleProgressAsync(int userId, int articleId, ArticleProgressRequestDTO request);
     Task<List<ArticleProgressResponseDTO>> GetUserArticleProgressesAsync(int userId, List<int> articleIds);
     Task<bool> MarkArticleAsDoneAsync(int userId, int articleId);
+    
+    // Hide/Show article (Manager only) - Uses IsPublished field
+    Task<bool> ToggleHideArticleAsync(int articleId, bool isPublished, int managerUserId);
 }

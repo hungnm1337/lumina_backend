@@ -109,6 +109,12 @@ public class ArticleReviewRequest
     public string? Comment { get; set; }
 }
 
+public class ToggleHideRequest
+{
+    [Required]
+    public bool IsPublished { get; set; }
+}
+
 // DTO cho việc tạo category mới
 public class CategoryCreateDTO
 {
