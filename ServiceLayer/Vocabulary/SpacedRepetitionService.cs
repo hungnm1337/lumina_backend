@@ -305,15 +305,30 @@ namespace ServiceLayer.Vocabulary
             }
             else if (quality == 3)
             {
-                // Nhớ tạm, giữ nguyên hoặc tăng nhẹ
-                newIntervals = currentIntervals;
+                // Sửa: Lần review thứ 2 (reviewCount = 1) với quality >= 3 nên là 6 ngày
+                if (reviewCount == 1 && currentIntervals == 1)
+                {
+                    newIntervals = 6;  // Đúng với SM-2
+                }
+                else
+                {
+                    newIntervals = currentIntervals;  // Giữ nguyên cho các lần sau
+                }
                 newStatus = "Learning";
             }
             else
             {
-                // Nhớ tốt, tăng khoảng thời gian
-                // Công thức: interval = interval * (1 + (quality - 3) * 0.5)
-                newIntervals = (int)Math.Ceiling(currentIntervals * (1 + (quality - 3) * 0.5));
+                // Sửa: Lần review thứ 2 (reviewCount = 1) với quality > 3 cũng nên là 6 ngày
+                if (reviewCount == 1 && currentIntervals == 1)
+                {
+                    newIntervals = 6;  // Đúng với SM-2
+                }
+                else
+                {
+                    // Nhớ tốt, tăng khoảng thời gian
+                    // Công thức: interval = interval * (1 + (quality - 3) * 0.5)
+                    newIntervals = (int)Math.Ceiling(currentIntervals * (1 + (quality - 3) * 0.5));
+                }
                 newStatus = newIntervals >= 30 ? "Mastered" : "Learning";
             }
 

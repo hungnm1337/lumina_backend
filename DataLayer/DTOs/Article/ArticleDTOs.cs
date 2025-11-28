@@ -129,3 +129,19 @@ public class CategoryResponseDTO
     public int? CreatedByUserId { get; set; }
     public DateTime CreateAt { get; set; }
 }
+
+// DTOs cho Article Progress
+public class ArticleProgressRequestDTO
+{
+    public int ProgressPercent { get; set; }
+    public string Status { get; set; } = string.Empty; // "not_started" | "in_progress" | "completed"
+}
+
+public class ArticleProgressResponseDTO
+{
+    public int ArticleId { get; set; }
+    public int ProgressPercent { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public DateTime LastAccessedAt { get; set; }
+    public DateTime? CompletedAt { get; set; }
+}

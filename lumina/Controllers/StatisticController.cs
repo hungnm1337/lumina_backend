@@ -100,7 +100,7 @@ namespace lumina.Controllers
             var endOfMonth = firstOfMonth.AddMonths(1);
 
             // ✅ Lấy 3 gói Pro theo DurationInDays
-            var targetDurations = new int[] { 30, 90, 365 };
+            var targetDurations = new int[] { 30, 180, 365 };
             var proPackages = await _systemContext.Packages
                 .Where(p => p.DurationInDays != null && targetDurations.Contains(p.DurationInDays.Value) && p.IsActive == true)
                 .ToListAsync();
@@ -198,7 +198,7 @@ namespace lumina.Controllers
                 string packageName = duration switch
                 {
                     30 => "Pro 1 tháng",
-                    90 => "Pro 3 tháng",
+                    180 => "Pro 6 tháng",
                     365 => "Pro 12 tháng",
                     _ => $"Pro {duration} ngày"
                 };
