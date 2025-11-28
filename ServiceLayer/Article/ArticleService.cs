@@ -148,13 +148,36 @@ public class ArticleService : IArticleService
             return null;
         }
 
+        // Kiểm tra role của user để xác định có phải Staff không
+        var updater = await _unitOfWork.Users.GetUserByIdAsync(updaterUserId);
+        bool isStaff = updater?.RoleId == 3; // RoleId 3 = Staff
+
+        // Lưu trạng thái ban đầu để kiểm tra
+        var originalStatus = article.Status;
+        var originalIsPublished = article.IsPublished;
+        var wasPublished = !string.IsNullOrEmpty(article.Status) && 
+                          article.Status.Trim().Equals("Published", StringComparison.OrdinalIgnoreCase);
+
+        _logger.LogInformation("UpdateArticleAsync - ArticleId: {ArticleId}, OriginalStatus: '{Status}', OriginalIsPublished: {IsPublished}, IsStaff: {IsStaff}, WasPublished: {WasPublished}, UpdaterRoleId: {RoleId}", 
+            id, originalStatus, originalIsPublished, isStaff, wasPublished, updater?.RoleId);
+
+        // Nếu là Staff và bài viết đã được published, chuyển về pending để manager duyệt lại
+        if (isStaff && wasPublished)
+        {
+            article.Status = "Pending";
+            article.IsPublished = false;
+            _logger.LogInformation("Article {ArticleId} changed from '{OriginalStatus}' (IsPublished: {OriginalIsPublished}) to 'Pending' (IsPublished: false) after staff edit by User {UserId}", 
+                id, originalStatus, originalIsPublished, updaterUserId);
+        }
+
         article.Title = request.Title;
         article.Summary = request.Summary;
         article.CategoryId = request.CategoryId;
         article.UpdatedBy = updaterUserId;
         article.UpdatedAt = DateTime.UtcNow;
 
-        // Cập nhật metadata bài viết
+        // Cập nhật metadata bài viết (bao gồm cả Status và IsPublished nếu đã thay đổi)
+        // UpdateAsync đã tự động gọi SaveChangesAsync
         await _unitOfWork.Articles.UpdateAsync(article);
 
         // Cập nhật sections nếu có
@@ -170,8 +193,29 @@ public class ArticleService : IArticleService
             await _unitOfWork.Articles.UpdateSectionsAsync(id, newSections);
         }
 
-        // Lấy lại article với sections đã cập nhật
+        // Lưu lại status và isPublished trước khi reload (để tránh EF Core tracking issues)
+        var savedStatus = article.Status;
+        var savedIsPublished = article.IsPublished;
+        
+        // Lấy lại article từ database để đảm bảo có dữ liệu mới nhất (bao gồm sections)
         article = await _unitOfWork.Articles.FindByIdAsync(id);
+        
+        // Đảm bảo status và isPublished được giữ nguyên sau khi reload
+        if (article != null && (article.Status != savedStatus || article.IsPublished != savedIsPublished))
+        {
+            _logger.LogWarning("UpdateArticleAsync - Status/IsPublished mismatch after reload! Expected Status: '{ExpectedStatus}', Got: '{ActualStatus}'. Expected IsPublished: {ExpectedIsPublished}, Got: {ActualIsPublished}", 
+                savedStatus, article.Status, savedIsPublished, article.IsPublished);
+            // Force update lại status và isPublished
+            article.Status = savedStatus;
+            article.IsPublished = savedIsPublished;
+            await _unitOfWork.Articles.UpdateAsync(article);
+            // Reload lại
+            article = await _unitOfWork.Articles.FindByIdAsync(id);
+        }
+        
+        _logger.LogInformation("UpdateArticleAsync - After reload, ArticleId: {ArticleId}, Status: '{Status}', IsPublished: {IsPublished}", 
+            id, article?.Status, article?.IsPublished);
+        
         var category = await _unitOfWork.Categories.FindByIdAsync(article.CategoryId);
         var author = await _unitOfWork.Users.GetUserByIdAsync(article.CreatedBy);
 
@@ -278,7 +322,7 @@ public class ArticleService : IArticleService
     public async Task<ArticleResponseDTO?> GetArticleByIdAsync(int id)
     {
         var article = await _unitOfWork.Articles.FindByIdAsync(id);
-        if (article == null || article.IsPublished != true) // Chỉ lấy bài đã published
+        if (article == null || article.IsPublished != true) // Chỉ lấy bài đã published (IsPublished = 1)
         {
             return null;
         }
@@ -341,6 +385,29 @@ public class ArticleService : IArticleService
                     OrderIndex = s.OrderIndex
                 }).ToList()
         };
+    }
+
+    public async Task<bool> ToggleHideArticleAsync(int articleId, bool isPublished, int managerUserId)
+    {
+        var article = await _unitOfWork.Articles.FindByIdAsync(articleId);
+        if (article == null)
+        {
+            return false;
+        }
+
+        // Chỉ cho phép toggle IsPublished cho bài viết đã được duyệt (status = Published)
+        if (article.Status != "Published")
+        {
+            return false;
+        }
+
+        article.IsPublished = isPublished;
+        article.UpdatedBy = managerUserId;
+        article.UpdatedAt = DateTime.UtcNow;
+
+        await _unitOfWork.Articles.UpdateAsync(article);
+        _logger.LogInformation("Article {ArticleId} IsPublished status changed to {IsPublished} by manager {ManagerId}", articleId, isPublished, managerUserId);
+        return true;
     }
 
     public async Task<ArticleProgressResponseDTO> SaveArticleProgressAsync(int userId, int articleId, ArticleProgressRequestDTO request)
