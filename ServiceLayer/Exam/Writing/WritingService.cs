@@ -28,6 +28,18 @@ namespace ServiceLayer.Exam.Writting
 
         public async Task<bool> SaveWritingAnswer(WritingAnswerRequestDTO writingAnswerRequestDTO)
         {
+            if (writingAnswerRequestDTO == null)
+                throw new ArgumentNullException(nameof(writingAnswerRequestDTO), "Request cannot be null.");
+
+            if (writingAnswerRequestDTO.AttemptID <= 0)
+                throw new ArgumentException("Attempt ID must be greater than zero.", nameof(writingAnswerRequestDTO.AttemptID));
+
+            if (writingAnswerRequestDTO.QuestionId <= 0)
+                throw new ArgumentException("Question ID must be greater than zero.", nameof(writingAnswerRequestDTO.QuestionId));
+
+            if (string.IsNullOrWhiteSpace(writingAnswerRequestDTO.UserAnswerContent))
+                throw new ArgumentException("User Answer Content cannot be empty.", nameof(writingAnswerRequestDTO.UserAnswerContent));
+
             try
             {
                 return await _writtingRepository.SaveWritingAnswer(writingAnswerRequestDTO);

@@ -53,6 +53,11 @@ namespace ServiceLayer.MockTest
 
         public async Task<MocktestFeedbackDTO> GetMocktestFeedbackAsync(int examAttemptId)
         {
+            if (examAttemptId <= 0)
+            {
+                throw new ArgumentException("Exam Attempt ID must be greater than zero", nameof(examAttemptId));
+            }
+
             var examAttempt = await _examAttemptRepository.GetExamAttemptById(examAttemptId);
             if (examAttempt == null)
             {
