@@ -587,7 +587,7 @@ public partial class LuminaSystemContext : DbContext
             entity.Property(e => e.FirstAttemptDate)
                 .HasColumnName("FirstAttemptDate")
                 .HasColumnType("datetime")
-                .HasPrecision(3);
+                ;
 
             entity.HasOne(d => d.Leaderboard).WithMany(p => p.UserLeaderboards)
                 .HasForeignKey(d => d.LeaderboardId)
