@@ -13,5 +13,13 @@ namespace DataLayer.DTOs.Notification
         public string Content { get; set; } = null!;
 
         public bool IsActive { get; set; } = true;
+
+        // Gửi thông báo theo role (nếu có)
+        public List<int>? RoleIds { get; set; }
+
+        // Gửi thông báo cho các user cụ thể (nếu có)
+        public List<int>? UserIds { get; set; }
+
+        // Nếu cả RoleIds và UserIds đều null/empty, gửi cho tất cả users
     }
 }
