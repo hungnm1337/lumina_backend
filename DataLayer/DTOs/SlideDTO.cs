@@ -9,6 +9,7 @@ namespace DataLayer.DTOs
         public string SlideName { get; set; } = null!;
         public int? UpdateBy { get; set; }
         public int CreateBy { get; set; }
+        public string? CreatedByName { get; set; } // Tên người tạo
         public bool? IsActive { get; set; }
         public DateTime? UpdateAt { get; set; }
         public DateTime CreateAt { get; set; }

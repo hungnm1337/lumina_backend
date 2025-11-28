@@ -127,5 +127,29 @@ namespace RepositoryLayer.Notification
                 .Select(u => u.UserId)
                 .ToListAsync();
         }
+
+        public async Task<List<int>> GetUserIdsByRoleIdsAsync(List<int> roleIds)
+        {
+            if (roleIds == null || roleIds.Count == 0)
+                return new List<int>();
+
+            return await _context.Users
+                .Where(u => u.IsActive == true && roleIds.Contains(u.RoleId))
+                .Select(u => u.UserId)
+                .Distinct()
+                .ToListAsync();
+        }
+
+        public async Task<List<int>> GetUserIdsByUserIdsAsync(List<int> userIds)
+        {
+            if (userIds == null || userIds.Count == 0)
+                return new List<int>();
+
+            return await _context.Users
+                .Where(u => u.IsActive == true && userIds.Contains(u.UserId))
+                .Select(u => u.UserId)
+                .Distinct()
+                .ToListAsync();
+        }
     }
 }

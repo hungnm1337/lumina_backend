@@ -15,5 +15,7 @@ namespace RepositoryLayer.Notification
         Task<bool> UpdateAsync(DataLayer.Models.Notification entity);
         Task<bool> DeleteAsync(int notificationId);
         Task<List<int>> GetAllUserIdsAsync();
+        Task<List<int>> GetUserIdsByRoleIdsAsync(List<int> roleIds);
+        Task<List<int>> GetUserIdsByUserIdsAsync(List<int> userIds);
     }
 }
