@@ -1,4 +1,5 @@
 ﻿using DataLayer.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace RepositoryLayer;
 
@@ -19,5 +20,17 @@ public class CategoryRepository : ICategoryRepository
     public async Task<List<ArticleCategory>> GetAllAsync()
     {
         return await Task.FromResult(_context.ArticleCategories.OrderBy(c => c.CategoryName).ToList());
+    }
+
+    public async Task<ArticleCategory> AddAsync(ArticleCategory category)
+    {
+        await _context.ArticleCategories.AddAsync(category);
+        return category;
+    }
+
+    public async Task<bool> ExistsByNameAsync(string categoryName)
+    {
+        return await _context.ArticleCategories
+            .AnyAsync(c => c.CategoryName.ToLower() == categoryName.ToLower());
     }
 }

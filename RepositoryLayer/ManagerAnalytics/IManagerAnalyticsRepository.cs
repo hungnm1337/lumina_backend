@@ -60,3 +60,11 @@ public interface IManagerAnalyticsRepository
 }
 
 
+
+
+
+
+
+
+
+

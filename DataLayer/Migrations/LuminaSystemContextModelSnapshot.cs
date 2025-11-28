@@ -4,7 +4,6 @@ using DataLayer.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -12,11 +11,9 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataLayer.Migrations
 {
     [DbContext(typeof(LuminaSystemContext))]
-    [Migration("20251119155732_v44")]
-    partial class v44
+    partial class LuminaSystemContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -470,15 +467,33 @@ namespace DataLayer.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("(getutcdate())");
+
+                    b.Property<int>("CreatedBy")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("(getutcdate())");
 
                     b.HasKey("NotificationId")
                         .HasName("PK__Notifica__20CF2E12AAE7DD1E");
 
-                    b.ToTable("Notifications");
+                    b.ToTable("Notification", (string)null);
                 });
 
             modelBuilder.Entity("DataLayer.Models.Option", b =>
@@ -703,6 +718,60 @@ namespace DataLayer.Migrations
                     b.HasIndex("PromptId");
 
                     b.ToTable("Questions");
+                });
+
+            modelBuilder.Entity("DataLayer.Models.RefreshToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(3)
+                        .HasColumnType("datetime2(3)")
+                        .HasDefaultValueSql("(sysutcdatetime())");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasPrecision(3)
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<bool>("IsRevoked")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("ReplacedByToken")
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasPrecision(3)
+                        .HasColumnType("datetime2(3)");
+
+                    b.Property<string>("RevokedReason")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id")
+                        .HasName("PK_RefreshTokens");
+
+                    b.HasIndex("Token")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("RefreshTokens", (string)null);
                 });
 
             modelBuilder.Entity("DataLayer.Models.Report", b =>
@@ -1141,6 +1210,14 @@ namespace DataLayer.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserLeaderboardId"));
 
+                    b.Property<int?>("EstimatedTOEICScore")
+                        .HasColumnType("int")
+                        .HasColumnName("EstimatedTOEICScore");
+
+                    b.Property<DateTime?>("FirstAttemptDate")
+                        .HasColumnType("datetime")
+                        .HasColumnName("FirstAttemptDate");
+
                     b.Property<int>("LeaderboardId")
                         .HasColumnType("int")
                         .HasColumnName("LeaderboardID");
@@ -1242,7 +1319,7 @@ namespace DataLayer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserNotifications");
+                    b.ToTable("UserNotification", (string)null);
                 });
 
             modelBuilder.Entity("DataLayer.Models.UserSpacedRepetition", b =>
@@ -1594,6 +1671,18 @@ namespace DataLayer.Migrations
                     b.Navigation("Prompt");
                 });
 
+            modelBuilder.Entity("DataLayer.Models.RefreshToken", b =>
+                {
+                    b.HasOne("DataLayer.Models.User", "User")
+                        .WithMany("RefreshTokens")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_RefreshTokens_Users");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("DataLayer.Models.Report", b =>
                 {
                     b.HasOne("DataLayer.Models.User", "SendByNavigation")
@@ -1814,13 +1903,15 @@ namespace DataLayer.Migrations
                     b.HasOne("DataLayer.Models.Notification", "Notification")
                         .WithMany("UserNotifications")
                         .HasForeignKey("NotificationId")
-                        .HasConstraintName("FK_UserNotifications_Notifications");
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("FK_UserNotification_Notification");
 
                     b.HasOne("DataLayer.Models.User", "User")
                         .WithMany("UserNotifications")
                         .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("FK_UserNotifications_Users");
+                        .HasConstraintName("FK_UserNotification_Users");
 
                     b.Navigation("Notification");
 
@@ -1995,6 +2086,8 @@ namespace DataLayer.Migrations
                     b.Navigation("PasswordResetTokens");
 
                     b.Navigation("Payments");
+
+                    b.Navigation("RefreshTokens");
 
                     b.Navigation("Reports");
 

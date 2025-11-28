@@ -1,12 +1,12 @@
-//using DataLayer.DTOs.Exam.Speaking;
-//using DataLayer.Models;
-//using Microsoft.AspNetCore.Http;
-//using Microsoft.AspNetCore.Mvc;
-//using Moq;
-//using RepositoryLayer.UnitOfWork;
-//using ServiceLayer.Exam.Speaking;
-//using ServiceLayer.Speech;
-//using System.Security.Claims;
+/*using DataLayer.DTOs.Exam.Speaking;
+using DataLayer.Models;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Moq;
+using RepositoryLayer.UnitOfWork;
+using ServiceLayer.Exam.Speaking;
+using ServiceLayer.Speech;
+using System.Security.Claims;
 
 //namespace Lumina.Tests
 //{
@@ -316,35 +316,7 @@
 //            };
 //        }
 
-//        private void SetupUserClaims(string userId)
-//        {
-//            var claims = new List<Claim>
-//            {
-//                new Claim(ClaimTypes.NameIdentifier, userId)
-//            };
-//            var identity = new ClaimsIdentity(claims, "TestAuthType");
-//            var claimsPrincipal = new ClaimsPrincipal(identity);
-
-//            _controller.ControllerContext = new ControllerContext
-//            {
-//                HttpContext = new DefaultHttpContext { User = claimsPrincipal }
-//            };
-//        }
-
-//        private IFormFile CreateMockFormFile(long length = 1024)
-//        {
-//            var content = new byte[length];
-//            var stream = new MemoryStream(content);
-//            var mockFile = new Mock<IFormFile>();
-
-//            mockFile.Setup(f => f.Length).Returns(length);
-//            mockFile.Setup(f => f.OpenReadStream()).Returns(stream);
-//            mockFile.Setup(f => f.FileName).Returns("test-audio.wav");
-//            mockFile.Setup(f => f.ContentType).Returns("audio/wav");
-
-//            return mockFile.Object;
-//        }
-
-//        #endregion
-//    }
-//}
+        #endregion
+    }
+}
+*/

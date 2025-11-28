@@ -102,35 +102,54 @@ namespace ServiceLayer.Exam.Speaking
 
             var azureResult = await RetryAzureRecognitionAsync(transformedMp3Url, question.SampleAnswer, maxRetries: 3);
 
-          
-
-            if (string.IsNullOrWhiteSpace(azureResult.Transcript) || azureResult.Transcript == ".")
+            // ✅ FIX: Early return with zero scores when no speech detected
+            bool isTranscriptEmpty = string.IsNullOrWhiteSpace(azureResult.Transcript) || azureResult.Transcript.Trim() == ".";
+            
+            if (isTranscriptEmpty)
             {
-                Console.WriteLine($"[Speaking] ⚠️ Azure failed (possibly subscription disabled), using MOCK transcript");
-                azureResult.Transcript = question.SampleAnswer ?? "This is a mock transcript for testing purposes.";
-                // Mock scores tạm để test UI
-                azureResult.PronunciationScore = 0;
-                azureResult.AccuracyScore = 0;
-                azureResult.FluencyScore = 0;
-                azureResult.CompletenessScore =0;
+                Console.WriteLine("[Speaking] ❌ No speech detected - returning zero scores");
+                
+                // Save to database with zero scores
+                var zeroAnswer = new UserAnswerSpeaking
+                {
+                    AttemptID = attemptId,
+                    QuestionId = questionId,
+                    Transcript = "[Không nhận diện được giọng nói]",
+                    AudioUrl = transformedMp3Url,
+                    PronunciationScore = 0,
+                    AccuracyScore = 0,
+                    FluencyScore = 0,
+                    CompletenessScore = 0,
+                    GrammarScore = 0,
+                    VocabularyScore = 0,
+                    ContentScore = 0,
+                    OverallScore = 0
+                };
+
+                await _unitOfWork.UserAnswersSpeaking.AddAsync(zeroAnswer);
+                await _unitOfWork.CompleteAsync();
+
+                Console.WriteLine($"[Speaking] Saved zero-score answer to database: QuestionId={questionId}, AttemptId={attemptId}");
+
+                return new SpeakingScoringResultDTO
+                {
+                    QuestionId = questionId,
+                    Transcript = "[Không nhận diện được giọng nói]",
+                    SavedAudioUrl = transformedMp3Url,
+                    AudioUrl = transformedMp3Url,
+                    OverallScore = 0,
+                    PronunciationScore = 0,
+                    AccuracyScore = 0,
+                    FluencyScore = 0,
+                    CompletenessScore = 0,
+                    GrammarScore = 0,
+                    VocabularyScore = 0,
+                    ContentScore = 0,
+                    SubmittedAt = DateTime.UtcNow
+                };
             }
 
             Console.WriteLine($"[Speaking] Transcript result: {azureResult.Transcript}");
-            if (!string.IsNullOrEmpty(azureResult.ErrorMessage) || string.IsNullOrWhiteSpace(azureResult.Transcript) || azureResult.Transcript.Trim() == ".")
-            {
-                Console.WriteLine($"[Speaking] Azure URL analysis failed: {azureResult.ErrorMessage}. Retrying MP3 URL once more.");
-                // Retry once more after short delay
-                await Task.Delay(800);
-                await EnsureCloudinaryAssetReady(transformedMp3Url);
-                azureResult = await _azureSpeechService.AnalyzePronunciationFromUrlAsync(transformedMp3Url, question.SampleAnswer, "en-GB");
-            }
-
-            // Validate transcript after retry - but don't throw exception
-            if (string.IsNullOrWhiteSpace(azureResult.Transcript) || azureResult.Transcript.Trim() == ".")
-            {
-                Console.WriteLine("[Speaking] Azure transcription failed after retries, using fallback transcript");
-                azureResult.Transcript = "."; // Fallback for NLP processing
-            }
 
             var nlpResult = await GetNlpScoresAsync(azureResult.Transcript, question.SampleAnswer);
 
@@ -298,45 +317,47 @@ namespace ServiceLayer.Exam.Speaking
         /// </summary>
         private NlpResponseDTO GetFallbackNlpScores(string transcript, string sampleAnswer)
         {
+            // ✅ FIX: Return 0 for empty transcript
+            if (string.IsNullOrWhiteSpace(transcript) || transcript.Trim() == ".")
+            {
+                Console.WriteLine("[NLP] Fallback: Empty transcript - returning zero scores");
+                return new NlpResponseDTO
+                {
+                    Grammar_score = 0f,
+                    Vocabulary_score = 0f,
+                    Content_score = 0f
+                };
+            }
+
             // Basic heuristic scoring based on transcript characteristics
             float grammarScore = 50f;
             float vocabularyScore = 50f;
             float contentScore = 50f;
 
-            if (!string.IsNullOrWhiteSpace(transcript) && transcript != ".")
+            // Transcript length heuristic (longer = better content coverage)
+            int transcriptLength = transcript.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
+            int sampleLength = string.IsNullOrWhiteSpace(sampleAnswer) ? 20 : sampleAnswer.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
+
+            // Content score: based on length ratio (capped at 100)
+            float lengthRatio = (float)transcriptLength / Math.Max(sampleLength, 1);
+            contentScore = Math.Min(lengthRatio * 60f, 75f); // Max 75 for fallback
+
+            // Grammar score: assume reasonable if they spoke enough words
+            if (transcriptLength >= 5)
             {
-                // Transcript length heuristic (longer = better content coverage)
-                int transcriptLength = transcript.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
-                int sampleLength = string.IsNullOrWhiteSpace(sampleAnswer) ? 20 : sampleAnswer.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
-
-                // Content score: based on length ratio (capped at 100)
-                float lengthRatio = (float)transcriptLength / Math.Max(sampleLength, 1);
-                contentScore = Math.Min(lengthRatio * 60f, 75f); // Max 75 for fallback
-
-                // Grammar score: assume reasonable if they spoke enough words
-                if (transcriptLength >= 5)
-                {
-                    grammarScore = 60f;
-                }
-                else if (transcriptLength >= 3)
-                {
-                    grammarScore = 50f;
-                }
-                else
-                {
-                    grammarScore = 40f;
-                }
-
-                // Vocabulary score: similar to grammar
-                vocabularyScore = grammarScore;
+                grammarScore = 60f;
+            }
+            else if (transcriptLength >= 3)
+            {
+                grammarScore = 50f;
             }
             else
             {
-                // No transcript = low scores
-                grammarScore = 30f;
-                vocabularyScore = 30f;
-                contentScore = 30f;
+                grammarScore = 40f;
             }
+
+            // Vocabulary score: similar to grammar
+            vocabularyScore = grammarScore;
 
             Console.WriteLine($"[NLP] Fallback scores: Grammar={grammarScore:F1}, Vocab={vocabularyScore:F1}, Content={contentScore:F1}");
 

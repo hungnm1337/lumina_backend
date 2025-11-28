@@ -21,3 +21,11 @@ public interface IManagerAnalyticsService
 }
 
 
+
+
+
+
+
+
+
+

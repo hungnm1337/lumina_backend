@@ -108,3 +108,46 @@ public class ArticleReviewRequest
     public bool IsApproved { get; set; }
     public string? Comment { get; set; }
 }
+
+public class ToggleHideRequest
+{
+    [Required]
+    public bool IsPublished { get; set; }
+}
+
+// DTO cho việc tạo category mới
+public class CategoryCreateDTO
+{
+    [Required]
+    [MaxLength(255)]
+    [MinLength(2)]
+    public string Name { get; set; } = string.Empty;
+
+    public string? Description { get; set; }
+}
+
+// DTO cho response category
+public class CategoryResponseDTO
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public int? CreatedByUserId { get; set; }
+    public DateTime CreateAt { get; set; }
+}
+
+// DTOs cho Article Progress
+public class ArticleProgressRequestDTO
+{
+    public int ProgressPercent { get; set; }
+    public string Status { get; set; } = string.Empty; // "not_started" | "in_progress" | "completed"
+}
+
+public class ArticleProgressResponseDTO
+{
+    public int ArticleId { get; set; }
+    public int ProgressPercent { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public DateTime LastAccessedAt { get; set; }
+    public DateTime? CompletedAt { get; set; }
+}
