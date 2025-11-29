@@ -404,7 +404,7 @@ Now answer the user's question (PLAIN TEXT, NO JSON):";
             int attempt = 0;
 
             var config = PromptFactory.GetPartConfiguration(partNumber); 
-            Console.WriteLine($"📋 Part {partNumber} config: {config.QuestionsPerPrompt} Q/Prompt, expecting {quantity} prompts");
+            Console.WriteLine($" Part {partNumber} config: {config.QuestionsPerPrompt} Q/Prompt, expecting {quantity} prompts");
 
             while (attempt < MAX_RETRIES)
             {

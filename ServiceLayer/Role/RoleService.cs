@@ -4,23 +4,25 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
-public class RoleService : IRoleService
+namespace ServiceLayer.Role
 {
-    private readonly IRoleRepository _roleRepository;
-
-    public RoleService(IRoleRepository roleRepository)
+    public class RoleService : IRoleService
     {
-        _roleRepository = roleRepository;
-    }
+        private readonly IRoleRepository _roleRepository;
 
-    public async Task<IEnumerable<RoleDto>> GetAllRolesAsync()
-    {
-        var roles = await _roleRepository.GetAllRolesAsync();
-        return roles.Select(r => new RoleDto
+        public RoleService(IRoleRepository roleRepository)
         {
-            Id = r.RoleId,
-            Name = r.RoleName
-        });
+            _roleRepository = roleRepository;
+        }
+
+        public async Task<IEnumerable<RoleDto>> GetAllRolesAsync()
+        {
+            var roles = await _roleRepository.GetAllRolesAsync();
+            return roles.Select(r => new RoleDto
+            {
+                Id = r.RoleId,
+                Name = r.RoleName
+            });
+        }
     }
 }
