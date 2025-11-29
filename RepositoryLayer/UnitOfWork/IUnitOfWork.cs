@@ -19,10 +19,6 @@ public interface IUnitOfWork : IDisposable
     IVocabularyRepository Vocabularies { get; }
     IVocabularyListRepository VocabularyLists { get; }
     IQuestionRepository Questions { get; }
-
-    // TODO: Uncomment after migration - SpeakingResult and UserAnswer models have been modified
-    // ISpeakingResultRepository SpeakingResults { get; }
-
     RepositoryLayer.Exam.ExamAttempt.IExamAttemptRepository ExamAttempts { get; }
 
     IUserAnswerRepository UserAnswers { get; }
@@ -30,7 +26,6 @@ public interface IUnitOfWork : IDisposable
     IUserSpacedRepetitionRepository UserSpacedRepetitions { get; }
     IUserArticleProgressRepository UserArticleProgresses { get; }
 
-    // Generic repositories for direct entity access
     IRepository<ExamAttempt> ExamAttemptsGeneric { get; }
     IRepository<Question> QuestionsGeneric { get; }
     IRepository<Option> Options { get; }

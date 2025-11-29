@@ -22,11 +22,7 @@ namespace lumina.Controllers
             _logger = logger;
         }
 
-        /// <summary>
-        /// Ask a question about lesson content
-        /// </summary>
-        /// <param name="request">Chat request with user question and lesson content</param>
-        /// <returns>AI response to the question</returns>
+       
         [HttpPost("ask-question")]
         [ProducesResponseType(typeof(ChatResponseDTO), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -67,11 +63,7 @@ namespace lumina.Controllers
             }
         }
 
-        /// <summary>
-        /// Continue conversation with context
-        /// </summary>
-        /// <param name="request">Chat request with conversation history</param>
-        /// <returns>AI response with updated conversation history</returns>
+       
         [HttpPost("continue-conversation")]
         [ProducesResponseType(typeof(ChatConversationResponseDTO), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -112,11 +104,7 @@ namespace lumina.Controllers
             }
         }
 
-        /// <summary>
-        /// Generate suggested questions based on lesson content
-        /// </summary>
-        /// <param name="request">Request with lesson content and optional title</param>
-        /// <returns>List of suggested questions</returns>
+        
         [HttpPost("suggested-questions")]
         [ProducesResponseType(typeof(ChatResponseDTO), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -154,11 +142,7 @@ namespace lumina.Controllers
             }
         }
 
-        /// <summary>
-        /// Get detailed explanation of a concept
-        /// </summary>
-        /// <param name="request">Request with concept and lesson context</param>
-        /// <returns>Detailed explanation of the concept</returns>
+        
         [HttpPost("explain-concept")]
         [ProducesResponseType(typeof(ChatResponseDTO), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -201,11 +185,7 @@ namespace lumina.Controllers
             }
         }
 
-        /// <summary>
-        /// Quick ask - simplified endpoint for single questions
-        /// </summary>
-        /// <param name="request">Simple question request</param>
-        /// <returns>AI response</returns>
+       
         [HttpPost("quick-ask")]
         [ProducesResponseType(typeof(ChatResponseDTO), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -249,29 +229,20 @@ namespace lumina.Controllers
         }
     }
 
-    #region Supporting DTOs
-
-    /// <summary>
-    /// DTO for lesson content request
-    /// </summary>
+    
     public class LessonContentRequestDTO
     {
         public string LessonContent { get; set; } = string.Empty;
         public string? LessonTitle { get; set; }
     }
 
-    /// <summary>
-    /// DTO for concept explanation request
-    /// </summary>
+    
     public class ConceptExplanationRequestDTO
     {
         public string Concept { get; set; } = string.Empty;
         public string LessonContext { get; set; } = string.Empty;
     }
 
-    /// <summary>
-    /// DTO for quick ask request
-    /// </summary>
     public class QuickAskRequestDTO
     {
         public string Question { get; set; } = string.Empty;
@@ -279,5 +250,4 @@ namespace lumina.Controllers
         public int? UserId { get; set; }
     }
 
-    #endregion
 }

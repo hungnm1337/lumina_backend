@@ -20,7 +20,6 @@ namespace ServiceLayer.Exam.Reading
 
         public async Task<SubmitAnswerResponseDTO> SubmitAnswerAsync(ReadingAnswerRequestDTO request)
         {
-            // 1. Validate ExamAttempt
             var attempt = await _unitOfWork.ExamAttemptsGeneric
                 .GetAsync(a => a.AttemptID == request.ExamAttemptId);
 
@@ -38,7 +37,6 @@ namespace ServiceLayer.Exam.Reading
                     Message = "Exam already completed"
                 };
 
-            // 2. Get Question with Options
             var question = await _unitOfWork.QuestionsGeneric
                 .GetAsync(
                     q => q.QuestionId == request.QuestionId,
@@ -52,7 +50,6 @@ namespace ServiceLayer.Exam.Reading
                     Message = "Question not found"
                 };
 
-            // 3. Validate Selected Option
             var selectedOption = question.Options
                 .FirstOrDefault(o => o.OptionId == request.SelectedOptionId);
 
@@ -63,7 +60,6 @@ namespace ServiceLayer.Exam.Reading
                     Message = "Invalid option selected"
                 };
 
-            // 4. Check if answer already exists
             var existingAnswer = await _unitOfWork.UserAnswers
                 .GetAsync(ua =>
                     ua.AttemptID == request.ExamAttemptId &&
@@ -75,7 +71,6 @@ namespace ServiceLayer.Exam.Reading
 
             if (existingAnswer != null)
             {
-                // Update existing answer
                 existingAnswer.SelectedOptionId = request.SelectedOptionId;
                 existingAnswer.IsCorrect = isCorrect;
                 existingAnswer.Score = score;
@@ -84,7 +79,6 @@ namespace ServiceLayer.Exam.Reading
             }
             else
             {
-                // Create new answer
                 var userAnswer = new UserAnswerMultipleChoice
                 {
                     AttemptID = request.ExamAttemptId,

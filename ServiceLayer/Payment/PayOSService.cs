@@ -37,10 +37,7 @@ namespace ServiceLayer.Payment
 
         public string GenerateOrderCode(int userId, int packageId)
         {
-            // PayOS requires numeric order code (long type, max ~18 digits)
-            // Format: timestamp (10 digits) + userId (max 4 digits) + packageId (1 digit)
             var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            // Keep only last 9 digits of timestamp to save space
             var shortTimestamp = timestamp % 1000000000;
             return $"{shortTimestamp}{userId:D4}{packageId}";
         }
@@ -52,7 +49,6 @@ namespace ServiceLayer.Payment
                 var orderCode = GenerateOrderCode(userId, packageId);
                 var orderCodeLong = long.Parse(orderCode);
 
-                // Create payment data for signature (sorted alphabetically)
                 var paymentData = new Dictionary<string, object>
                 {
                     { "amount", (int)amount },
@@ -102,7 +98,6 @@ namespace ServiceLayer.Payment
                 _logger.LogInformation("PayOS Response parsed - Code: {Code}, Desc: {Desc}, Data: {Data}", 
                     result?.Code, result?.Desc, result?.Data != null ? "Present" : "Null");
 
-                // Check response code (00 = success)
                 if (result?.Code != "00")
                 {
                     _logger.LogError("PayOS returned error code. Code: {Code}, Desc: {Desc}, Full Response: {Response}", 
@@ -163,12 +158,9 @@ namespace ServiceLayer.Payment
                     };
                 }
 
-                // Parse orderCode to extract userId and packageId
-                // Format: timestamp(9) + userId(4) + packageId(1) = 14 digits
                 var orderCodeStr = data.OrderCode;
                 if (orderCodeStr.Length >= 5)
                 {
-                    // Extract last 5 digits: userId(4) + packageId(1)
                     var userAndPackage = orderCodeStr.Substring(orderCodeStr.Length - 5);
                     var userIdStr = userAndPackage.Substring(0, 4);
                     var packageIdStr = userAndPackage.Substring(4, 1);
@@ -234,7 +226,6 @@ namespace ServiceLayer.Payment
             return Convert.ToHexString(hash).ToLower();
         }
 
-        // PayOS API response structure (matches successful project)
         private class PayOSApiResponse
         {
             public string? Code { get; set; }

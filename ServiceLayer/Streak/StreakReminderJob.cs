@@ -29,7 +29,6 @@ namespace ServiceLayer.Streak
             var startTime = DateTime.UtcNow;
             _logger.LogInformation("=== START Daily Streak Reminder at {Time} UTC ===", startTime);
 
-            // ✅ THÊM: Defense layer - Kiểm tra thời gian
             var nowGMT7 = TimeZoneInfo.ConvertTimeFromUtc(
                 DateTime.UtcNow,
                 TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")
@@ -39,13 +38,13 @@ namespace ServiceLayer.Streak
             if (nowGMT7.Hour < 20 || nowGMT7.Hour >= 22)
             {
                 _logger.LogWarning(
-                    "⚠️ Job triggered outside allowed time window. Current time: {Time} GMT+7. Expected: 20:00-22:00. Skipping execution.",
+                    " Job triggered outside allowed time window. Current time: {Time} GMT+7. Expected: 20:00-22:00. Skipping execution.",
                     nowGMT7.ToString("yyyy-MM-dd HH:mm:ss")
                 );
                 return;
             }
 
-            _logger.LogInformation("✅ Time check passed. Current time: {Time} GMT+7", nowGMT7.ToString("HH:mm:ss"));
+            _logger.LogInformation(" Time check passed. Current time: {Time} GMT+7", nowGMT7.ToString("HH:mm:ss"));
 
             try
             {
@@ -124,7 +123,7 @@ namespace ServiceLayer.Streak
         /// Gửi email 
         private async Task SendReminderEmailAsync(StreakReminderDTO user)
         {
-            var subject = $"⏰ Nhắc nhở: Hãy duy trì chuỗi {user.CurrentStreak} ngày của bạn!";
+            var subject = $" Nhắc nhở: Hãy duy trì chuỗi {user.CurrentStreak} ngày của bạn!";
 
             var body = GenerateEmailBody(user);
 

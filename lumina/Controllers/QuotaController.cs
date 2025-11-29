@@ -20,9 +20,6 @@ namespace lumina.Controllers
             _logger = logger;
         }
 
-        /// <summary>
-        /// Get remaining quota for current user
-        /// </summary>
         [HttpGet("remaining")]
         public async Task<IActionResult> GetRemainingQuota()
         {
@@ -44,10 +41,6 @@ namespace lumina.Controllers
             }
         }
 
-        /// <summary>
-        /// Check if user can access a specific skill (reading, listening, speaking, writing)
-        /// </summary>
-        /// <param name="skill">Skill type: reading, listening, speaking, writing</param>
         [HttpGet("check/{skill}")]
         public async Task<IActionResult> CheckQuota(string skill)
         {
@@ -84,10 +77,6 @@ namespace lumina.Controllers
             }
         }
 
-        /// <summary>
-        /// Increment quota after user completes an exam
-        /// </summary>
-        /// <param name="skill">Skill type: reading, listening, speaking, writing</param>
         [HttpPost("increment/{skill}")]
         public async Task<IActionResult> IncrementQuota(string skill)
         {
@@ -99,7 +88,6 @@ namespace lumina.Controllers
                     return Unauthorized(new { message = "User not authenticated" });
                 }
 
-                // Check quota before incrementing
                 var result = await _quotaService.CheckQuotaAsync(userId, skill);
                 
                 if (!result.CanAccess && !result.IsPremium)
@@ -123,9 +111,6 @@ namespace lumina.Controllers
             }
         }
 
-        /// <summary>
-        /// Admin only: Reset all quotas (typically run monthly via scheduled job)
-        /// </summary>
         [HttpPost("reset-all")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ResetAllQuotas()

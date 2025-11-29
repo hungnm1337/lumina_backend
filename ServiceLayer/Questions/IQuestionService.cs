@@ -14,9 +14,6 @@ namespace ServiceLayer.Questions
 
         Task<(List<PromptDto> Items, int TotalPages)> GetPromptsPagedAsync(int page, int size, int? partId);
            
-          
-          /*  Task<bool> EditPassageWithPromptAsync(PassageEditDto dto);*/
-
         Task<bool> EditPromptWithQuestionsAsync(PromptEditDto dto);
 
         Task<int> AddQuestionAsync(QuestionCrudDto dto);
@@ -26,7 +23,7 @@ namespace ServiceLayer.Questions
         Task<QuestionStatisticDto> GetStatisticsAsync();
 
         Task<List<int>> SavePromptsWithQuestionsAndOptionsAsync(
-    List<CreatePromptWithQuestionsDTO> promptDtos, int partId);
+        List<CreatePromptWithQuestionsDTO> promptDtos, int partId);
 
         Task<int> GetAvailableSlots(int partId, int requestedCount);
 

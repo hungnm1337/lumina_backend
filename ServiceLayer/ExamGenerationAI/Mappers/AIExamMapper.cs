@@ -8,7 +8,6 @@ namespace ServiceLayer.ExamGenerationAI.Mappers
 {
     public class AIExamMapper : IAIExamMapper
     {
-        // Chuyển đổi từ AI-generated exam sang DTO dùng để tạo prompt + question
         public List<CreatePromptWithQuestionsDTO> MapAIGeneratedToCreatePrompts(AIGeneratedExamDTO aiExam)
         {
             var result = new List<CreatePromptWithQuestionsDTO>();
@@ -48,8 +47,8 @@ namespace ServiceLayer.ExamGenerationAI.Mappers
                     ScoreWeight = aiQuestion.ScoreWeight,
                     QuestionExplain = aiQuestion.Explanation ?? string.Empty,
                     Time = aiQuestion.Time,
-                    QuestionNumber = 0,  // Gán lại khi lưu DB
-                    PromptId = 0, // Gán lại khi lưu DB
+                    QuestionNumber = 0, 
+                    PromptId = 0, 
                     SampleAnswer = aiQuestion.SampleAnswer
                 },
                 Options = aiQuestion.Options?.Select(o => new OptionDTO

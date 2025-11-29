@@ -46,9 +46,7 @@ public class ArticleRepository : IArticleRepository
 
         if (article != null)
         {
-            // Xóa sections trước
             _context.ArticleSections.RemoveRange(article.ArticleSections);
-            // Xóa article
             _context.Articles.Remove(article);
             await _context.SaveChangesAsync();
             return true;
@@ -87,19 +85,16 @@ public class ArticleRepository : IArticleRepository
             query = query.Where(a => a.IsPublished == isPublished.Value);
         }
 
-        // Giờ đây 'status' đã hợp lệ
         if (!string.IsNullOrWhiteSpace(status))
         {
             query = query.Where(a => a.Status == status);
         }
 
-        // Filter by author/user ID
         if (createdBy.HasValue)
         {
             query = query.Where(a => a.CreatedBy == createdBy.Value);
         }
 
-        // Sorting
         bool desc = string.Equals(sortDir, "desc", StringComparison.OrdinalIgnoreCase);
         query = (sortBy?.ToLower()) switch
         {
@@ -114,11 +109,9 @@ public class ArticleRepository : IArticleRepository
     }
     public async Task UpdateSectionsAsync(int articleId, IEnumerable<ArticleSection> newSections)
     {
-        // Bắt đầu một transaction để đảm bảo tất cả các thao tác đều thành công hoặc thất bại cùng nhau.
         using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
-            // 1. Tìm và xóa tất cả các section cũ thuộc về bài viết này.
             var existingSections = await _context.ArticleSections
                 .Where(s => s.ArticleId == articleId)
                 .ToListAsync();
@@ -128,11 +121,9 @@ public class ArticleRepository : IArticleRepository
                 _context.ArticleSections.RemoveRange(existingSections);
             }
 
-            // 2. Thêm các section mới được cung cấp.
-            // Cần đảm bảo rằng ArticleId được gán chính xác cho mỗi section mới.
             var sectionsToAdd = newSections.Select(s => new ArticleSection
             {
-                ArticleId = articleId, // Gán ID của bài viết cha
+                ArticleId = articleId,
                 SectionTitle = s.SectionTitle,
                 SectionContent = s.SectionContent,
                 OrderIndex = s.OrderIndex
@@ -143,17 +134,13 @@ public class ArticleRepository : IArticleRepository
                 await _context.ArticleSections.AddRangeAsync(sectionsToAdd);
             }
 
-            // 3. Lưu tất cả các thay đổi (xóa và thêm) vào cơ sở dữ liệu.
             await _context.SaveChangesAsync();
 
-            // 4. Nếu mọi thứ thành công, commit transaction.
             await transaction.CommitAsync();
         }
         catch (Exception)
         {
-            // Nếu có bất kỳ lỗi nào xảy ra, rollback transaction để cơ sở dữ liệu trở lại trạng thái ban đầu.
             await transaction.RollbackAsync();
-            // Ném lại lỗi để lớp gọi có thể xử lý.
             throw;
         }
     }

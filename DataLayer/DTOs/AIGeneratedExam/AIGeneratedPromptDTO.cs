@@ -10,8 +10,8 @@ namespace DataLayer.DTOs.AIGeneratedExam
     {
         public string ExamTitle { get; set; } = null!;
         public string Description { get; set; } = null!;
-        public string? ReferenceImageUrl { get; set; } // Cho Listening/Speaking
-        public string? ReferenceAudioUrl { get; set; } // Cho Listening
+        public string? ReferenceImageUrl { get; set; } 
+        public string? ReferenceAudioUrl { get; set; } 
         public List<AIGeneratedQuestionDTO> Questions { get; set; } = new();
     }
 }

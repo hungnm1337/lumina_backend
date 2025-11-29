@@ -18,10 +18,7 @@ namespace ServiceLayer.Streak
             _logger = logger;
         }
 
-        /// <summary>
-        /// Job chạy hàng ngày lúc 00:05 GMT+7
-        /// Xử lý auto-freeze hoặc reset streak cho users bỏ lỡ ngày
-        /// </summary>
+        
         public async Task ProcessDailyStreaksAsync()
         {
             var startTime = DateTime.UtcNow;

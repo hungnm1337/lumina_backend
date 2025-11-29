@@ -18,14 +18,12 @@ namespace ServiceLayer.Leaderboard
         Task<List<LeaderboardRankDTO>> GetSeasonRankingAsync(int leaderboardId, int top = 100);
         Task<int> RecalculateSeasonScoresAsync(int leaderboardId);
         
-        // Season-specific methods
         Task<int> ResetSeasonAsync(int leaderboardId, bool archiveScores = true);
         Task<UserSeasonStatsDTO?> GetUserStatsAsync(int userId, int? leaderboardId = null);
         Task<TOEICScoreCalculationDTO?> GetUserTOEICCalculationAsync(int userId, int? leaderboardId = null);
         Task<int> GetUserRankAsync(int userId, int? leaderboardId = null);
         Task AutoManageSeasonsAsync(); // Tự động kích hoạt và kết thúc seasons
         
-        // New method for calculating season score
         Task<CalculateScoreResponseDTO> CalculateSeasonScoreAsync(int userId, CalculateScoreRequestDTO request);
     }
 }

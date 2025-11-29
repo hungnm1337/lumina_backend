@@ -40,7 +40,6 @@ namespace RepositoryLayer.Generic
             return await _dbSet.Where(expression).ToListAsync();
         }
 
-        // **THÊM PHẦN TRIỂN KHAI CHO HÀM NÀY**
         public async Task AddAsync(T entity)
         {
             await _dbSet.AddAsync(entity);

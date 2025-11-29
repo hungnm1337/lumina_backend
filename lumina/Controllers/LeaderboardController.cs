@@ -21,9 +21,7 @@ namespace lumina.Controllers
             _service = service;
         }
 
-        /// <summary>
-        /// Lấy danh sách tất cả các mùa giải (phân trang)
-        /// </summary>
+        
         [HttpGet]
         public async Task<ActionResult<PaginatedResultDTO<LeaderboardDTO>>> GetAll(
             [FromQuery] string? keyword = null, 
@@ -34,9 +32,7 @@ namespace lumina.Controllers
             return Ok(result);
         }
 
-        /// <summary>
-        /// Lấy danh sách mùa giải đơn giản (không phân trang)
-        /// </summary>
+        
         [HttpGet("all")]
         public async Task<ActionResult<List<LeaderboardDTO>>> GetAllSimple([FromQuery] bool? isActive = null)
         {
@@ -44,9 +40,7 @@ namespace lumina.Controllers
             return Ok(result);
         }
 
-        /// <summary>
-        /// Lấy thông tin mùa giải hiện tại
-        /// </summary>
+        
         [HttpGet("current")]
         public async Task<ActionResult<LeaderboardDTO?>> GetCurrent()
         {
@@ -55,9 +49,7 @@ namespace lumina.Controllers
             return Ok(dto);
         }
 
-        /// <summary>
-        /// Lấy thông tin mùa giải theo ID
-        /// </summary>
+        
         [HttpGet("{leaderboardId:int}")]
         public async Task<ActionResult<LeaderboardDTO>> GetById(int leaderboardId)
         {
@@ -66,9 +58,7 @@ namespace lumina.Controllers
             return Ok(dto);
         }
 
-        /// <summary>
-        /// Tạo mùa giải mới (Chỉ Staff)
-        /// </summary>
+        
         [Authorize(Roles = "Staff")]
         [HttpPost]
         public async Task<ActionResult<int>> Create([FromBody] CreateLeaderboardDTO dto)
@@ -84,9 +74,7 @@ namespace lumina.Controllers
             }
         }
 
-        /// <summary>
-        /// Cập nhật thông tin mùa giải (Chỉ Staff)
-        /// </summary>
+       
         [Authorize(Roles = "Staff")]
         [HttpPut("{leaderboardId:int}")]
         public async Task<ActionResult> Update(int leaderboardId, [FromBody] UpdateLeaderboardDTO dto)
@@ -103,9 +91,7 @@ namespace lumina.Controllers
             }
         }
 
-        /// <summary>
-        /// Xóa mùa giải (Chỉ Staff)
-        /// </summary>
+       
         [Authorize(Roles = "Staff")]
         [HttpDelete("{leaderboardId:int}")]
         public async Task<ActionResult> Delete(int leaderboardId)
@@ -115,9 +101,7 @@ namespace lumina.Controllers
             return NoContent();
         }
 
-        /// <summary>
-        /// Đặt mùa giải thành mùa hiện tại (Chỉ Staff)
-        /// </summary>
+        
         [Authorize(Roles = "Staff")]
         [HttpPost("{leaderboardId:int}/set-current")]
         public async Task<ActionResult> SetCurrent(int leaderboardId)
@@ -127,9 +111,7 @@ namespace lumina.Controllers
             return NoContent();
         }
 
-        /// <summary>
-        /// Lấy bảng xếp hạng của mùa giải
-        /// </summary>
+        
         [HttpGet("{leaderboardId:int}/ranking")]
         public async Task<ActionResult<List<LeaderboardRankDTO>>> GetRanking(
             int leaderboardId, 
@@ -139,9 +121,7 @@ namespace lumina.Controllers
             return Ok(result);
         }
 
-        /// <summary>
-        /// Tính lại điểm của mùa giải (Chỉ Staff)
-        /// </summary>
+       
         [Authorize(Roles = "Staff")]
         [HttpPost("{leaderboardId:int}/recalculate")]
         public async Task<ActionResult<int>> Recalculate(int leaderboardId)
@@ -150,9 +130,7 @@ namespace lumina.Controllers
             return Ok(new { affected, message = $"Đã tính lại điểm cho {affected} người dùng" });
         }
 
-        /// <summary>
-        /// Reset điểm của mùa giải (kết thúc mùa) (Chỉ Staff)
-        /// </summary>
+        
         [Authorize(Roles = "Staff")]
         [HttpPost("{leaderboardId:int}/reset")]
         public async Task<ActionResult<int>> ResetSeason(
@@ -163,9 +141,7 @@ namespace lumina.Controllers
             return Ok(new { affected, message = $"Đã reset điểm cho mùa giải. {affected} bản ghi bị xóa" });
         }
 
-        /// <summary>
-        /// Lấy thống kê của user trong mùa giải hiện tại
-        /// </summary>
+       
         [Authorize]
         [HttpGet("user/stats")]
         public async Task<ActionResult<UserSeasonStatsDTO>> GetMyStats([FromQuery] int? leaderboardId = null)
@@ -182,9 +158,7 @@ namespace lumina.Controllers
             return Ok(stats);
         }
 
-        /// <summary>
-        /// Lấy thống kê của user khác trong mùa giải
-        /// </summary>
+        
         [HttpGet("user/{userId:int}/stats")]
         public async Task<ActionResult<UserSeasonStatsDTO>> GetUserStats(
             int userId, 
@@ -195,9 +169,7 @@ namespace lumina.Controllers
             return Ok(stats);
         }
 
-        /// <summary>
-        /// Lấy thông tin tính điểm TOEIC của user
-        /// </summary>
+       
         [Authorize]
         [HttpGet("user/toeic-calculation")]
         public async Task<ActionResult<TOEICScoreCalculationDTO>> GetMyTOEICCalculation(
@@ -214,9 +186,7 @@ namespace lumina.Controllers
             return Ok(calculation);
         }
 
-        /// <summary>
-        /// Lấy thứ hạng của user trong mùa giải
-        /// </summary>
+        
         [Authorize]
         [HttpGet("user/rank")]
         public async Task<ActionResult<int>> GetMyRank([FromQuery] int? leaderboardId = null)
@@ -231,9 +201,7 @@ namespace lumina.Controllers
             return Ok(new { rank });
         }
 
-        /// <summary>
-        /// Tính điểm season cho user sau khi hoàn thành bài thi
-        /// </summary>
+       
         [Authorize]
         [HttpPost("calculate-score")]
         public async Task<ActionResult<CalculateScoreResponseDTO>> CalculateScore([FromBody] CalculateScoreRequestDTO request)
@@ -246,7 +214,7 @@ namespace lumina.Controllers
 
             try
             {
-                Console.WriteLine($"🎯 [LeaderboardController] Calculate score request:");
+                Console.WriteLine($" [LeaderboardController] Calculate score request:");
                 Console.WriteLine($"   UserId: {userId}");
                 Console.WriteLine($"   ExamAttemptId: {request.ExamAttemptId}");
                 Console.WriteLine($"   ExamPartId: {request.ExamPartId}");
@@ -254,7 +222,7 @@ namespace lumina.Controllers
                 
                 var result = await _service.CalculateSeasonScoreAsync(userId, request);
                 
-                Console.WriteLine($"✅ [LeaderboardController] Score calculated:");
+                Console.WriteLine($" [LeaderboardController] Score calculated:");
                 Console.WriteLine($"   SeasonScore: {result.SeasonScore}");
                 Console.WriteLine($"   TotalAccumulatedScore: {result.TotalAccumulatedScore}");
                 Console.WriteLine($"   EstimatedTOEIC: {result.EstimatedTOEIC}");
@@ -264,21 +232,17 @@ namespace lumina.Controllers
             }
             catch (ArgumentException ex)
             {
-                Console.WriteLine($"❌ [LeaderboardController] ArgumentException: {ex.Message}");
+                Console.WriteLine($" [LeaderboardController] ArgumentException: {ex.Message}");
                 return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ [LeaderboardController] Exception: {ex.Message}");
+                Console.WriteLine($" [LeaderboardController] Exception: {ex.Message}");
                 Console.WriteLine($"   StackTrace: {ex.StackTrace}");
                 return StatusCode(500, new { message = "Lỗi khi tính điểm: " + ex.Message });
             }
         }
 
-        /// <summary>
-        /// Tự động quản lý mùa giải (kích hoạt và kết thúc) (Chỉ Staff)
-        /// Endpoint này nên được gọi định kỳ bởi background job
-        /// </summary>
         [Authorize(Roles = "Staff")]
         [HttpPost("auto-manage")]
         public async Task<ActionResult> AutoManageSeasons()
