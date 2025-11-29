@@ -2,7 +2,6 @@
 
 namespace DataLayer.DTOs.Article;
 
-// DTO cho việc tạo một section mới
 public class ArticleSectionCreateDTO
 {
     [Required]
@@ -16,7 +15,6 @@ public class ArticleSectionCreateDTO
     public int OrderIndex { get; set; }
 }
 
-// DTO cho việc tạo một article mới
 public class ArticleCreateDTO
 {
     [Required]
@@ -29,13 +27,11 @@ public class ArticleCreateDTO
     [Required]
     public int CategoryId { get; set; }
 
-    // true nếu nhấn "Lưu & Xuất bản", false nếu nhấn "Lưu nháp"
     public bool PublishNow { get; set; } = false;
 
     public List<ArticleSectionCreateDTO> Sections { get; set; } = new();
 }
 
-// ----- DTOs cho Response (trả về cho client) -----
 
 public class ArticleSectionResponseDTO
 {
@@ -59,7 +55,6 @@ public class ArticleResponseDTO
     public List<ArticleSectionResponseDTO> Sections { get; set; } = new();
 }
 
-// ----- Update / Publish / Query DTOs -----
 
 public class ArticleSectionUpdateDTO
 {
@@ -86,13 +81,13 @@ public class ArticleQueryParams
 {
     public int Page { get; set; } = 1;
     public int PageSize { get; set; } = 10;
-    public string? SortBy { get; set; } = "createdAt"; // createdAt | title | category
-    public string? SortDir { get; set; } = "desc"; // asc | desc
+    public string? SortBy { get; set; } = "createdAt"; 
+    public string? SortDir { get; set; } = "desc"; 
     public string? Search { get; set; }
     public int? CategoryId { get; set; }
     public bool? IsPublished { get; set; }
     public string? Status { get; set; }
-    public int? CreatedBy { get; set; } // Filter by author/user ID
+    public int? CreatedBy { get; set; } 
 }
 
 public class PagedResponse<T>
@@ -109,7 +104,12 @@ public class ArticleReviewRequest
     public string? Comment { get; set; }
 }
 
-// DTO cho việc tạo category mới
+public class ToggleHideRequest
+{
+    [Required]
+    public bool IsPublished { get; set; }
+}
+
 public class CategoryCreateDTO
 {
     [Required]
@@ -120,7 +120,6 @@ public class CategoryCreateDTO
     public string? Description { get; set; }
 }
 
-// DTO cho response category
 public class CategoryResponseDTO
 {
     public int Id { get; set; }
@@ -130,11 +129,10 @@ public class CategoryResponseDTO
     public DateTime CreateAt { get; set; }
 }
 
-// DTOs cho Article Progress
 public class ArticleProgressRequestDTO
 {
     public int ProgressPercent { get; set; }
-    public string Status { get; set; } = string.Empty; // "not_started" | "in_progress" | "completed"
+    public string Status { get; set; } = string.Empty; 
 }
 
 public class ArticleProgressResponseDTO

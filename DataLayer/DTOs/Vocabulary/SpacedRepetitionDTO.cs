@@ -6,19 +6,18 @@ namespace DataLayer.DTOs.Vocabulary
     {
         public int UserSpacedRepetitionId { get; set; }
         public int UserId { get; set; }
-        public int? VocabularyId { get; set; } // Null = folder level, Not null = word level
+        public int? VocabularyId { get; set; }
         public int VocabularyListId { get; set; }
         public string VocabularyListName { get; set; } = string.Empty;
-        public string? VocabularyWord { get; set; } // Word text if VocabularyId is set
+        public string? VocabularyWord { get; set; }
         public DateTime LastReviewedAt { get; set; }
         public DateTime? NextReviewAt { get; set; }
         public int ReviewCount { get; set; }
-        public int Intervals { get; set; } // Số ngày
+        public int Intervals { get; set; }
         public string Status { get; set; } = string.Empty;
         public bool IsDue { get; set; }
         public int DaysUntilReview { get; set; }
         
-        // Quiz score fields (only used when VocabularyId is null)
         public int? BestQuizScore { get; set; }
         public int? LastQuizScore { get; set; }
         public DateTime? LastQuizCompletedAt { get; set; }
@@ -27,14 +26,12 @@ namespace DataLayer.DTOs.Vocabulary
 
     public class ReviewVocabularyRequestDTO
     {
-        // Option 1: Use existing UserSpacedRepetitionId (backward compatible)
         public int? UserSpacedRepetitionId { get; set; }
         
-        // Option 2: Create new record with VocabularyId and VocabularyListId
         public int? VocabularyId { get; set; }
         public int? VocabularyListId { get; set; }
         
-        public int Quality { get; set; } // 0-5: 0 = không nhớ, 5 = nhớ rất tốt
+        public int Quality { get; set; }
     }
 
     public class ReviewVocabularyResponseDTO
@@ -46,18 +43,16 @@ namespace DataLayer.DTOs.Vocabulary
         public int NewIntervals { get; set; }
     }
 
-    // DTO for saving quiz result
     public class SaveQuizResultRequestDTO
     {
         public int VocabularyListId { get; set; }
-        public int Score { get; set; } // 0-100
+        public int Score { get; set; }
         public int TotalQuestions { get; set; }
         public int CorrectCount { get; set; }
-        public int TotalTimeSpent { get; set; } // seconds
-        public string Mode { get; set; } = string.Empty; // practice, test, challenge
+        public int TotalTimeSpent { get; set; }
+        public string Mode { get; set; } = string.Empty;
     }
 
-    // DTO for returning quiz scores
     public class QuizScoreDTO
     {
         public int VocabularyListId { get; set; }
@@ -68,4 +63,3 @@ namespace DataLayer.DTOs.Vocabulary
         public int? TotalAttempts { get; set; }
     }
 }
-

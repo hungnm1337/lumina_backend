@@ -13,7 +13,7 @@ namespace DataLayer.DTOs.ExamPart
         public string Title { get; set; }
         public int MaxQuestions { get; set; }
         public string? SkillType { get; set; }
-        public string? ExamSetKey { get; set; } // lấy từ bảng Exam
+        public string? ExamSetKey { get; set; } 
     }
 
 

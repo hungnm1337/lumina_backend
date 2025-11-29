@@ -97,20 +97,15 @@ namespace ServiceLayer.Exam.ExamAttempt
             if (attempt.Status == "Completed")
                 return new ExamAttemptSummaryDTO { Success = false };
 
-            // ✅ FIX Bug #13: Get all user answers for this attempt (Reading/Listening/Writing)
             var userAnswers = await _unitOfWork.UserAnswers
                 .GetAllAsync(ua => ua.AttemptID == attemptId);
 
-            // ✅ FIX Bug #13: Get Speaking answers separately
             var speakingAnswers = await _unitOfWork.UserAnswersSpeaking
                 .GetAllAsync(sa => sa.AttemptID == attemptId);
 
-            // ✅ FIX Bug #13: Calculate scores from both sources
             var regularScore = userAnswers.Sum(ua => ua.Score ?? 0);
             var speakingScore = 0m;
 
-            // ✅ FIX Bug #2: Use OverallScore from DB (calculated by ScoringWeightService)
-            // This ensures consistency with SpeakingScoringService scoring logic
             var questionIds = speakingAnswers.Select(sa => sa.QuestionId).ToList();
             List<Question> questions = new List<Question>();
             if (questionIds.Any())
@@ -128,7 +123,6 @@ namespace ServiceLayer.Exam.ExamAttempt
             {
                 if (questionDict.TryGetValue(sa.QuestionId, out var question) && question.ScoreWeight > 0)
                 {
-                    // Use OverallScore directly from DB (single source of truth)
                     var overallScore = sa.OverallScore ?? 0m;
                     var scoreRatio = overallScore / 100m;
                     var earnedScore = question.ScoreWeight * scoreRatio;
@@ -144,7 +138,6 @@ namespace ServiceLayer.Exam.ExamAttempt
 
             Console.WriteLine($"[ExamAttempt] Finalize attemptId={attemptId}: regularScore={regularScore}, speakingScore={speakingScore}, total={totalScore}");
 
-            // Update attempt
             attempt.EndTime = DateTime.UtcNow;
             attempt.Score = (int)Math.Round(totalScore);
             attempt.Status = "Completed";
@@ -152,7 +145,6 @@ namespace ServiceLayer.Exam.ExamAttempt
             _unitOfWork.ExamAttemptsGeneric.Update(attempt);
             await _unitOfWork.CompleteAsync();
 
-            //  ===== THÊM PHẦN NÀY (STREAK HOOK) =====
             try
             {
                 var userId = attempt.UserID;
@@ -171,7 +163,6 @@ namespace ServiceLayer.Exam.ExamAttempt
                         _logger.LogInformation(
                             " User {UserId} reached milestone {Milestone}!",
                             userId, streakResult.MilestoneValue);
-                        // TODO Phase 6: Send notification
                     }
                 }
                 else
@@ -187,11 +178,9 @@ namespace ServiceLayer.Exam.ExamAttempt
                     "Error updating streak for user {UserId} after exam {AttemptId}",
                     attempt.UserID, attemptId);
             }
-            // ===== KẾT THÚC PHẦN THÊM =====
 
             var duration = attempt.EndTime.Value - attempt.StartTime;
 
-            // Get detailed answers with question info
             var answerDetails = new List<UserAnswerDetailDTO>();
             foreach (var ua in userAnswers)
             {
@@ -235,15 +224,10 @@ namespace ServiceLayer.Exam.ExamAttempt
             };
         }
 
-        /// <summary>
-        /// DEPRECATED: This method is no longer needed after Bug #2 fix.
-        /// OverallScore is now stored in the database and calculated by ScoringWeightService.
-        /// Kept for backwards compatibility in case old data exists without OverallScore.
-        /// </summary>
+        
         [Obsolete("OverallScore should be read from database. This is a fallback for legacy data.", false)]
         private double CalculateSpeakingOverallScore(DataLayer.Models.UserAnswerSpeaking sa)
         {
-            // Fallback: If OverallScore is null (legacy data), use this calculation
             Console.WriteLine($"[DEPRECATED] CalculateSpeakingOverallScore called for QuestionId={sa.QuestionId}. Should use OverallScore from DB.");
 
             if (sa.OverallScore.HasValue)
@@ -251,7 +235,6 @@ namespace ServiceLayer.Exam.ExamAttempt
                 return (double)sa.OverallScore.Value;
             }
 
-            // Legacy calculation - use generic weights as fallback
             var weights = new Dictionary<string, double>
             {
                 ["pronunciation"] = 0.20,
@@ -293,7 +276,6 @@ namespace ServiceLayer.Exam.ExamAttempt
                     Message = "Exam attempt not found" 
                 };
 
-            // Update status to Paused
             attempt.Status = "Paused";
 
             _unitOfWork.ExamAttemptsGeneric.Update(attempt);

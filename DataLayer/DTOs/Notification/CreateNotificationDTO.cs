@@ -13,5 +13,10 @@ namespace DataLayer.DTOs.Notification
         public string Content { get; set; } = null!;
 
         public bool IsActive { get; set; } = true;
+
+        public List<int>? RoleIds { get; set; }
+
+        public List<int>? UserIds { get; set; }
+
     }
 }

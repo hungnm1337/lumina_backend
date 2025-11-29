@@ -8,7 +8,7 @@ namespace DataLayer.DTOs.Questions
 {
     public class QuestionCrudDto
     {
-        public int? QuestionId { get; set; } // null với Add
+        public int? QuestionId { get; set; } 
 
         public int PartId { get; set; }
         public int? PromptId { get; set; }
@@ -22,10 +22,6 @@ namespace DataLayer.DTOs.Questions
         public string? SampleAnswer { get; set; }
     }
 
-/*    public class OptionCrudDto
-    {
-        public string Content { get; set; }
-        public bool IsCorrect { get; set; }
-    }*/
+
 
 }

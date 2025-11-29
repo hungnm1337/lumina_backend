@@ -17,9 +17,6 @@ namespace lumina.Controllers
             _analyticsService = analyticsService;
         }
 
-        /// <summary>
-        /// Lấy key metrics tổng quan (30 ngày qua)
-        /// </summary>
         [HttpGet("key-metrics")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetKeyMetrics()
@@ -35,9 +32,6 @@ namespace lumina.Controllers
             }
         }
 
-        /// <summary>
-        /// Lấy số người dùng đang online (realtime)
-        /// </summary>
         [HttpGet("realtime")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetRealtimeUsers()
@@ -53,9 +47,6 @@ namespace lumina.Controllers
             }
         }
 
-        /// <summary>
-        /// Lấy top 10 trang được xem nhiều nhất (30 ngày qua)
-        /// </summary>
         [HttpGet("top-pages")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetTopPages()
@@ -71,9 +62,6 @@ namespace lumina.Controllers
             }
         }
 
-        /// <summary>
-        /// Lấy nguồn traffic (30 ngày qua)
-        /// </summary>
         [HttpGet("traffic-sources")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetTrafficSources()
@@ -89,9 +77,6 @@ namespace lumina.Controllers
             }
         }
 
-        /// <summary>
-        /// Lấy thống kê theo thiết bị (30 ngày qua)
-        /// </summary>
         [HttpGet("devices")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetDeviceStats()
@@ -107,9 +92,6 @@ namespace lumina.Controllers
             }
         }
 
-        /// <summary>
-        /// Lấy thống kê theo quốc gia (30 ngày qua)
-        /// </summary>
         [HttpGet("countries")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetCountryStats()
@@ -125,9 +107,6 @@ namespace lumina.Controllers
             }
         }
 
-        /// <summary>
-        /// Lấy traffic theo ngày (30 ngày qua)
-        /// </summary>
         [HttpGet("daily-traffic")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetDailyTraffic()
@@ -143,9 +122,6 @@ namespace lumina.Controllers
             }
         }
 
-        /// <summary>
-        /// Lấy thống kê theo browser (30 ngày qua)
-        /// </summary>
         [HttpGet("browsers")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetBrowserStats()

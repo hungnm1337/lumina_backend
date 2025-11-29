@@ -6,22 +6,17 @@ namespace RepositoryLayer.Statistic
 {
     public interface IStatisticRepository
     {
-        // Dashboard Stats
         Task<int> GetTotalUsersAsync();
         Task<int> GetNewUsersThisMonthAsync();
         Task<int> GetProUserCountAsync();
         Task<decimal> GetMonthlyRevenueAsync(int year, int month);
         
-        // Revenue Chart
         Task<List<MonthlyRevenueDTO>> GetMonthlyRevenueForYearAsync(int year);
         
-        // User Growth
         Task<List<UserGrowthDTO>> GetUserGrowthForMonthsAsync(int months);
         
-        // Plan Distribution
         Task<List<PlanDistributionDTO>> GetPlanDistributionAsync();
         
-        // Daily Analytics
         Task<List<DailyAnalyticsDTO>> GetDailyAnalyticsAsync(int days);
     }
 

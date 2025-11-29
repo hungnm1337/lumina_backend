@@ -21,12 +21,7 @@ namespace RepositoryLayer.Questions
             _context = context;
         }
         
-        /*public async Task<Passage> AddPassageAsync(Passage passage)
-        {
-            _context.Passages.Add(passage);
-            await _context.SaveChangesAsync();
-            return passage;
-        }*/
+       
 
         public async Task<Prompt> AddPromptAsync(Prompt prompt)
         {
@@ -51,7 +46,6 @@ namespace RepositoryLayer.Questions
 
         public async Task<bool> EditPromptWithQuestionsAsync(PromptEditDto dto)
         {
-            // Lấy Prompt theo id, bao gồm câu hỏi (nếu có)
             var prompt = await _context.Prompts
                 .Include(p => p.Questions)
                 .ThenInclude(q => q.Options)
@@ -60,7 +54,6 @@ namespace RepositoryLayer.Questions
             if (prompt == null)
                 return false;
 
-            // Update các trường chính của Prompt (Title và ContentText thay cho Passage)
             prompt.Title = dto.Title;
             prompt.ContentText = dto.ContentText;
             prompt.Skill = dto.Skill;
@@ -124,18 +117,15 @@ namespace RepositoryLayer.Questions
 
         public async Task<int> AddQuestionAsync(QuestionCrudDto dto)
         {
-            // Lấy ExamPart để biết max câu hỏi được phép
             var part = await _context.ExamParts.FindAsync(dto.PartId);
             if (part == null)
                 throw new Exception($"ExamPart với Id={dto.PartId} không tồn tại.");
 
-            // Đếm số câu hỏi hiện tại của Part
             int currentCount = await _context.Questions.CountAsync(q => q.PartId == dto.PartId);
 
             if (currentCount >= part.MaxQuestions)
                 throw new Exception($"ExamPart id {dto.PartId} đã đủ {part.MaxQuestions} câu hỏi rồi.");
 
-            // Nếu chưa đạt max thì thêm câu hỏi mới
             var question = new Question
             {
                 StemText = dto.StemText,
@@ -170,7 +160,6 @@ namespace RepositoryLayer.Questions
             question.SampleAnswer = dto.SampleAnswer;
             question.ScoreWeight = dto.ScoreWeight;
             question.Time = dto.Time;
-            // Xử lý Option nếu có
             if (dto.Options != null)
             {
                 foreach (var optionDto in dto.Options)
@@ -178,13 +167,11 @@ namespace RepositoryLayer.Questions
                     var existingOption = question.Options.FirstOrDefault(o => o.OptionId == optionDto.OptionId);
                     if (existingOption != null)
                     {
-                        // Chỉ cập nhật nội dung option cũ
                         existingOption.Content = optionDto.Content;
                         existingOption.IsCorrect = optionDto.IsCorrect;
                     }
                     else
                     {
-                        // Thêm mới option nếu chưa tồn tại
                         var newOption = new Option
                         {
                             Content = optionDto.Content,
@@ -193,9 +180,7 @@ namespace RepositoryLayer.Questions
                         question.Options.Add(newOption);
                     }
                 }
-                // KHÔNG xóa option nào cả!
             }
-            // KHÔNG xóa hết option nếu dto.Options == null
 
             await _context.SaveChangesAsync();
             return true;
@@ -204,7 +189,6 @@ namespace RepositoryLayer.Questions
 
         public async Task<bool> DeleteQuestionAsync(int questionId)
         {
-            // Lấy question và options (chỉ cần)
             var question = await _context.Questions
                 .Include(q => q.Options)
                 .FirstOrDefaultAsync(q => q.QuestionId == questionId);
@@ -212,7 +196,6 @@ namespace RepositoryLayer.Questions
             if (question == null)
                 return false;
 
-            // Lấy ExamPart và Exam tương ứng qua PartId (trường trong Question)
             var examPart = await _context.ExamParts
                 .Include(ep => ep.Exam)
                 .FirstOrDefaultAsync(ep => ep.PartId == question.PartId);
@@ -220,7 +203,6 @@ namespace RepositoryLayer.Questions
             if (examPart.Exam != null && examPart.Exam.IsActive)
                 throw new Exception("Không thể xóa câu hỏi vì bài thi đang hoạt động.");
 
-            // Xoá options nếu có
             if (question.Options.Any())
             {
                 _context.Options.RemoveRange(question.Options);
@@ -236,22 +218,10 @@ namespace RepositoryLayer.Questions
 
         public async Task<QuestionStatisticDto> GetQuestionStatisticsAsync()
         {
-            // TODO: Fix after migration - UserAnswers đã split thành 3 bảng
             var total = await _context.Questions.CountAsync();
             
-            /* UNCOMMENT SAU KHI MIGRATION
-            // Combine all 3 answer types
-            var usedMultipleChoice = await _context.UserAnswerMultipleChoices.Select(eq => eq.QuestionId).Distinct().ToListAsync();
-            var usedSpeaking = await _context.UserAnswerSpeakings.Select(eq => eq.QuestionId).Distinct().ToListAsync();
-            var usedWriting = await _context.UserAnswerWritings.Select(eq => eq.QuestionId).Distinct().ToListAsync();
-            
-            var usedQuestions = usedMultipleChoice.Union(usedSpeaking).Union(usedWriting).Distinct().ToList();
-            var used = usedQuestions.Count;
-            var unused = total - used;
-            */
-            
-            var used = 0; // Temporary fix
-            var unused = total; // Temporary fix
+            var used = 0; 
+            var unused = total; 
 
             return new QuestionStatisticDto
             {
@@ -265,7 +235,6 @@ namespace RepositoryLayer.Questions
 
         public async Task<bool> DeletePromptAsync(int promptId)
         {
-            // Lấy prompt với questions và options
             var prompt = await _context.Prompts
                 .Include(p => p.Questions)
                     .ThenInclude(q => q.Options)
@@ -274,28 +243,23 @@ namespace RepositoryLayer.Questions
             if (prompt == null)
                 return false;
 
-            // ✅ Kiểm tra xem có question nào không
             if (!prompt.Questions.Any())
             {
-                // Nếu prompt không có question thì xóa luôn
                 _context.Prompts.Remove(prompt);
                 await _context.SaveChangesAsync();
                 return true;
             }
 
-            // ✅ Lấy PartId từ question đầu tiên để check exam
             var firstQuestion = prompt.Questions.First();
             var examPart = await _context.ExamParts
                 .Include(ep => ep.Exam)
                 .FirstOrDefaultAsync(ep => ep.PartId == firstQuestion.PartId);
 
-            // ✅ Kiểm tra xem bài thi có đang hoạt động không
             if (examPart?.Exam != null && examPart.Exam.IsActive)
             {
                 throw new Exception("Không thể xóa prompt vì bài thi đang hoạt động.");
             }
 
-            // ✅ Xóa theo thứ tự: Options -> Questions -> Prompt
             foreach (var question in prompt.Questions)
             {
                 if (question.Options.Any())

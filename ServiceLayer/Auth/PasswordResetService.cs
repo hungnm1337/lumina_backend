@@ -39,7 +39,6 @@ public sealed class PasswordResetService : IPasswordResetService
         _context = context;
         _emailSender = emailSender;
         _logger = logger;
-        // Đảm bảo giá trị cấu hình trong khoảng hợp lý
         _passwordResetCodeLength = Math.Clamp(configuration.GetValue("PasswordReset:CodeLength", 6), 4, 12);
         _passwordResetExpiryMinutes = Math.Clamp(configuration.GetValue("PasswordReset:CodeExpiryMinutes", 10), 1, 60);
     }
@@ -49,31 +48,26 @@ public sealed class PasswordResetService : IPasswordResetService
     {
         var normalizedEmail = NormalizeEmail(request.Email);
 
-        // Tìm user theo email
         var user = await _context.Users
             .Include(u => u.Accounts)
             .FirstOrDefaultAsync(u => u.Email == normalizedEmail);
 
-        // Guard clause: User không tồn tại
         if (user == null)
         {
             throw AuthServiceException.NotFound("Email not found");
         }
 
-        // Guard clause: Kiểm tra account có password
         var account = user.Accounts.FirstOrDefault(a => string.IsNullOrEmpty(a.AuthProvider));
         if (account == null || string.IsNullOrEmpty(account.PasswordHash))
         {
             throw AuthServiceException.BadRequest("This account does not have a password set");
         }
 
-        // Tạo OTP code ngẫu nhiên
         var otpCode = GenerateOtpCode();
         var otpHash = BCrypt.Net.BCrypt.HashPassword(otpCode);
         var now = DateTime.UtcNow;
         var expiresAt = now.AddMinutes(_passwordResetExpiryMinutes);
 
-        // Vô hiệu hóa các token cũ chưa sử dụng (chống replay attack)
         var existingTokens = await _context.PasswordResetTokens
             .Where(token => token.UserId == user.UserId && token.UsedAt == null)
             .ToListAsync();
@@ -83,7 +77,6 @@ public sealed class PasswordResetService : IPasswordResetService
             _context.PasswordResetTokens.RemoveRange(existingTokens);
         }
 
-        // Tạo token mới
         var resetToken = new PasswordResetToken
         {
             UserId = user.UserId,
@@ -95,7 +88,6 @@ public sealed class PasswordResetService : IPasswordResetService
         await _context.PasswordResetTokens.AddAsync(resetToken);
         await _context.SaveChangesAsync();
 
-        // Gửi email OTP
         try
         {
             await _emailSender.SendPasswordResetCodeAsync(user.Email, user.FullName, otpCode);
@@ -103,7 +95,6 @@ public sealed class PasswordResetService : IPasswordResetService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to send password reset OTP to {Email}", user.Email);
-            // Vô hiệu hóa token nếu gửi email thất bại
             resetToken.UsedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
             throw AuthServiceException.ServerError("Failed to send OTP email");
@@ -119,21 +110,17 @@ public sealed class PasswordResetService : IPasswordResetService
     {
         var normalizedEmail = NormalizeEmail(request.Email);
 
-        // Tìm user
         var user = await _context.Users
             .AsNoTracking()
             .FirstOrDefaultAsync(u => u.Email == normalizedEmail);
 
-        // Guard clause: User không tồn tại
         if (user == null)
         {
             throw AuthServiceException.NotFound("Email not found");
         }
 
-        // Lấy token active
         var resetToken = await GetActiveResetTokenAsync(user.UserId, asTracking: false);
 
-        // Guard clause: Token không hợp lệ hoặc OTP sai
         if (resetToken == null || !BCrypt.Net.BCrypt.Verify(request.OtpCode, resetToken.CodeHash))
         {
             throw AuthServiceException.BadRequest("Invalid or expired OTP code");
@@ -147,40 +134,33 @@ public sealed class PasswordResetService : IPasswordResetService
     {
         var normalizedEmail = NormalizeEmail(request.Email);
 
-        // Tìm user với account
         var user = await _context.Users
             .Include(u => u.Accounts)
             .FirstOrDefaultAsync(u => u.Email == normalizedEmail);
 
-        // Guard clause: User không tồn tại
         if (user == null)
         {
             throw AuthServiceException.NotFound("Email not found");
         }
 
-        // Guard clause: Kiểm tra account có password
         var account = user.Accounts.FirstOrDefault(a => string.IsNullOrEmpty(a.AuthProvider));
         if (account == null)
         {
             throw AuthServiceException.BadRequest("This account does not support password login");
         }
 
-        // Lấy token active (tracking để có thể update)
         var resetToken = await GetActiveResetTokenAsync(user.UserId, asTracking: true);
 
-        // Guard clause: Token không hợp lệ hoặc OTP sai
         if (resetToken == null || !BCrypt.Net.BCrypt.Verify(request.OtpCode, resetToken.CodeHash))
         {
             throw AuthServiceException.BadRequest("Invalid or expired OTP code");
         }
 
-        // Guard clause: Mật khẩu mới không được trùng mật khẩu cũ
         if (!string.IsNullOrEmpty(account.PasswordHash) && BCrypt.Net.BCrypt.Verify(request.NewPassword, account.PasswordHash))
         {
             throw AuthServiceException.BadRequest("New password must be different from the current password");
         }
 
-        // Cập nhật mật khẩu và vô hiệu hóa token
         account.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
         account.UpdateAt = DateTime.UtcNow;
         resetToken.UsedAt = DateTime.UtcNow;

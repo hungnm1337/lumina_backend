@@ -19,21 +19,17 @@ namespace RepositoryLayer.MockTest
             _context = context;
         }
 
-        /// <summary>
-        /// Lấy tất cả exam parts và questions cho mock test
-        /// Tối ưu với 1 query duy nhất sử dụng eager loading
-        /// </summary>
+        
         public async Task<List<ExamPartDTO>> GetMocktestAsync(int[] examPartIds)
         {
-            // Single query với Include để load tất cả related data
             var examParts = await _context.ExamParts
                 .Where(ep => examPartIds.Contains(ep.PartId))
-                .Include(ep => ep.Exam) // Load Exam info
-                .Include(ep => ep.Questions) // Load all Questions
-                    .ThenInclude(q => q.Options) // Load all Options cho mỗi Question
+                .Include(ep => ep.Exam) 
+                .Include(ep => ep.Questions) 
+                    .ThenInclude(q => q.Options) 
                 .Include(ep => ep.Questions)
-                    .ThenInclude(q => q.Prompt) // Load Prompt nếu có
-                .AsNoTracking() // Tăng performance vì không cần tracking changes
+                    .ThenInclude(q => q.Prompt) 
+                .AsNoTracking() 
                 .ToListAsync();
 
             // Map sang DTO

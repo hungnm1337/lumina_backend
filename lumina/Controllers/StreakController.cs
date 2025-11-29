@@ -21,10 +21,7 @@ namespace lumina.Controllers
             _logger = logger;
         }
 
-        /// <summary>
-        /// Lấy thông tin streak summary của user
-        /// GET /api/streak/summary/{userId}
-        /// </summary>
+        
         [HttpGet("summary/{userId}")]
         public async Task<IActionResult> GetStreakSummary(int userId)
         {
@@ -48,13 +45,9 @@ namespace lumina.Controllers
             }
         }
 
-        /// <summary>
-        /// Trigger manual daily streak processing job (ADMIN ONLY)
-        /// POST /api/streak/admin/trigger-daily-job
-        /// Dùng để test Hangfire job mà không cần đợi đến 00:05
-        /// </summary>
+        
         [HttpPost("admin/trigger-daily-job")]
-        // [Authorize(Roles = "Admin")] // ⚠️ Bỏ comment ở production
+        // [Authorize(Roles = "Admin")] //  Bỏ comment ở production
         public IActionResult TriggerDailyJob()
         {
             try
@@ -86,11 +79,7 @@ namespace lumina.Controllers
             }
         }
 
-        /// <summary>
-        /// Test auto-freeze/reset cho 1 user cụ thể (ADMIN ONLY)
-        /// POST /api/streak/admin/test-auto-process/{userId}
-        /// Dùng để test logic ApplyAutoFreezeOrResetAsync cho 1 user
-        /// </summary>
+        
         [HttpPost("admin/test-auto-process/{userId}")]
         // [Authorize(Roles = "Admin")] // ⚠️ Bỏ comment ở production
         public async Task<IActionResult> TestAutoProcess(int userId)
@@ -125,11 +114,7 @@ namespace lumina.Controllers
             }
         }
 
-        /// <summary>
-        /// Lấy danh sách users cần xử lý auto-freeze/reset hôm nay
-        /// GET /api/streak/admin/users-needing-process
-        /// Dùng để debug: xem có bao nhiêu user sẽ bị xử lý
-        /// </summary>
+        
         [HttpGet("admin/users-needing-process")]
         // [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetUsersNeedingProcess()
@@ -158,11 +143,7 @@ namespace lumina.Controllers
             }
         }
 
-        /// <summary>
-        /// Update streak manually khi user hoàn thành hoạt động
-        /// POST /api/streak/update
-        /// INTERNAL USE - Được gọi từ ExamAttemptService (không expose public)
-        /// </summary>
+       
         [HttpPost("update")]
         // [Authorize] // Chỉ cho phép authenticated users
         public async Task<IActionResult> UpdateStreak([FromBody] UpdateStreakRequest request)
@@ -205,10 +186,7 @@ namespace lumina.Controllers
             }
         }
 
-        /// <summary>
-        /// Lấy danh sách top users theo streak
-        /// GET /api/streak/top
-        /// </summary>
+        
         [HttpGet("top")]
         public async Task<IActionResult> GetTopStreakUsers()
         {
@@ -217,6 +195,5 @@ namespace lumina.Controllers
         }
     }
 
-    // DTO cho request body
    
 }
