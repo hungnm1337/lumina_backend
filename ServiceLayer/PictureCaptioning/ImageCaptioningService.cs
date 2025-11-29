@@ -1,4 +1,4 @@
-﻿
+using System;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -21,6 +21,16 @@ public class ImageCaptioningService
 
     public async Task<string> GetCaptionFromImageUrl(string imageUrl)
     {
+        if (imageUrl == null)
+        {
+            throw new ArgumentNullException(nameof(imageUrl));
+        }
+
+        if (string.IsNullOrWhiteSpace(imageUrl))
+        {
+            throw new ArgumentException("Image URL cannot be null or empty", nameof(imageUrl));
+        }
+
         try
         {
             var requestBody = new { imageUrl = imageUrl };

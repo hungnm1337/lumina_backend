@@ -1,5 +1,6 @@
 ﻿using DataLayer.DTOs.UserAnswer;
 using DataLayer.DTOs.Exam;
+using DataLayer.Models;
 using RepositoryLayer.Exam;
 using RepositoryLayer.Exam.ExamAttempt;
 using RepositoryLayer.UnitOfWork;
@@ -34,26 +35,59 @@ namespace ServiceLayer.Exam.ExamAttempt
 
         public async Task<ExamAttemptRequestDTO> EndAnExam(ExamAttemptRequestDTO model)
         {
+            if (model == null)
+                throw new ArgumentNullException(nameof(model), "Request DTO cannot be null.");
+
+            if (model.AttemptID < 0)
+                throw new ArgumentException("AttemptID must be non-negative.", nameof(model.AttemptID));
+
+            if (model.AttemptID == 0)
+                return null;
+
+            if (string.IsNullOrWhiteSpace(model.Status))
+                throw new ArgumentException("Status cannot be empty.", nameof(model.Status));
+
             return await _examAttemptRepository.EndAnExam(model);
         }
 
         public async Task<List<ExamAttemptResponseDTO>> GetAllExamAttempts(int userId)
         {
+            if (userId <= 0)
+                throw new ArgumentException("User ID must be greater than zero.", nameof(userId));
+
             return await _examAttemptRepository.GetAllExamAttempts(userId);
         }
 
         public async Task<ExamAttemptDetailResponseDTO> GetExamAttemptById(int attemptId)
         {
+            if (attemptId <= 0)
+                throw new ArgumentException("Attempt ID must be greater than zero.", nameof(attemptId));
+
             return await _examAttemptRepository.GetExamAttemptById(attemptId);
         }
 
         public async Task<ExamAttemptRequestDTO> StartAnExam(ExamAttemptRequestDTO model)
         {
+            if (model == null)
+                throw new ArgumentNullException(nameof(model), "Request DTO cannot be null.");
+
+            if (model.UserID <= 0)
+                throw new ArgumentException("User ID must be greater than zero.", nameof(model.UserID));
+
+            if (model.ExamID <= 0)
+                throw new ArgumentException("Exam ID must be greater than zero.", nameof(model.ExamID));
+
+            if (string.IsNullOrWhiteSpace(model.Status))
+                throw new ArgumentException("Status cannot be empty.", nameof(model.Status));
+
             return await _examAttemptRepository.StartAnExam(model);
         }
 
         public async Task<ExamAttemptSummaryDTO> FinalizeAttemptAsync(int attemptId)
         {
+            if (attemptId <= 0)
+                throw new ArgumentException("Attempt ID must be greater than zero.", nameof(attemptId));
+
             var attempt = await _unitOfWork.ExamAttemptsGeneric
                 .GetAsync(a => a.AttemptID == attemptId);
 
@@ -73,8 +107,16 @@ namespace ServiceLayer.Exam.ExamAttempt
             var speakingScore = 0m;
 
             var questionIds = speakingAnswers.Select(sa => sa.QuestionId).ToList();
-            var questions = await _unitOfWork.QuestionsGeneric
-                .GetAllAsync(q => questionIds.Contains(q.QuestionId));
+            List<Question> questions = new List<Question>();
+            if (questionIds.Any())
+            {
+                var questionsResult = await _unitOfWork.QuestionsGeneric
+                    .GetAllAsync(q => questionIds.Contains(q.QuestionId));
+                if (questionsResult != null)
+                {
+                    questions = questionsResult;
+                }
+            }
             var questionDict = questions.ToDictionary(q => q.QuestionId);
 
             foreach (var sa in speakingAnswers)
@@ -218,6 +260,12 @@ namespace ServiceLayer.Exam.ExamAttempt
 
         public async Task<DataLayer.DTOs.UserAnswer.SaveProgressResponseDTO> SaveProgressAsync(SaveProgressRequestDTO request)
         {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request), "Request cannot be null.");
+
+            if (request.ExamAttemptId <= 0)
+                throw new ArgumentException("Exam Attempt ID must be greater than zero.", nameof(request.ExamAttemptId));
+
             var attempt = await _unitOfWork.ExamAttemptsGeneric
                 .GetAsync(a => a.AttemptID == request.ExamAttemptId);
 

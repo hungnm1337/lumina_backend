@@ -29,11 +29,21 @@ using System.Threading.Tasks;
 
         public async Task<ExamDTO> GetExamDetailAndExamPartByExamID(int examId)
         {
+            if (examId <= 0)
+            {
+                throw new ArgumentException("Exam ID must be greater than zero", nameof(examId));
+            }
+
             return await _examRepository.GetExamDetailAndExamPartByExamID(examId);
         }
 
         public async Task<ExamPartDTO> GetExamPartDetailAndQuestionByExamPartID(int partId)
         {
+            if (partId <= 0)
+            {
+                throw new ArgumentException("Part ID must be greater than zero", nameof(partId));
+            }
+
             return await _examRepository.GetExamPartDetailAndQuestionByExamPartID(partId);
         }
 

@@ -20,6 +20,19 @@ namespace ServiceLayer.Exam.Reading
 
         public async Task<SubmitAnswerResponseDTO> SubmitAnswerAsync(ReadingAnswerRequestDTO request)
         {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request), "Request cannot be null.");
+
+            if (request.ExamAttemptId <= 0)
+                throw new ArgumentException("Exam Attempt ID must be greater than zero.", nameof(request.ExamAttemptId));
+
+            if (request.QuestionId <= 0)
+                throw new ArgumentException("Question ID must be greater than zero.", nameof(request.QuestionId));
+
+            if (request.SelectedOptionId <= 0)
+                throw new ArgumentException("Selected Option ID must be greater than zero.", nameof(request.SelectedOptionId));
+
+            // 1. Validate ExamAttempt
             var attempt = await _unitOfWork.ExamAttemptsGeneric
                 .GetAsync(a => a.AttemptID == request.ExamAttemptId);
 
