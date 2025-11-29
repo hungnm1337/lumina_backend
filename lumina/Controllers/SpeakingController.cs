@@ -37,7 +37,6 @@ public class SpeakingController : ControllerBase
     [HttpPost("submit-answer")]
     public async Task<IActionResult> SubmitAnswer([FromForm] SubmitSpeakingAnswerRequest request)
     {
-        // ✅ FIX: Add timeout with CancellationToken (90 seconds)
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(90));
 
         if (request.Audio == null || request.Audio.Length == 0)
@@ -53,7 +52,6 @@ public class SpeakingController : ControllerBase
                 return Unauthorized(new { message = "User ID not found in token." });
             }
 
-            // ✅ SỬA: Sử dụng attemptId từ request thay vì tự tìm
             int attemptId;
 
             if (request.AttemptId > 0)
@@ -61,7 +59,7 @@ public class SpeakingController : ControllerBase
                 var existingAttempt = await _unitOfWork.ExamAttemptsGeneric
                     .GetAsync(
                         a => a.AttemptID == request.AttemptId,
-                        includeProperties: "User" // ✅ THÊM: Include User để check
+                        includeProperties: "User" 
                     );
 
                 if (existingAttempt == null)
@@ -78,7 +76,6 @@ public class SpeakingController : ControllerBase
             }
             else
             {
-                // Fallback: Tìm hoặc tạo attempt (legacy behavior)
                 var question = await _unitOfWork.Questions.Get()
                                     .Include(q => q.Part)
                                     .FirstOrDefaultAsync(q => q.QuestionId == request.QuestionId);
@@ -109,7 +106,6 @@ public class SpeakingController : ControllerBase
                 _logger.LogInformation("[Speaking] Created/Found attemptId: {AttemptId}", attemptId);
             }
 
-            // ✅ FIX: Check if already submitted (idempotency - prevents duplicate submissions)
             var existing = await _unitOfWork.UserAnswersSpeaking.GetAsync(
                 a => a.AttemptID == attemptId && a.QuestionId == request.QuestionId,
                 includeProperties: null
@@ -123,7 +119,6 @@ public class SpeakingController : ControllerBase
                     attemptId
                 );
 
-                // Return existing result instead of error (idempotent behavior)
                 return Ok(new SpeakingScoringResultDTO
                 {
                     QuestionId = existing.QuestionId,
@@ -141,7 +136,6 @@ public class SpeakingController : ControllerBase
                 });
             }
 
-            // Process and score
             var result = await _speakingScoringService.ProcessAndScoreAnswerAsync(
                 request.Audio,
                 request.QuestionId,
@@ -172,7 +166,6 @@ public class SpeakingController : ControllerBase
         }
     }
 
-    // ASR-only recognition from a Cloudinary URL with optional language override
     [HttpGet("asr-from-url")]
     [AllowAnonymous]
     public async Task<IActionResult> AsrFromUrl([FromQuery] string audioUrl, [FromQuery] string language = "en-US")
@@ -182,16 +175,5 @@ public class SpeakingController : ControllerBase
         return Ok(new { language, transcript = text });
     }
 
-    // ASR-only recognition from uploaded file with optional language override
-    // Temporarily commented out due to Swagger generation issue
-    /*
-    [HttpPost("asr-from-file")]
-    [AllowAnonymous]
-    public async Task<IActionResult> AsrFromFile([FromForm] IFormFile audio, [FromQuery] string language = "en-US")
-    {
-        if (audio == null || audio.Length == 0) return BadRequest("audio file is required");
-        var text = await _azureSpeechService.RecognizeFromFileAsync(audio, language);
-        return Ok(new { language, transcript = text });
-    }
-    */
+   
 }
