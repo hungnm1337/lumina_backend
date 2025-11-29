@@ -13,12 +13,14 @@ namespace Lumina.Test.Services
     {
         private readonly Mock<IConfiguration> _mockConfiguration;
         private readonly Mock<IWrittingRepository> _mockWrittingRepository;
+        private readonly Mock<IGenerativeAIService> _mockGenerativeAIService;
         private readonly WritingService _service;
 
         public SaveWritingAnswerUnitTest()
         {
             _mockConfiguration = new Mock<IConfiguration>();
             _mockWrittingRepository = new Mock<IWrittingRepository>();
+            _mockGenerativeAIService = new Mock<IGenerativeAIService>();
 
             // Setup configuration for API key
             _mockConfiguration
@@ -27,7 +29,8 @@ namespace Lumina.Test.Services
 
             _service = new WritingService(
                 _mockConfiguration.Object,
-                _mockWrittingRepository.Object
+                _mockWrittingRepository.Object,
+                _mockGenerativeAIService.Object
             );
         }
 

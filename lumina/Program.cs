@@ -1,4 +1,4 @@
-﻿using DataLayer.Models;
+using DataLayer.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -175,6 +175,12 @@ namespace lumina
 
             // Writing Services
             builder.Services.AddScoped<IWrittingRepository, WrittingRepository>();
+            builder.Services.AddScoped<IGenerativeAIService>(sp =>
+            {
+                var configuration = sp.GetRequiredService<IConfiguration>();
+                var apiKey = configuration["Gemini:ApiKey"] ?? throw new InvalidOperationException("Gemini API key is not configured.");
+                return new GenerativeAIService(apiKey);
+            });
             builder.Services.AddScoped<IWritingService, WritingService>();
 
             // Chat Services
