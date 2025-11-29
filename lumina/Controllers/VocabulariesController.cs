@@ -466,6 +466,7 @@ public class VocabulariesController : ControllerBase
                 definition = v.Definition,
                 example = v.Example,
                 //audioUrl = v.AudioUrl
+                imageUrl = v.ImageUrl // Trả về ImageUrl cho từng vocabulary
             }));
         }
         catch (Exception ex)
@@ -495,7 +496,8 @@ public class VocabulariesController : ControllerBase
                 definition = v.Definition,
                 category = v.Category,
                 example = v.Example,
-                audioUrl = (string?)null // Vocabulary model không có AudioUrl, để null cho frontend xử lý
+                audioUrl = (string?)null, // Vocabulary model không có AudioUrl, để null cho frontend xử lý
+                imageUrl = v.ImageUrl // Trả về ImageUrl cho từng vocabulary
             }));
         }
         catch (Exception ex)

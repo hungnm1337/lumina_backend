@@ -11,6 +11,7 @@ namespace DataLayer.DTOs.Chat
         public int UserId { get; set; }
         public string FolderName { get; set; } = null!;
         public List<GeneratedVocabularyDTO> Vocabularies { get; set; } = new List<GeneratedVocabularyDTO>();
+        public string? ImageUrl { get; set; } // URL ảnh từ Pollinations AI hoặc Cloudinary
     }
 
     public class SaveVocabularyResponseDTO
