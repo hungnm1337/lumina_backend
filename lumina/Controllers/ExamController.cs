@@ -19,9 +19,6 @@ namespace lumina.Controllers
             _examService = examService;
         }
 
-        // GET: api/exam
-        // Lấy danh sách tất cả các bài thi (không bao gồm các phần Part)
-        // Có thể filter theo examType và partCode
         [HttpGet]
         public async Task<ActionResult<List<ExamDTO>>> GetAllExams(
             [FromQuery] string? examType = null, 
@@ -31,8 +28,6 @@ namespace lumina.Controllers
             return Ok(exams);
         }
 
-        // GET: api/exam/{examId}
-        // Lấy chi tiết bài thi theo examId bao gồm các phần Part bên trong
         [HttpGet("{examId:int}")]
         public async Task<ActionResult<ExamDTO>> GetExamDetailAndPart(int examId)
         {
@@ -44,8 +39,6 @@ namespace lumina.Controllers
             return Ok(exam);
         }
 
-        // GET: api/exam/part/{partId}
-        // Lấy thông tin chi tiết part cùng các câu hỏi của part
         [HttpGet("part/{partId:int}")]
         public async Task<ActionResult<ExamPartDTO>> GetExamPartDetailAndQuestion(int partId)
         {
@@ -62,10 +55,8 @@ namespace lumina.Controllers
         public async Task<IActionResult> CreateExams(
             [FromQuery] string toExamSetKey)
         {
-            // ✅ Fix cứng giá trị fromExamSetKey
             const string fromExamSetKey = "10-2025";
 
-            // lấy user id từ token
             var userIdClaim = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
             if (userIdClaim == null)
                 return Unauthorized(new { message = "Không tìm thấy thông tin người dùng trong token" });
@@ -96,12 +87,6 @@ namespace lumina.Controllers
             return Ok(new { message = "Đổi trạng thái thành công." });
         }
 
-        // ============ COMPLETION STATUS ENDPOINTS ============
-
-        /// <summary>
-        /// GET: api/exam/completion-status
-        /// Get completion status for all exams for the authenticated user
-        /// </summary>
         [HttpGet("completion-status")]
         [Authorize]
         public async Task<ActionResult<List<ExamCompletionStatusDTO>>> GetUserExamCompletionStatuses()
@@ -115,10 +100,6 @@ namespace lumina.Controllers
             return Ok(statuses);
         }
 
-        /// <summary>
-        /// GET: api/exam/{examId}/completion-status
-        /// Get completion status for a specific exam for the authenticated user
-        /// </summary>
         [HttpGet("{examId:int}/completion-status")]
         [Authorize]
         public async Task<ActionResult<ExamCompletionStatusDTO>> GetExamCompletionStatus(int examId)
@@ -132,10 +113,6 @@ namespace lumina.Controllers
             return Ok(status);
         }
 
-        /// <summary>
-        /// GET: api/exam/{examId}/parts/completion-status
-        /// Get completion status for all parts of a specific exam for the authenticated user
-        /// </summary>
         [HttpGet("{examId:int}/parts/completion-status")]
         [Authorize]
         public async Task<ActionResult<List<PartCompletionStatusDTO>>> GetPartCompletionStatus(int examId)

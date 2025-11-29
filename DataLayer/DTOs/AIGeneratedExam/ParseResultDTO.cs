@@ -9,7 +9,7 @@ namespace DataLayer.DTOs.AIGeneratedExam
     public class ParseResultDTO
     {
         public int PartNumber { get; set; }
-        public int Quantity { get; set; } = 1;  // Mặc định 1 nếu AI không trả
+        public int Quantity { get; set; } = 1;  
         public string? Topic { get; set; }
     }
 

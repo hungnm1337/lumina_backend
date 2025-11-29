@@ -22,13 +22,11 @@ public class ManagerAnalyticsService : IManagerAnalyticsService
         var weekAgo = now.AddDays(-7);
         var monthAgo = now.AddMonths(-1);
 
-        // Load sequentially to avoid DbContext concurrency issues
         var activeUsers = await _repository.GetActiveUsersCountAsync(fromDate);
         var totalUsers = await _repository.GetTotalUsersCountAsync();
         var newUsersThisWeek = await _repository.GetNewUsersCountAsync(weekAgo);
         var newUsersThisMonth = await _repository.GetNewUsersCountAsync(monthAgo);
 
-        // Calculate growth rate (new users this month vs last month)
         var lastMonthStart = monthAgo;
         var newUsersLastMonth = await _repository.GetNewUsersCountAsync(lastMonthStart);
         var growthRate = newUsersLastMonth > 0

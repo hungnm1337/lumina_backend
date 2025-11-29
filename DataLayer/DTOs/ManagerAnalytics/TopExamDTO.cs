@@ -8,7 +8,7 @@ public class TopExamDTO
     public int AttemptCount { get; set; }
     public int CompletedCount { get; set; }
     public double AverageScore { get; set; }
-    public double CompletionRate { get; set; } // percentage
+    public double CompletionRate { get; set; } 
     public DateTime CreatedAt { get; set; }
 }
 

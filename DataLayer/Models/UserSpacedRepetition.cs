@@ -9,9 +9,6 @@ public partial class UserSpacedRepetition
 
     public int UserId { get; set; }
 
-    // VocabularyId (nullable)
-    // Nếu null → track theo folder (cho quiz scores)
-    // Nếu có giá trị → track theo từng word (cho spaced repetition)
     public int? VocabularyId { get; set; }
 
     public int VocabularyListId { get; set; }
@@ -26,11 +23,10 @@ public partial class UserSpacedRepetition
 
     public string? Status { get; set; }
 
-    // Quiz score fields
-    public int? BestQuizScore { get; set; } // Điểm cao nhất (0-100)
-    public int? LastQuizScore { get; set; } // Điểm lần làm gần nhất (0-100)
-    public DateTime? LastQuizCompletedAt { get; set; } // Thời gian làm quiz gần nhất
-    public int? TotalQuizAttempts { get; set; } // Tổng số lần làm quiz
+    public int? BestQuizScore { get; set; }
+    public int? LastQuizScore { get; set; }
+    public DateTime? LastQuizCompletedAt { get; set; }
+    public int? TotalQuizAttempts { get; set; }
 
     public virtual User User { get; set; } = null!;
 

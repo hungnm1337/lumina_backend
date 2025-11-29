@@ -28,7 +28,6 @@ public partial class User
     public int? LongestStreak { get; set; }
 
     public int? StreakFreezesAvailable { get; set; }
-    // Quota tracking for subscription tiers
     public int MonthlyReadingAttempts { get; set; } = 0;
 
     public int MonthlyListeningAttempts { get; set; } = 0;

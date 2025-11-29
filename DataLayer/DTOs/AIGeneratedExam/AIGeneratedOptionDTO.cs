@@ -9,7 +9,7 @@ namespace DataLayer.DTOs.AIGeneratedExam
     public class AIGeneratedOptionDTO
     {
         
-        public string Label { get; set; } = null!; // A, B, C, D
+        public string Label { get; set; } = null!;
         public string Content { get; set; } = null!;
         public bool? IsCorrect { get; set; }
     }

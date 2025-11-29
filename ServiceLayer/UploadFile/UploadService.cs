@@ -64,17 +64,14 @@ namespace ServiceLayer.UploadFile
                 throw new Exception(uploadResult.Error.Message);
             }
 
-            // Cách trả về kết quả này là hoàn toàn chính xác
             return new UploadResultDTO { Url = uploadResult.SecureUrl.ToString(), PublicId = uploadResult.PublicId };
         }
 
-        // ✅ Hàm mới: Upload từ URL (không cần file)
         public async Task<UploadResultDTO> UploadFromUrlAsync(string fileUrl)
         {
             if (string.IsNullOrEmpty(fileUrl))
                 throw new ArgumentException("URL không hợp lệ.");
 
-            // Kiểm tra đuôi file để xác định loại upload
             bool isAudio = fileUrl.EndsWith(".mp3") || fileUrl.EndsWith(".wav") || fileUrl.EndsWith(".m4a");
 
             UploadResult uploadResult;

@@ -14,7 +14,6 @@ namespace RepositoryLayer.Import
         Task<Question> AddQuestionAsync(Question question);
         Task AddOptionsAsync(IEnumerable<Option> options);
 
-      /*  Task<List<Prompt>> GetPromptsWithPassagesAsync();*/
         Task<IDbContextTransaction> BeginTransactionAsync();
         Task SaveChangesAsync();
 

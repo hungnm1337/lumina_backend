@@ -23,8 +23,8 @@ namespace RepositoryLayer.Streak
             return await _dbContext.Users
                 .Where(u => u.IsActive == true && u.CurrentStreak > 0)
                 .OrderByDescending(u => u.CurrentStreak)
-                .ThenBy(u => u.LastPracticeDate) // Người giữ streak lâu hơn lên trên
-                .ThenBy(u => u.UserId)           // Nếu vẫn bằng nhau thì UserId nhỏ hơn lên trên
+                .ThenBy(u => u.LastPracticeDate) 
+                .ThenBy(u => u.UserId)           
                 .Take(topN)
                 .Select(u => new StreakUserDTO
                 {

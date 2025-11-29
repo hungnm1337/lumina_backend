@@ -23,13 +23,11 @@ using System.Threading.Tasks;
         {
             var query = _luminaSystemContext.Exams.Where(e => e.IsActive == true);
             
-            // Filter by ExamType if provided
             if (!string.IsNullOrEmpty(examType))
             {
                 query = query.Where(e => e.ExamType == examType);
             }
             
-            // Filter by PartCode if provided
             if (!string.IsNullOrEmpty(partCode))
             {
                 query = query.Where(e => e.ExamParts.Any(ep => ep.PartCode == partCode));
@@ -100,7 +98,7 @@ using System.Threading.Tasks;
                     PartCode = ep.PartCode,
                     Title = ep.Title,
                     OrderIndex = ep.OrderIndex,
-                    Questions = null // Không load câu hỏi
+                    Questions = null 
                 }).ToList()
             };
 
@@ -240,14 +238,12 @@ using System.Threading.Tasks;
 
         if (exam.IsActive == false)
         {
-            // đang khóa, chuẩn bị mở -> kiểm tra đủ câu hỏi
             bool allPartsEnough = exam.ExamParts.All(p => p.Questions.Count() >= p.MaxQuestions);
             if (!allPartsEnough) return false;
             exam.IsActive = true;
         }
         else
         {
-            // đang mở, chỉ việc khóa lại
             exam.IsActive = false;
         }
 
@@ -262,7 +258,7 @@ using System.Threading.Tasks;
                 .Include(p => p.Questions)
                     .ThenInclude(q => q.Options)
                 .Include(p => p.Questions)
-                    .ThenInclude(q => q.Prompt) // ✅ Đảm bảo Include Prompt
+                    .ThenInclude(q => q.Prompt) 
                 .FirstOrDefaultAsync(p => p.PartId == partId);
 
             if (part == null) return null;
