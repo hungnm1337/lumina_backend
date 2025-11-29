@@ -3,25 +3,22 @@ using System.Collections.Generic;
 
 namespace DataLayer.DTOs.MockTest
 {
-    // Request to start a mock test attempt
     public class MockTestAttemptRequestDTO
     {
         public int UserId { get; set; }
         public List<int> ExamIds { get; set; } = new List<int>();
-        public string AttemptType { get; set; } = "mock_test"; // mock_test, practice, etc.
+        public string AttemptType { get; set; } = "mock_test"; 
         public DateTime StartTime { get; set; }
     }
 
-    // Response after creating mock test attempt
     public class MockTestAttemptResponseDTO
     {
         public int ExamAttemptId { get; set; }
         public int UserId { get; set; }
         public DateTime StartTime { get; set; }
-        public string Status { get; set; } = "in_progress"; // in_progress, completed, scored
+        public string Status { get; set; } = "in_progress"; 
     }
 
-    // Part answer submission
     public class PartAnswersSubmissionDTO
     {
         public int ExamAttemptId { get; set; }
@@ -36,13 +33,11 @@ namespace DataLayer.DTOs.MockTest
         public bool? IsCorrect { get; set; }
     }
 
-    // Complete mock test request
     public class CompleteMockTestRequestDTO
     {
         public DateTime EndTime { get; set; }
     }
 
-    // Mock test result
     public class MockTestResultDTO
     {
         public int ExamAttemptId { get; set; }
@@ -51,7 +46,7 @@ namespace DataLayer.DTOs.MockTest
         public int ReadingScore { get; set; }
         public string SpeakingLevel { get; set; } = string.Empty;
         public string WritingLevel { get; set; } = string.Empty;
-        public int CompletionTime { get; set; } // minutes
+        public int CompletionTime { get; set; } 
         public List<PartResultDTO> PartResults { get; set; } = new List<PartResultDTO>();
         public PerformanceAnalysisDTO? Analysis { get; set; }
     }
@@ -63,7 +58,7 @@ namespace DataLayer.DTOs.MockTest
         public int Score { get; set; }
         public int CorrectAnswers { get; set; }
         public int TotalQuestions { get; set; }
-        public int TimeSpent { get; set; } // minutes
+        public int TimeSpent { get; set; } 
     }
 
     public class PerformanceAnalysisDTO

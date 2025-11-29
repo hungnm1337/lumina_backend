@@ -277,15 +277,12 @@ namespace RepositoryLayer.Leaderboard
                 var totalQuestions = answers.Count;
                 var accuracyRate = totalQuestions > 0 ? (decimal)correctCount / totalQuestions : 0;
                 
-                // Lấy độ khó trung bình (giả sử có field DifficultyLevel trong Question)
-                var avgDifficulty = 1.0m; // Default Medium
+                var avgDifficulty = 1.0m; 
 
-                // Tính thời gian làm bài
                 var timeSpent = attempt.EndTime.HasValue 
                     ? (attempt.EndTime.Value - attempt.StartTime).TotalMinutes 
                     : 0;
 
-                // Tính điểm theo công thức TOEIC
                 var estimatedToeic = await CalculateEstimatedTOEICScore(attempt.UserID, leaderboardId);
                 var scoreConfig = GetScoreConfigByTOEIC(estimatedToeic);
                 
@@ -302,7 +299,6 @@ namespace RepositoryLayer.Leaderboard
                 userScores[attempt.UserID] += totalScore;
             }
 
-            // Lưu vào UserLeaderboards
             foreach (var kvp in userScores)
             {
                 _context.UserLeaderboards.Add(new UserLeaderboard
@@ -323,11 +319,8 @@ namespace RepositoryLayer.Leaderboard
 
             if (archiveScores)
             {
-                // TODO: Implement archiving logic (lưu vào bảng LeaderboardArchive)
-                // Có thể tạo bảng mới để lưu lịch sử điểm của các season đã kết thúc
             }
 
-            // Reset điểm về 0
             var userLeaderboards = await _context.UserLeaderboards
                 .Where(ul => ul.LeaderboardId == leaderboardId)
                 .ToListAsync();
@@ -363,7 +356,6 @@ namespace RepositoryLayer.Leaderboard
             var rank = await GetUserRankInSeasonAsync(userId, leaderboardId);
             var estimatedToeic = await CalculateEstimatedTOEICScore(userId, leaderboardId);
             
-            // Tính stats từ attempts
             var attempts = await _context.ExamAttempts
                 .Where(ea => ea.UserID == userId 
                     && ea.Status == "Completed"
@@ -482,13 +474,11 @@ namespace RepositoryLayer.Leaderboard
             await _context.SaveChangesAsync();
         }
 
-        // Helper methods
         private async Task<int> CalculateEstimatedTOEICScore(int userId, int leaderboardId)
         {
             var season = await _context.Leaderboards.FirstOrDefaultAsync(x => x.LeaderboardId == leaderboardId);
             if (season == null) return 0;
 
-            // Lấy 10 bài gần nhất
             var recentAttempts = await _context.ExamAttempts
                 .Where(ea => ea.UserID == userId 
                     && ea.Status == "Completed"
@@ -510,7 +500,6 @@ namespace RepositoryLayer.Leaderboard
 
             if (totalQuestions == 0) return 0;
 
-            // Công thức ước tính: TOEIC = (correct/total) * 990
             var accuracyRate = (decimal)correctAnswers / totalQuestions;
             var estimatedScore = (int)(accuracyRate * 990);
 
@@ -521,12 +510,12 @@ namespace RepositoryLayer.Leaderboard
         {
             return toeicScore switch
             {
-                >= 851 => "Proficient", // Xuất sắc
-                >= 751 => "Advanced", // Sẵn sàng thi
-                >= 601 => "Upper-Intermediate", // Khá tốt
-                >= 401 => "Intermediate", // Trung bình
-                >= 201 => "Elementary", // Đang tiến bộ
-                _ => "Beginner" // Bắt đầu hành trình
+                >= 851 => "Proficient", 
+                >= 751 => "Advanced", 
+                >= 601 => "Upper-Intermediate",
+                >= 401 => "Intermediate", 
+                >= 201 => "Elementary", 
+                _ => "Beginner"
             };
         }
 
@@ -534,12 +523,12 @@ namespace RepositoryLayer.Leaderboard
         {
             return toeicScore switch
             {
-                >= 851 => (2, 0.10m, 0.20m),   // Proficient
-                >= 751 => (3, 0.15m, 0.40m),   // Advanced
-                >= 601 => (5, 0.20m, 0.60m),   // Upper-Intermediate
-                >= 401 => (8, 0.25m, 0.90m),   // Intermediate
-                >= 201 => (12, 0.28m, 1.20m),  // Elementary
-                _ => (15, 0.30m, 1.50m)        // Beginner
+                >= 851 => (2, 0.10m, 0.20m),   
+                >= 751 => (3, 0.15m, 0.40m),   
+                >= 601 => (5, 0.20m, 0.60m),   
+                >= 401 => (8, 0.25m, 0.90m),   
+                >= 201 => (12, 0.28m, 1.20m),  
+                _ => (15, 0.30m, 1.50m)        
             };
         }
     }

@@ -22,7 +22,6 @@ namespace RepositoryLayer.Exam.Writting
         {
             try
             {
-                // Check if the answer already exists
                 var existingAnswer = await _context.UserAnswerWritings
                     .FirstOrDefaultAsync(ua => ua.AttemptID == writingAnswerRequestDTO.AttemptID 
                                            && ua.QuestionId == writingAnswerRequestDTO.QuestionId);
@@ -35,7 +34,6 @@ namespace RepositoryLayer.Exam.Writting
                 }
                 else
                 {
-                    // Create new answer
                     var newAnswer = new UserAnswerWriting
                     {
                         AttemptID = writingAnswerRequestDTO.AttemptID,

@@ -136,6 +136,28 @@ public class VocabulariesController : ControllerBase
                 }
             }
 
+            // Kiểm tra user hiện tại
+            var user = await _unitOfWork.Users.GetUserByIdAsync(currentUserId);
+            if (user == null)
+            {
+                return Unauthorized(new ErrorResponse("User not found."));
+            }
+
+            bool isStaff = user.RoleId == 3; // RoleId 3 = Staff
+            var wasPublished = !string.IsNullOrEmpty(vocabularyList.Status) && 
+                              vocabularyList.Status.Trim().Equals("Published", StringComparison.OrdinalIgnoreCase);
+
+            // Nếu là Staff và list đã được published, chuyển về pending để manager duyệt lại
+            if (isStaff && wasPublished)
+            {
+                vocabularyList.Status = "Pending";
+                vocabularyList.IsPublic = false;
+                vocabularyList.UpdateAt = DateTime.UtcNow;
+                await _unitOfWork.VocabularyLists.UpdateAsync(vocabularyList);
+                // Đảm bảo thay đổi được lưu trước khi tiếp tục
+                await _unitOfWork.CompleteAsync();
+            }
+
             var vocab = new Vocabulary
             {
                 VocabularyListId = req.VocabularyListId,
@@ -152,7 +174,8 @@ public class VocabulariesController : ControllerBase
 
             return CreatedAtAction(nameof(GetList), new { listId = req.VocabularyListId }, new { 
                 id = vocab.VocabularyId,
-                audioUrl = audioUrl
+                audioUrl = audioUrl,
+                statusChanged = isStaff && wasPublished // Thông báo cho frontend biết status đã thay đổi
             });
         }
         catch (Exception ex)
@@ -247,6 +270,35 @@ public class VocabulariesController : ControllerBase
                 return NotFound(new { message = "Vocabulary not found" });
             }
 
+            // Kiểm tra vocabulary list
+            var vocabularyList = await _unitOfWork.VocabularyLists.FindByIdAsync(vocab.VocabularyListId);
+            if (vocabularyList == null)
+            {
+                return NotFound(new ErrorResponse("Vocabulary list not found."));
+            }
+
+            // Kiểm tra user hiện tại
+            var user = await _unitOfWork.Users.GetUserByIdAsync(currentUserId);
+            if (user == null)
+            {
+                return Unauthorized(new ErrorResponse("User not found."));
+            }
+
+            bool isStaff = user.RoleId == 3; // RoleId 3 = Staff
+            var wasPublished = !string.IsNullOrEmpty(vocabularyList.Status) && 
+                              vocabularyList.Status.Trim().Equals("Published", StringComparison.OrdinalIgnoreCase);
+
+            // Nếu là Staff và list đã được published, chuyển về pending để manager duyệt lại
+            if (isStaff && wasPublished)
+            {
+                vocabularyList.Status = "Pending";
+                vocabularyList.IsPublic = false;
+                vocabularyList.UpdateAt = DateTime.UtcNow;
+                await _unitOfWork.VocabularyLists.UpdateAsync(vocabularyList);
+                // Đảm bảo thay đổi được lưu trước khi tiếp tục
+                await _unitOfWork.CompleteAsync();
+            }
+
             vocab.Word = req.Word;
             vocab.TypeOfWord = req.TypeOfWord;
             vocab.Category = req.Category;
@@ -256,7 +308,10 @@ public class VocabulariesController : ControllerBase
             await _unitOfWork.Vocabularies.UpdateAsync(vocab);
             await _unitOfWork.CompleteAsync();
 
-            return Ok(new { message = "Vocabulary updated successfully" });
+            return Ok(new { 
+                message = "Vocabulary updated successfully",
+                statusChanged = isStaff && wasPublished // Thông báo cho frontend biết status đã thay đổi
+            });
         }
         catch (Exception ex)
         {

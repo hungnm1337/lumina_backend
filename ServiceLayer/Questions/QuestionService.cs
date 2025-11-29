@@ -32,7 +32,6 @@ namespace ServiceLayer.Questions
 
             try
             {
-                // Tạo Prompt mới (đã gộp Passage)
                 var prompt = new Prompt
                 {
                     Title = dto.Title,
@@ -43,22 +42,18 @@ namespace ServiceLayer.Questions
                 };
                 prompt = await _questionRepository.AddPromptAsync(prompt);
 
-                // Lấy danh sách PartId trong dto để xử lý 1 lượt
                 var partIds = dto.Questions.Select(q => q.Question.PartId).Distinct().ToList();
 
-                // Lấy các ExamParts tương ứng
                 var partsDict = await _dbContext.ExamParts
                     .Where(p => partIds.Contains(p.PartId))
                     .ToDictionaryAsync(p => p.PartId);
 
-                // Lấy số câu hỏi hiện có theo từng Part
                 var currentCounts = await _dbContext.Questions
                     .Where(q => partIds.Contains(q.PartId))
                     .GroupBy(q => q.PartId)
                     .Select(g => new { PartId = g.Key, Count = g.Count() })
                     .ToDictionaryAsync(x => x.PartId, x => x.Count);
 
-                // Duyệt theo từng nhóm câu hỏi theo PartId
                 foreach (var grouped in dto.Questions.GroupBy(q => q.Question.PartId))
                 {
                     var partId = grouped.Key;
@@ -68,7 +63,6 @@ namespace ServiceLayer.Questions
                     int maxQuestions = partsDict[partId].MaxQuestions;
                     int currentCount = currentCounts.ContainsKey(partId) ? currentCounts[partId] : 0;
 
-                    // Kiểm tra số lượng câu hỏi tối đa
                     if (currentCount + grouped.Count() > maxQuestions)
                         throw new Exception($"ExamPart id {partId} chỉ được phép có tối đa {maxQuestions} câu hỏi");
 
@@ -142,21 +136,18 @@ namespace ServiceLayer.Questions
 
             try
             {
-                // Kiểm tra PartId tồn tại
                 var part = await _dbContext.ExamParts.FirstOrDefaultAsync(p => p.PartId == partId);
                 if (part == null)
                     throw new Exception($"PartId {partId} không tồn tại");
 
                 int maxQuestions = part.MaxQuestions;
 
-                // Tổng số lượng câu hỏi hiện có ở part này
                 int currentCount = await _dbContext.Questions.CountAsync(q => q.PartId == partId);
 
-                int assignNumber = currentCount + 1; // Đánh số tiếp theo
+                int assignNumber = currentCount + 1; 
 
                 foreach (var promptDto in promptDtos)
                 {
-                    // 1. Lưu Prompt
                     var prompt = new Prompt
                     {
                         Title = promptDto.Title,
@@ -170,7 +161,6 @@ namespace ServiceLayer.Questions
                     int promptId = prompt.PromptId;
                     savedPromptIds.Add(promptId);
 
-                    // 2. Lưu Question cho Prompt này (tất cả sẽ gán partId truyền vào)
                     foreach (var q in promptDto.Questions)
                     {
                         if (currentCount + 1 > maxQuestions)
@@ -194,7 +184,6 @@ namespace ServiceLayer.Questions
                         int questionId = question.QuestionId;
                         currentCount++;
 
-                        // 3. Lưu Option nếu có
                         if (q.Options != null && q.Options.Any())
                         {
                             var options = q.Options.Select(op => new Option
@@ -242,7 +231,6 @@ namespace ServiceLayer.Questions
     }
     catch (Exception ex)
     {
-        // Log error nếu cần
         throw new Exception($"Lỗi khi xóa prompt: {ex.Message}");
     }
 }

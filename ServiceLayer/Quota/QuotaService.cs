@@ -25,7 +25,6 @@ namespace ServiceLayer.Quota
         {
             var userStatus = await _quotaRepo.GetUserQuotaStatusAsync(userId);
 
-            // Premium users: unlimited access to all skills
             if (userStatus.SubscriptionType == "PREMIUM")
             {
                 return new QuotaCheckResult
@@ -33,12 +32,11 @@ namespace ServiceLayer.Quota
                     CanAccess = true,
                     IsPremium = true,
                     RequiresUpgrade = false,
-                    RemainingAttempts = -1, // -1 indicates unlimited
+                    RemainingAttempts = -1, 
                     SubscriptionType = "PREMIUM"
                 };
             }
 
-            // Free users: check skill-specific rules
             return skill.ToLower() switch
             {
                 "reading" => new QuotaCheckResult
@@ -57,7 +55,6 @@ namespace ServiceLayer.Quota
                     RemainingAttempts = Math.Max(0, FREE_TIER_LIMIT - userStatus.MonthlyListeningAttempts),
                     SubscriptionType = "FREE"
                 },
-                // Speaking and Writing require premium
                 "speaking" or "writing" => new QuotaCheckResult
                 {
                     CanAccess = false,
@@ -79,16 +76,13 @@ namespace ServiceLayer.Quota
 
         public async Task IncrementQuotaAsync(int userId, string skill)
         {
-            // Check and reset quota if it's a new month
             await _quotaRepo.CheckAndResetQuotaAsync(userId);
 
-            // Increment the attempt counter
             await _quotaRepo.IncrementAttemptAsync(userId, skill);
         }
 
         public async Task ResetMonthlyQuotaAsync()
         {
-            // This will be called by a scheduled job (Hangfire) at the start of each month
             await _quotaRepo.ResetAllQuotasAsync();
         }
 

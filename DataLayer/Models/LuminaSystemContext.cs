@@ -80,8 +80,6 @@ public partial class LuminaSystemContext : DbContext
     
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        // Only configure SQL Server if no options have been provided
-        // This allows tests to use InMemory database
         if (!optionsBuilder.IsConfigured)
         {
             var builder = new ConfigurationBuilder();
@@ -169,12 +167,12 @@ public partial class LuminaSystemContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasOne(d => d.Question)
-                .WithMany(p => p.UserAnswerMultipleChoices)  // ✅ Chỉ định navigation property
+                .WithMany(p => p.UserAnswerMultipleChoices)  
                 .HasForeignKey(d => d.QuestionId)
                 .OnDelete(DeleteBehavior.NoAction);
 
             entity.HasOne(d => d.SelectedOption)
-                .WithMany(p => p.UserAnswerMultipleChoices)  // ✅ Chỉ định navigation property
+                .WithMany(p => p.UserAnswerMultipleChoices) 
                 .HasForeignKey(d => d.SelectedOptionId)
                 .OnDelete(DeleteBehavior.NoAction);
         });
@@ -211,7 +209,7 @@ public partial class LuminaSystemContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasOne(d => d.Question)
-                .WithMany(p => p.UserAnswerWritings)  // ✅ Chỉ định navigation property
+                .WithMany(p => p.UserAnswerWritings)  
                 .HasForeignKey(d => d.QuestionId)
                 .OnDelete(DeleteBehavior.NoAction);
         });
@@ -587,7 +585,7 @@ public partial class LuminaSystemContext : DbContext
             entity.Property(e => e.FirstAttemptDate)
                 .HasColumnName("FirstAttemptDate")
                 .HasColumnType("datetime")
-                .HasPrecision(3);
+                ;
 
             entity.HasOne(d => d.Leaderboard).WithMany(p => p.UserLeaderboards)
                 .HasForeignKey(d => d.LeaderboardId)

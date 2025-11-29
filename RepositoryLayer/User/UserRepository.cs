@@ -77,7 +77,6 @@ namespace RepositoryLayer.User
                 return false;
             }
 
-            // Đảo ngược trạng thái IsActive
             user.IsActive = !user.IsActive;
 
             _context.Users.Update(user);
@@ -113,7 +112,6 @@ namespace RepositoryLayer.User
             var u = await _context.Users.Include(x => x.Role).Include(x => x.Accounts).FirstOrDefaultAsync(x => x.UserId == userId);
             if (u == null) return null;
 
-            // Update fields - fullName đã được validated trong service layer
             u.FullName = fullName;
             u.Phone = string.IsNullOrWhiteSpace(phone) ? null : phone.Trim();
             u.Bio = string.IsNullOrWhiteSpace(bio) ? null : bio.Trim();
@@ -144,7 +142,7 @@ namespace RepositoryLayer.User
 
             if (account == null)
             {
-                return false; // Không phải tài khoản local hoặc không có mật khẩu để đổi
+                return false;
             }
 
             var ok = BCrypt.Net.BCrypt.Verify(currentPassword, account.PasswordHash);

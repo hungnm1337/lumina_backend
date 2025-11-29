@@ -13,8 +13,8 @@ public interface IArticleService
     Task<ArticleResponseDTO?> GetArticleByIdForManagerAsync(int id); // For manager to view any article including pending
     Task<PagedResponse<ArticleResponseDTO>> QueryAsync(ArticleQueryParams query);
     
-    // Article Progress methods
     Task<ArticleProgressResponseDTO> SaveArticleProgressAsync(int userId, int articleId, ArticleProgressRequestDTO request);
     Task<List<ArticleProgressResponseDTO>> GetUserArticleProgressesAsync(int userId, List<int> articleIds);
     Task<bool> MarkArticleAsDoneAsync(int userId, int articleId);
+    Task<bool> ToggleHideArticleAsync(int articleId, bool isPublished, int managerUserId);
 }

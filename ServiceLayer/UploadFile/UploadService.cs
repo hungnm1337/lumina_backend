@@ -4,7 +4,6 @@ using DataLayer.DTOs;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -32,48 +31,23 @@ namespace ServiceLayer.UploadFile
             }
 
             UploadResult uploadResult;
-            string contentType = file.ContentType?.ToLower() ?? "";
-            string fileName = file.FileName?.ToLower() ?? "";
 
-            // Xử lý Audio files
-            if (contentType.StartsWith("audio/"))
+            if (file.ContentType.StartsWith("audio/"))
             {
                 var audioParams = new VideoUploadParams()
                 {
                     File = new FileDescription(file.FileName, file.OpenReadStream()),
-                    PublicId = $"lumina/audio/{Path.GetFileNameWithoutExtension(file.FileName)}_{Guid.NewGuid()}"
-                    // ResourceType is automatically set to Video by VideoUploadParams
+                    PublicId = $"lumina/audio/{Path.GetFileNameWithoutExtension(file.FileName)}_{Guid.NewGuid()}",
                 };
 
                 uploadResult = await _cloudinary.UploadAsync(audioParams);
             }
-            // Xử lý Video files
-            else if (contentType.StartsWith("video/") || 
-                     fileName.EndsWith(".mp4") || fileName.EndsWith(".mov") || 
-                     fileName.EndsWith(".avi") || fileName.EndsWith(".wmv") || 
-                     fileName.EndsWith(".flv") || fileName.EndsWith(".webm"))
-            {
-                var videoParams = new VideoUploadParams()
-                {
-                    File = new FileDescription(file.FileName, file.OpenReadStream()),
-                    PublicId = $"lumina/videos/{Path.GetFileNameWithoutExtension(file.FileName)}_{Guid.NewGuid()}",
-                    // ResourceType is automatically set to Video by VideoUploadParams
-                    EagerTransforms = new List<Transformation>()
-                    {
-                        new Transformation().Width(1280).Height(720).Crop("limit").Quality("auto"),
-                        new Transformation().Width(640).Height(360).Crop("limit").Quality("auto")
-                    }
-                };
-
-                uploadResult = await _cloudinary.UploadAsync(videoParams);
-            }
-            // Xử lý Image files (mặc định)
-            else
+            else // Mặc định xử lý cho file ảnh
             {
                 var imageParams = new ImageUploadParams
                 {
                     File = new FileDescription(file.FileName, file.OpenReadStream()),
-                    PublicId = $"lumina/images/{Path.GetFileNameWithoutExtension(file.FileName)}_{Guid.NewGuid()}",
+                    PublicId = $"music_app/images/{Path.GetFileNameWithoutExtension(file.FileName)}_{Guid.NewGuid()}",
                     // Không đặt Transformation để giữ nguyên kích thước gốc ảnh
                 };
 
@@ -93,46 +67,30 @@ namespace ServiceLayer.UploadFile
             return new UploadResultDTO { Url = uploadResult.SecureUrl.ToString(), PublicId = uploadResult.PublicId };
         }
 
-        // ✅ Hàm mới: Upload từ URL (không cần file)
         public async Task<UploadResultDTO> UploadFromUrlAsync(string fileUrl)
         {
             if (string.IsNullOrEmpty(fileUrl))
                 throw new ArgumentException("URL không hợp lệ.");
 
-            string urlLower = fileUrl.ToLower();
-            UploadResult uploadResult;
+            bool isAudio = fileUrl.EndsWith(".mp3") || fileUrl.EndsWith(".wav") || fileUrl.EndsWith(".m4a");
 
-            // Kiểm tra đuôi file để xác định loại upload
-            bool isAudio = urlLower.EndsWith(".mp3") || urlLower.EndsWith(".wav") || urlLower.EndsWith(".m4a") || urlLower.EndsWith(".ogg");
-            bool isVideo = urlLower.EndsWith(".mp4") || urlLower.EndsWith(".mov") || urlLower.EndsWith(".avi") || 
-                          urlLower.EndsWith(".wmv") || urlLower.EndsWith(".flv") || urlLower.EndsWith(".webm");
+            UploadResult uploadResult;
 
             if (isAudio)
             {
                 var audioParams = new VideoUploadParams
                 {
                     File = new FileDescription(fileUrl),
-                    PublicId = $"lumina/audio_{Guid.NewGuid()}"
-                    // ResourceType is automatically set to Video by VideoUploadParams
+                    PublicId = $"lumina/audio_{Guid.NewGuid()}",
                 };
                 uploadResult = await _cloudinary.UploadAsync(audioParams);
             }
-            else if (isVideo)
-            {
-                var videoParams = new VideoUploadParams
-                {
-                    File = new FileDescription(fileUrl),
-                    PublicId = $"lumina/videos_{Guid.NewGuid()}"
-                    // ResourceType is automatically set to Video by VideoUploadParams
-                };
-                uploadResult = await _cloudinary.UploadAsync(videoParams);
-            }
-            else // Mặc định là image
+            else
             {
                 var imageParams = new ImageUploadParams
                 {
                     File = new FileDescription(fileUrl),
-                    PublicId = $"lumina/images_{Guid.NewGuid()}",
+                    PublicId = $"music_app/images_{Guid.NewGuid()}",
                 };
                 uploadResult = await _cloudinary.UploadAsync(imageParams);
             }

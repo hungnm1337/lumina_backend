@@ -22,11 +22,7 @@ namespace lumina.Controllers
             _logger = logger;
         }
 
-        /// <summary>
-        /// Save writing answer to database
-        /// </summary>
-        /// <param name="request">Writing answer request DTO</param>
-        /// <returns>Success status</returns>
+        
         [HttpPost("save-answer")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -58,11 +54,7 @@ namespace lumina.Controllers
             }
         }
 
-        /// <summary>
-        /// Get AI feedback for writing answer
-        /// </summary>
-        /// <param name="request">Writing request DTO with picture caption and user answer</param>
-        /// <returns>AI feedback with score and detailed evaluation</returns>
+        
         [HttpPost("p1-get-feedback")]
         [ProducesResponseType(typeof(WritingResponseDTO), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]

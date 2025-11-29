@@ -54,7 +54,6 @@ public sealed class AuthService : IAuthService
         var identifier = request.Username.Trim();
         var account = await FindAccountByIdentifierAsync(identifier);
 
-        // Guard clauses
         if (account?.User == null || string.IsNullOrEmpty(account.PasswordHash))
         {
             _logger.LogWarning("Login attempt failed for identifier: {Identifier} - Account not found or no password", identifier);
@@ -79,7 +78,6 @@ public sealed class AuthService : IAuthService
 
     public async Task<LoginResponse> GoogleLoginAsync(GoogleLoginRequest request)
     {
-        // Xác thực với Google (đã tách thành service riêng)
         GoogleUserInfo googleUserInfo;
         try
         {
@@ -94,7 +92,6 @@ public sealed class AuthService : IAuthService
         var normalizedEmail = NormalizeEmail(googleUserInfo.Email);
         var account = await FindOrCreateGoogleAccountAsync(googleUserInfo, normalizedEmail, request.Token);
 
-        // Ensure Role loaded
         if (account.User.Role == null)
         {
             account.User.Role = await _context.Roles.FindAsync(account.User.RoleId)
@@ -116,14 +113,12 @@ public sealed class AuthService : IAuthService
         var normalizedEmail = NormalizeEmail(request.Email);
         var normalizedUsername = NormalizeUsername(request.Username);
 
-        // Check cả email và username trong 1 query để tối ưu performance
         var conflicts = await _context.Accounts
             .Include(a => a.User)
             .Where(a => a.Username == normalizedUsername || (a.User.Email == normalizedEmail && a.User.IsActive == true))
             .Select(a => new { a.Username, a.User.Email, a.User.IsActive })
             .ToListAsync();
 
-        // Kiểm tra email đã được đăng ký
         var emailExists = conflicts.Any(c => c.Email == normalizedEmail && c.IsActive == true);
         if (emailExists)
         {
@@ -131,7 +126,6 @@ public sealed class AuthService : IAuthService
             throw AuthServiceException.Conflict("Email đã được đăng ký");
         }
 
-        // Kiểm tra username đã tồn tại
         var usernameExists = conflicts.Any(c => c.Username == normalizedUsername);
         if (usernameExists)
         {
@@ -139,37 +133,32 @@ public sealed class AuthService : IAuthService
             throw AuthServiceException.Conflict("Tên đăng nhập đã tồn tại");
         }
 
-        // Cleanup: Xóa temp user cũ (IsActive=false, không có Account) nếu tồn tại
         var tempUserOld = await _context.Users
             .Include(u => u.PasswordResetTokens)
             .FirstOrDefaultAsync(u => u.Email == normalizedEmail && u.IsActive == false);
             
         if (tempUserOld != null)
         {
-            // Xóa các token cũ của temp user
             if (tempUserOld.PasswordResetTokens != null && tempUserOld.PasswordResetTokens.Count > 0)
             {
                 _context.PasswordResetTokens.RemoveRange(tempUserOld.PasswordResetTokens);
             }
             
-            // Xóa temp user cũ
             _context.Users.Remove(tempUserOld);
             await _context.SaveChangesAsync();
             
             _logger.LogInformation("Cleaned up old temp user for {Email}", normalizedEmail);
         }
 
-        // Tạo OTP code
         var otpCode = GenerateOtpCode();
         var otpHash = BCrypt.Net.BCrypt.HashPassword(otpCode);
 
         var now = DateTime.UtcNow;
         
-        // Tạo temp user mới với IsActive = false (chưa verify OTP)
         var tempUser = new DataLayer.Models.User
         {
             Email = normalizedEmail,
-            FullName = "Pending", // Placeholder - sẽ được cập nhật khi verify
+            FullName = "Pending", 
             RoleId = _defaultRoleId,
             IsActive = false,
             CurrentStreak = 0
@@ -189,7 +178,6 @@ public sealed class AuthService : IAuthService
         await _context.PasswordResetTokens.AddAsync(registrationToken);
         await _context.SaveChangesAsync();
 
-        // Gửi email OTP
         try
         {
             await _emailSender.SendRegistrationOtpAsync(normalizedEmail, normalizedEmail, otpCode);
@@ -198,7 +186,6 @@ public sealed class AuthService : IAuthService
         {
             _logger.LogError(ex, "Failed to send registration OTP to {Email}", normalizedEmail);
             
-            // Rollback: Xóa token và temp user
             _context.PasswordResetTokens.Remove(registrationToken);
             _context.Users.Remove(tempUser);
             await _context.SaveChangesAsync();
@@ -220,13 +207,11 @@ public sealed class AuthService : IAuthService
         var normalizedUsername = NormalizeUsername(request.Username);
         var trimmedName = request.Name.Trim();
 
-        // Validate inputs
         if (string.IsNullOrWhiteSpace(trimmedName))
         {
             throw AuthServiceException.BadRequest("Tên không được để trống");
         }
 
-        // Truncate if too long
         if (trimmedName.Length > NameMaxLength)
         {
             trimmedName = trimmedName[..NameMaxLength];
@@ -237,7 +222,6 @@ public sealed class AuthService : IAuthService
             normalizedUsername = normalizedUsername[..UsernameMaxLength];
         }
 
-        // Tìm temp user (Include Role để tạo JWT token)
         var tempUser = await _context.Users
             .Include(u => u.Accounts)
             .Include(u => u.Role)
@@ -248,7 +232,6 @@ public sealed class AuthService : IAuthService
             throw AuthServiceException.NotFound("Không tìm thấy thông tin đăng ký. Vui lòng yêu cầu mã OTP mới.");
         }
 
-        // Kiểm tra OTP token
         var registrationToken = await _context.PasswordResetTokens
             .FirstOrDefaultAsync(t => 
                 t.UserId == tempUser.UserId && 
@@ -260,13 +243,11 @@ public sealed class AuthService : IAuthService
             throw AuthServiceException.BadRequest("OTP không hợp lệ hoặc đã hết hạn");
         }
 
-        // Verify OTP
         if (!BCrypt.Net.BCrypt.Verify(request.OtpCode, registrationToken.CodeHash))
         {
             throw AuthServiceException.BadRequest("Mã OTP không đúng");
         }
 
-        // Kiểm tra email đã được đăng ký chưa (double check)
         var existingActiveUser = await _context.Users
             .AnyAsync(u => u.Email == normalizedEmail && u.IsActive == true);
             
@@ -275,7 +256,6 @@ public sealed class AuthService : IAuthService
             throw AuthServiceException.Conflict("Email đã được đăng ký");
         }
 
-        // Kiểm tra username đã tồn tại chưa
         var usernameExists = await _context.Accounts
             .AnyAsync(a => a.Username == normalizedUsername);
             
@@ -287,7 +267,6 @@ public sealed class AuthService : IAuthService
         await using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
-            // Update thông tin user thật
             tempUser.FullName = trimmedName;
             tempUser.IsActive = true;
 
@@ -302,7 +281,6 @@ public sealed class AuthService : IAuthService
 
             await _context.Accounts.AddAsync(newAccount);
 
-            // Đánh dấu token đã sử dụng
             registrationToken.UsedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
@@ -311,11 +289,9 @@ public sealed class AuthService : IAuthService
             _logger.LogInformation("User registration completed successfully: {Username} ({Email})", 
                 normalizedUsername, normalizedEmail);
 
-            // Tạo JWT token và refresh token để user có thể login ngay
             var tokenResult = _jwtTokenService.GenerateToken(tempUser);
             var refreshToken = _jwtTokenService.GenerateRefreshToken();
             
-            // Create refresh token entity
             var refreshTokenEntity = new RefreshToken
             {
                 UserId = tempUser.UserId,
@@ -355,7 +331,6 @@ public sealed class AuthService : IAuthService
     {
         var normalizedEmail = NormalizeEmail(request.Email);
 
-        // Tìm user chưa active
         var user = await _context.Users
             .FirstOrDefaultAsync(u => u.Email == normalizedEmail && u.IsActive == false);
 
@@ -364,7 +339,6 @@ public sealed class AuthService : IAuthService
             throw AuthServiceException.NotFound("Không tìm thấy thông tin đăng ký");
         }
 
-        // Xóa token cũ
         var existingTokens = await _context.PasswordResetTokens
             .Where(t => t.UserId == user.UserId && t.UsedAt == null)
             .ToListAsync();
@@ -374,7 +348,6 @@ public sealed class AuthService : IAuthService
             _context.PasswordResetTokens.RemoveRange(existingTokens);
         }
 
-        // Tạo OTP mới
         var otpCode = GenerateOtpCode();
         var otpHash = BCrypt.Net.BCrypt.HashPassword(otpCode);
 
@@ -392,7 +365,6 @@ public sealed class AuthService : IAuthService
         await _context.PasswordResetTokens.AddAsync(newToken);
         await _context.SaveChangesAsync();
 
-        // Gửi email
         try
         {
             await _emailSender.SendRegistrationOtpAsync(user.Email, user.FullName, otpCode);
@@ -401,7 +373,6 @@ public sealed class AuthService : IAuthService
         {
             _logger.LogError(ex, "Failed to resend registration OTP to {Email}", user.Email);
             
-            // Xóa token vừa tạo
             _context.PasswordResetTokens.Remove(newToken);
             await _context.SaveChangesAsync();
             
@@ -430,7 +401,6 @@ public sealed class AuthService : IAuthService
             .Include(a => a.User)
                 .ThenInclude(u => u.Role);
 
-        // Nếu identifier có @, tìm theo email
         if (LooksLikeEmail(identifier))
         {
             var normalizedEmail = NormalizeEmail(identifier);
@@ -443,7 +413,6 @@ public sealed class AuthService : IAuthService
             }
         }
 
-        // Tìm theo username
         var normalizedUsername = NormalizeUsername(identifier);
         return await accountsQuery
             .FirstOrDefaultAsync(a => a.Username == normalizedUsername);
@@ -454,7 +423,6 @@ public sealed class AuthService : IAuthService
         string normalizedEmail,
         string accessToken)
     {
-        // Tìm account theo ProviderUserId
         var existingAccount = await _context.Accounts
             .Include(a => a.User)
                 .ThenInclude(u => u.Role)
@@ -464,7 +432,6 @@ public sealed class AuthService : IAuthService
 
         if (existingAccount != null)
         {
-            // Update token và username (nếu chưa có)
             existingAccount.AccessToken = accessToken;
             existingAccount.TokenExpiresAt = GetTokenExpiry(googleUserInfo);
             existingAccount.UpdateAt = DateTime.UtcNow;
@@ -481,7 +448,6 @@ public sealed class AuthService : IAuthService
             return existingAccount;
         }
 
-        // Tạo account mới
         return await CreateGoogleAccountAsync(googleUserInfo, normalizedEmail, accessToken);
     }
 
@@ -493,7 +459,6 @@ public sealed class AuthService : IAuthService
         await using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
-            // Tìm hoặc tạo User
             var user = await _context.Users
                 .Include(u => u.Role)
                 .FirstOrDefaultAsync(u => u.Email == normalizedEmail);
@@ -515,11 +480,9 @@ public sealed class AuthService : IAuthService
                 _logger.LogInformation("Created new user for Google login: {Email}", normalizedEmail);
             }
 
-            // Tạo username unique
             var baseUsername = CreateUsernameCandidateFromEmail(normalizedEmail);
             var uniqueUsername = await GenerateUniqueUsernameAsync(baseUsername);
 
-            // Tạo Account Google
             var account = new DataLayer.Models.Account
             {
                 UserId = user.UserId,
@@ -578,7 +541,6 @@ public sealed class AuthService : IAuthService
     {
         var normalizedBase = NormalizeUsername(baseUsername);
 
-        // Truncate để có chỗ cho suffix
         if (normalizedBase.Length > UsernameMaxLength - 3)
         {
             normalizedBase = normalizedBase[..(UsernameMaxLength - 3)];
@@ -664,13 +626,11 @@ public sealed class AuthService : IAuthService
 
     private static string NormalizeEmail(string email) => email.Trim().ToLowerInvariant();
 
-    // Helper method to create LoginResponse with refresh token
     private async Task<LoginResponse> CreateLoginResponseAsync(DataLayer.Models.User user, string username)
     {
         var tokenResult = _jwtTokenService.GenerateToken(user);
         var refreshToken = _jwtTokenService.GenerateRefreshToken();
         
-        // Revoke old refresh tokens for this user
         var now = DateTime.UtcNow;
         var existingTokens = await _context.RefreshTokens
             .Where(rt => rt.UserId == user.UserId 
@@ -685,7 +645,6 @@ public sealed class AuthService : IAuthService
             token.RevokedReason = "Replaced by new token";
         }
         
-        // Create new refresh token
         var refreshTokenEntity = new RefreshToken
         {
             UserId = user.UserId,
@@ -747,18 +706,15 @@ public sealed class AuthService : IAuthService
             throw AuthServiceException.Unauthorized("User account is inactive");
         }
         
-        // Revoke the used refresh token
         refreshTokenEntity.IsRevoked = true;
         refreshTokenEntity.RevokedAt = DateTime.UtcNow;
         refreshTokenEntity.RevokedReason = "Token refreshed";
         
-        // Get username from account
         var account = refreshTokenEntity.User.Accounts.FirstOrDefault();
         var username = account?.Username ?? refreshTokenEntity.User.Email;
         
         _logger.LogInformation("Refresh token used successfully for user: {UserId}", refreshTokenEntity.UserId);
         
-        // Generate new tokens
         return await CreateLoginResponseAsync(refreshTokenEntity.User, username);
     }
 

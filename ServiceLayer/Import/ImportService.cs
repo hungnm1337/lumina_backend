@@ -19,7 +19,6 @@ namespace ServiceLayer.Import
             ExcelPackage.License.SetNonCommercialPersonal("TrungTuyen");
         }
 
-        // ✅ Dictionary fix cứng cấu hình theo PartCode
         private readonly Dictionary<string, (int RequiredPrompts, int QuestionsPerPrompt)> PartConfigurations = new()
         {
             // LISTENING
@@ -59,7 +58,6 @@ namespace ServiceLayer.Import
 
             try
             {
-                // ✅ Lấy ExamPart và PartCode
                 var part = await _repo.GetExamPartByIdAsync(partId);
                 if (part == null) throw new Exception($"ExamPart id {partId} không tồn tại.");
 
@@ -67,7 +65,6 @@ namespace ServiceLayer.Import
                 if (string.IsNullOrEmpty(partCode))
                     throw new Exception($"ExamPart id {partId} không có PartCode.");
 
-                // ✅ Kiểm tra PartCode có trong cấu hình không
                 if (!PartConfigurations.TryGetValue(partCode, out var config))
                     throw new Exception($"PartCode '{partCode}' không được hỗ trợ import. Vui lòng kiểm tra lại.");
 
@@ -75,7 +72,6 @@ namespace ServiceLayer.Import
                 int questionsPerPrompt = config.QuestionsPerPrompt;
                 int totalRequiredQuestions = requiredPrompts * questionsPerPrompt;
 
-                // ✅ Đếm số Prompts trong file Excel
                 int promptCountInExcel = 0;
                 for (int row = 2; row <= passageSheet.Dimension.End.Row; row++)
                 {
@@ -84,18 +80,14 @@ namespace ServiceLayer.Import
                         promptCountInExcel++;
                 }
 
-                // ✅ Validate số lượng Prompts
                 if (promptCountInExcel != requiredPrompts)
                     throw new Exception($"❌ PartCode '{partCode}' yêu cầu đúng {requiredPrompts} prompts, nhưng file Excel có {promptCountInExcel} prompts.");
 
-                // ✅ Đếm số Questions trong file Excel
                 int questionCountInExcel = questionSheet.Dimension.End.Row - 1;
 
-                // ✅ Validate số lượng Questions
                 if (questionCountInExcel != totalRequiredQuestions)
                     throw new Exception($"❌ PartCode '{partCode}' yêu cầu đúng {totalRequiredQuestions} questions ({requiredPrompts} prompts × {questionsPerPrompt} questions/prompt), nhưng file Excel có {questionCountInExcel} questions.");
 
-                // ✅ Kiểm tra số câu hỏi hiện có trong DB
                 var existingQuestions = await _repo.GetQuestionsByPartIdAsync(partId);
                 if (existingQuestions.Any())
                     throw new Exception($"❌ ExamPart '{partCode}' (id {partId}) đã có {existingQuestions.Count()} câu hỏi. Vui lòng xóa hết trước khi import.");
@@ -103,7 +95,6 @@ namespace ServiceLayer.Import
                 var passagePromptCache = new Dictionary<string, Prompt>();
                 var validSkills = new HashSet<string> { "listening", "reading", "speaking", "writing" };
 
-                // ✅ Import Prompts
                 for (int row = 2; row <= passageSheet.Dimension.End.Row; row++)
                 {
                     var passageNumber = passageSheet.Cells[row, 1].Text.Trim();
@@ -137,7 +128,6 @@ namespace ServiceLayer.Import
                     }
                 }
 
-                // ✅ Validate số câu hỏi cho mỗi Prompt
                 var questionsPerPromptCount = new Dictionary<string, int>();
 
                 for (int row = 2; row <= questionSheet.Dimension.End.Row; row++)
@@ -150,14 +140,12 @@ namespace ServiceLayer.Import
                     questionsPerPromptCount[passageNumber]++;
                 }
 
-                // ✅ Kiểm tra mỗi prompt có đúng số câu hỏi không
                 foreach (var kvp in questionsPerPromptCount)
                 {
                     if (kvp.Value != questionsPerPrompt)
                         throw new Exception($"❌ Prompt '{kvp.Key}' phải có đúng {questionsPerPrompt} questions, nhưng có {kvp.Value} questions.");
                 }
 
-                // ✅ Import Questions với QuestionNumber tuần tự
                 int currentQuestionNumber = 1;
 
                 for (int row = 2; row <= questionSheet.Dimension.End.Row; row++)
@@ -225,7 +213,7 @@ namespace ServiceLayer.Import
                         ScoreWeight = scoreWeight,
                         QuestionExplain = questionExplain,
                         Time = time,
-                        QuestionNumber = currentQuestionNumber++, // ✅ Tăng dần từ 1
+                        QuestionNumber = currentQuestionNumber++, 
                         PromptId = prompt.PromptId
                     };
 

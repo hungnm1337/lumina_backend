@@ -57,8 +57,6 @@ public class ArticlesController : ControllerBase
         }
     }
 
-    // Endpoint for manager to view any article (including pending/draft)
-    // Must be before {id} route to avoid conflict
     [HttpGet("manager/{id}")]
     [Authorize(Roles = "Manager")]
     public async Task<IActionResult> GetArticleByIdForManager(int id)
@@ -83,7 +81,6 @@ public class ArticlesController : ControllerBase
         return Ok(article);
     }
 
-    // API riêng cho việc xem bài viết công khai (chỉ bài đã published)
     [HttpGet("public")]
     [AllowAnonymous]
     public async Task<ActionResult<List<ArticleResponseDTO>>> GetPublicArticles()
@@ -107,7 +104,6 @@ public class ArticlesController : ControllerBase
         }
     }
 
-    // API debug để kiểm tra dữ liệu
     [HttpGet("debug")]
     [Authorize]
     public async Task<ActionResult> DebugArticles()
@@ -510,6 +506,34 @@ public class ArticlesController : ControllerBase
             return NotFound(new ErrorResponse($"Article with ID {id} not found or cannot be submitted for approval."));
         }
         return NoContent();
+    }
+
+    // Toggle hide/show article (Manager only) - Uses IsPublished field
+    [HttpPut("{id}/toggle-hide")]
+    [Authorize(Roles = "Manager")]
+    public async Task<IActionResult> ToggleHideArticle(int id, [FromBody] ToggleHideRequest request)
+    {
+        try
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var managerUserId))
+            {
+                return Unauthorized(new ErrorResponse("Invalid token - User ID could not be determined."));
+            }
+
+            var success = await _articleService.ToggleHideArticleAsync(id, request.IsPublished, managerUserId);
+            if (!success)
+            {
+                return NotFound(new ErrorResponse($"Article with ID {id} not found or is not published."));
+            }
+
+            return Ok(new { message = request.IsPublished ? "Article has been shown" : "Article has been hidden", isPublished = request.IsPublished });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An error occurred while toggling hide status for article {ArticleId}.", id);
+            return StatusCode(500, new ErrorResponse("An internal server error occurred. Please try again later."));
+        }
     }
 
     [HttpPost("{id}/review")]

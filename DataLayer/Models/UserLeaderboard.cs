@@ -11,11 +11,11 @@ public partial class UserLeaderboard
 
     public int LeaderboardId { get; set; }
 
-    public int Score { get; set; } // Điểm tích lũy - tăng mỗi lần làm bài
+    public int Score { get; set; } 
 
-    public int? EstimatedTOEICScore { get; set; } // Điểm TOEIC ước tính (0-990) - cập nhật liên tục khi làm bài mới
+    public int? EstimatedTOEICScore { get; set; } 
 
-    public DateTime? FirstAttemptDate { get; set; } // Ngày làm bài lần đầu tiên trong season
+    public DateTime? FirstAttemptDate { get; set; } 
 
     public virtual Leaderboard Leaderboard { get; set; } = null!;
 

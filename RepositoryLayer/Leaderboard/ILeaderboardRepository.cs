@@ -27,7 +27,7 @@ namespace RepositoryLayer.Leaderboard
         Task<TOEICScoreCalculationDTO?> GetUserTOEICCalculationAsync(int userId, int leaderboardId);
         Task<int> GetUserRankInSeasonAsync(int userId, int leaderboardId);
         Task<bool> IsSeasonActiveAsync(int leaderboardId);
-        Task AutoActivateSeasonAsync(); // Tự động kích hoạt season khi đến ngày bắt đầu
-        Task AutoEndSeasonAsync(); // Tự động kết thúc season khi hết hạn
+        Task AutoActivateSeasonAsync(); 
+        Task AutoEndSeasonAsync(); 
     }
 }

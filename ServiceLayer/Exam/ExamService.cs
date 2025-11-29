@@ -29,22 +29,29 @@ using System.Threading.Tasks;
 
         public async Task<ExamDTO> GetExamDetailAndExamPartByExamID(int examId)
         {
+            if (examId <= 0)
+            {
+                throw new ArgumentException("Exam ID must be greater than zero", nameof(examId));
+            }
+
             return await _examRepository.GetExamDetailAndExamPartByExamID(examId);
         }
 
         public async Task<ExamPartDTO> GetExamPartDetailAndQuestionByExamPartID(int partId)
         {
+            if (partId <= 0)
+            {
+                throw new ArgumentException("Part ID must be greater than zero", nameof(partId));
+            }
+
             return await _examRepository.GetExamPartDetailAndQuestionByExamPartID(partId);
         }
 
     public async Task<bool> CreateExamFormatAsync(string fromSetKey, string toSetKey, int createdBy)
     {
-        // Lấy tháng-năm hiện tại
-        // Kiểm tra xem đã tồn tại ExamSetKey này chưa
         if (await _examRepository.ExamSetKeyExistsAsync(toSetKey))
             return false; // Đã tạo rồi trong tháng này
 
-        // Tiếp tục clone như bình thường
         var sourceExams = await _examRepository.GetExamsBySetKeyAsync(fromSetKey);
         if (!sourceExams.Any()) return false;
 
@@ -91,9 +98,6 @@ using System.Threading.Tasks;
         return await _examRepository.ToggleExamStatusAsync(examId);
     }
 
-    /// <summary>
-    /// Get completion status for all exams for a specific user
-    /// </summary>
     public async Task<List<ExamCompletionStatusDTO>> GetUserExamCompletionStatusesAsync(int userId)
     {
         var exams = await _context.Exams
@@ -120,9 +124,6 @@ using System.Threading.Tasks;
         return completionStatuses;
     }
 
-    /// <summary>
-    /// Get completion status for a specific exam for a specific user
-    /// </summary>
     public async Task<ExamCompletionStatusDTO> GetExamCompletionStatusAsync(int userId, int examId)
     {
         var exam = await _context.Exams
@@ -152,11 +153,6 @@ using System.Threading.Tasks;
             Parts = partStatuses
         };
     }
-
-    /// <summary>
-    /// Get completion status for all parts of a specific exam for a specific user
-    /// Calculation based on ExamAttempts table with Status = "Completed"
-    /// </summary>
     public async Task<List<PartCompletionStatusDTO>> GetPartCompletionStatusAsync(int userId, int examId)
     {
         var parts = await _context.ExamParts
@@ -168,7 +164,6 @@ using System.Threading.Tasks;
 
         foreach (var part in parts)
         {
-            // Get all completed attempts for this part
             var completedAttempts = await _context.ExamAttempts
                 .Where(ea => ea.UserID == userId 
                     && ea.ExamPartId == part.PartId 
