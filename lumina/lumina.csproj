@@ -46,4 +46,8 @@
     <ProjectReference Include="..\ServiceLayer\ServiceLayer.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="lumina\lumina.Tests\ServiceTests\" />
+  </ItemGroup>
+
 </Project>
