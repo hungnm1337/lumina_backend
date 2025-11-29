@@ -342,83 +342,39 @@ CRITICAL REQUIREMENTS:
             // Parse vocabularies if present
             if (response.Vocabularies != null && response.Vocabularies.Count > 0)
             {
-                Console.WriteLine($"✅ Generated {response.Vocabularies.Count} vocabularies (requested: {vocabularyCount})");
-                
                 response.HasSaveOption = true;
                 response.SaveAction = "CREATE_VOCABULARY_LIST";
                 
                 // Generate image URL cho TỪNG vocabulary từ imageDescription của nó
                 // Upload ngay lên Cloudinary giống như exam generation
-                int successCount = 0;
-                int failCount = 0;
-                
                 foreach (var vocab in response.Vocabularies)
                 {
-                    try
+                    // Nếu không có imageDescription, tạo một mô tả đơn giản từ word
+                    if (string.IsNullOrWhiteSpace(vocab.ImageDescription))
                     {
-                        // Nếu không có imageDescription, tạo một mô tả đơn giản từ word
-                        if (string.IsNullOrWhiteSpace(vocab.ImageDescription))
+                        // Fallback: Tạo imageDescription từ word và definition
+                        vocab.ImageDescription = $"A visual representation of {vocab.Word.ToLower()}, {vocab.Definition}";
+                    }
+                    
+                    // Generate Pollinations AI URL từ imageDescription
+                    var pollinationsUrl = GeneratePollinationsImageUrl(vocab.ImageDescription);
+                    
+                    // Upload ngay lên Cloudinary (giống như exam generation)
+                    if (!string.IsNullOrWhiteSpace(pollinationsUrl))
+                    {
+                        try
                         {
-                            // Fallback: Tạo imageDescription từ word và definition
-                            vocab.ImageDescription = $"A visual representation of {vocab.Word.ToLower()}, {vocab.Definition}";
-                            Console.WriteLine($"⚠️ Missing imageDescription for '{vocab.Word}', using fallback");
+                            var uploadResult = await _uploadService.UploadFromUrlAsync(pollinationsUrl);
+                            vocab.ImageUrl = uploadResult.Url; // Lưu Cloudinary URL thay vì Pollinations URL
                         }
-                        
-                        // Generate Pollinations AI URL từ imageDescription
-                        var pollinationsUrl = GeneratePollinationsImageUrl(vocab.ImageDescription);
-                        
-                        // Upload ngay lên Cloudinary (giống như exam generation)
-                        if (!string.IsNullOrWhiteSpace(pollinationsUrl))
+                        catch (Exception ex)
                         {
-                            try
-                            {
-                                var uploadResult = await _uploadService.UploadFromUrlAsync(pollinationsUrl);
-                                vocab.ImageUrl = uploadResult.Url; // Lưu Cloudinary URL thay vì Pollinations URL
-                                successCount++;
-                                Console.WriteLine($"✅ Uploaded image for '{vocab.Word}' to Cloudinary");
-                            }
-                            catch (Exception ex)
-                            {
-                                // Nếu upload fail, fallback về Pollinations URL
-                                Console.WriteLine($"⚠️ Failed to upload image to Cloudinary for vocabulary '{vocab.Word}': {ex.Message}");
-                                vocab.ImageUrl = pollinationsUrl; // Fallback về Pollinations URL
-                                failCount++;
-                            }
-                        }
-                        else
-                        {
-                            Console.WriteLine($"⚠️ No Pollinations URL generated for '{vocab.Word}'");
-                            failCount++;
+                            // Nếu upload fail, fallback về Pollinations URL
+                            Console.WriteLine($"Warning: Failed to upload image to Cloudinary for vocabulary '{vocab.Word}': {ex.Message}");
+                            vocab.ImageUrl = pollinationsUrl; // Fallback về Pollinations URL
                         }
                     }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"❌ Error processing image for vocabulary '{vocab.Word}': {ex.Message}");
-                        Console.WriteLine($"❌ Stack trace: {ex.StackTrace}");
-                        failCount++;
-                    }
                 }
-                
-                Console.WriteLine($"📊 Image generation summary: {successCount} success, {failCount} failed out of {response.Vocabularies.Count} total");
-                
-                // Đảm bảo tất cả vocabularies đều có ít nhất một imageUrl (có thể là Pollinations fallback)
-                int vocabWithoutImage = 0;
-                foreach (var vocab in response.Vocabularies)
-                {
-                    if (string.IsNullOrWhiteSpace(vocab.ImageUrl))
-                    {
-                        vocabWithoutImage++;
-                    }
-                }
-                if (vocabWithoutImage > 0)
-                {
-                    Console.WriteLine($"⚠️ Warning: {vocabWithoutImage} vocabularies still have no imageUrl after processing");
-                }
-            }
-            else
-            {
-                Console.WriteLine($"⚠️ No vocabularies found in response. Response type: {response.ConversationType}");
-                Console.WriteLine($"⚠️ Response answer: {response.Answer?.Substring(0, Math.Min(200, response.Answer?.Length ?? 0))}");
             }
             
             return response;
@@ -531,7 +487,7 @@ Do not include any text outside the JSON object. Start your response with {{ and
                         temperature = 0.3, // Giảm temperature để JSON chính xác hơn
                         topK = 40,
                         topP = 0.95,
-                        maxOutputTokens = 16384, // Tăng token limit để đủ cho nhiều vocabularies (20, 30 từ) với imageDescription dài
+                        maxOutputTokens = 8192, // Tăng token limit để đủ cho nhiều vocabularies (có thể 20, 30 từ) với imageDescription
                     }
                 };
 
@@ -583,27 +539,6 @@ Do not include any text outside the JSON object. Start your response with {{ and
                 ChatResponseDTO result;
                 try
                 {
-                    // Log response length for debugging
-                    Console.WriteLine($"📝 Response length: {generatedText.Length} characters");
-                    
-                    // Kiểm tra xem response có bị truncate không (thường kết thúc bằng "..." hoặc không có closing brace)
-                    int openBraces = 0;
-                    int closeBraces = 0;
-                    foreach (char c in generatedText)
-                    {
-                        if (c == '{') openBraces++;
-                        if (c == '}') closeBraces++;
-                    }
-                    bool isTruncated = generatedText.Length > 15000 || 
-                                      !generatedText.TrimEnd().EndsWith("}") ||
-                                      (openBraces != closeBraces);
-                    
-                    if (isTruncated)
-                    {
-                        Console.WriteLine($"⚠️ Warning: Response may be truncated. Length: {generatedText.Length}");
-                        Console.WriteLine($"⚠️ Last 200 chars: {generatedText.Substring(Math.Max(0, generatedText.Length - 200))}");
-                    }
-                    
                     result = JsonConvert.DeserializeObject<ChatResponseDTO>(generatedText);
                     if (result == null)
                     {
@@ -613,46 +548,19 @@ Do not include any text outside the JSON object. Start your response with {{ and
                     // Nếu có vocabularies, luôn set answer rỗng để frontend chỉ hiển thị vocabulary list
                     if (result.Vocabularies != null && result.Vocabularies.Count > 0)
                     {
-                        Console.WriteLine($"✅ Successfully parsed {result.Vocabularies.Count} vocabularies from JSON");
-                        
-                        // Kiểm tra xem có vocabulary nào thiếu field quan trọng không
-                        int vocabWithAllFields = 0;
-                        int vocabMissingFields = 0;
-                        foreach (var vocab in result.Vocabularies)
-                        {
-                            if (string.IsNullOrWhiteSpace(vocab.Word) || 
-                                string.IsNullOrWhiteSpace(vocab.Definition))
-                            {
-                                vocabMissingFields++;
-                                Console.WriteLine($"⚠️ Vocabulary missing required fields: Word='{vocab.Word}', Definition='{vocab.Definition}'");
-                            }
-                            else
-                            {
-                                vocabWithAllFields++;
-                            }
-                        }
-                        Console.WriteLine($"📊 Vocabularies with all required fields: {vocabWithAllFields}, missing fields: {vocabMissingFields}");
-                        
                         result.Answer = string.Empty;
                     }
-                    else
+                    // Validate that answer is not raw JSON
+                    else if (string.IsNullOrWhiteSpace(result.Answer) || result.Answer.Trim().StartsWith("{"))
                     {
-                        Console.WriteLine($"⚠️ No vocabularies found in parsed response");
-                        Console.WriteLine($"⚠️ Response answer preview: {result.Answer?.Substring(0, Math.Min(200, result.Answer?.Length ?? 0))}");
-                        
-                        // Validate that answer is not raw JSON
-                        if (string.IsNullOrWhiteSpace(result.Answer) || result.Answer.Trim().StartsWith("{"))
+                        // Nếu không có vocabularies và answer rỗng hoặc là JSON, kiểm tra xem có phải là raw JSON không
+                        if (generatedText.Contains("\"word\"") || generatedText.Contains("\"vocabularies\""))
                         {
-                            // Nếu không có vocabularies và answer rỗng hoặc là JSON, kiểm tra xem có phải là raw JSON không
-                            if (generatedText.Contains("\"word\"") || generatedText.Contains("\"vocabularies\""))
-                            {
-                                Console.WriteLine($"⚠️ Found vocabulary patterns in generatedText but no vocabularies in result");
-                                result.Answer = string.Empty; // Nếu có vẻ như là JSON vocabulary, set rỗng
-                            }
-                            else if (!string.IsNullOrWhiteSpace(result.Answer) && result.Answer.Trim().StartsWith("{"))
-                            {
-                                result.Answer = string.Empty; // Nếu answer là JSON fragment, set rỗng
-                            }
+                            result.Answer = string.Empty; // Nếu có vẻ như là JSON vocabulary, set rỗng
+                        }
+                        else if (!string.IsNullOrWhiteSpace(result.Answer) && result.Answer.Trim().StartsWith("{"))
+                        {
+                            result.Answer = string.Empty; // Nếu answer là JSON fragment, set rỗng
                         }
                     }
                     
@@ -667,14 +575,8 @@ Do not include any text outside the JSON object. Start your response with {{ and
                 catch (Exception ex)
                 {
                     // If JSON parsing fails, try to extract vocabularies manually if possible
-                    Console.WriteLine($"❌ JSON Parse Error: {ex.Message}");
-                    Console.WriteLine($"📄 Raw Response (first 1000 chars): {generatedText.Substring(0, Math.Min(1000, generatedText.Length))}");
-                    
-                    // Check if response was truncated (common with long responses)
-                    if (generatedText.Length > 15000)
-                    {
-                        Console.WriteLine($"⚠️ Response is very long ({generatedText.Length} chars), may be truncated");
-                    }
+                    Console.WriteLine($"JSON Parse Error: {ex.Message}");
+                    Console.WriteLine($"Raw Response: {generatedText.Substring(0, Math.Min(500, generatedText.Length))}");
                     
                     // Try to extract vocabularies using regex if JSON is malformed
                     var vocabularies = new List<GeneratedVocabularyDTO>();
@@ -691,9 +593,9 @@ Do not include any text outside the JSON object. Start your response with {{ and
                         // If we can't parse properly, return error message
                         result = new ChatResponseDTO
                         {
-                            Answer = $"Xin lỗi, tôi gặp lỗi khi xử lý phản hồi (JSON parsing failed). Vui lòng thử lại với số lượng từ ít hơn hoặc thử lại sau.",
+                            Answer = "Xin lỗi, tôi gặp lỗi khi xử lý phản hồi. Vui lòng thử lại.",
                             ConversationType = "error",
-                            Suggestions = new List<string> { "Thử hỏi lại với 10 từ", "Đặt câu hỏi khác" },
+                            Suggestions = new List<string> { "Thử hỏi lại", "Đặt câu hỏi khác" },
                             Vocabularies = vocabularies
                         };
                     }
@@ -751,13 +653,6 @@ Do not include any text outside the JSON object. Start your response with {{ and
             
             try
             {
-                Console.WriteLine($"💾 Saving {request.Vocabularies?.Count ?? 0} vocabularies to folder '{request.FolderName}'");
-                
-                if (request.Vocabularies == null || request.Vocabularies.Count == 0)
-                {
-                    throw new Exception("Không có từ vựng để lưu");
-                }
-                
                 // 1. Tạo VocabularyList mới (không cần ImageUrl cho folder, mỗi vocabulary có ảnh riêng)
                 var vocabularyList = new VocabularyList
                 {
@@ -772,45 +667,27 @@ Do not include any text outside the JSON object. Start your response with {{ and
                 
                 _context.VocabularyLists.Add(vocabularyList);
                 await _context.SaveChangesAsync();
-                Console.WriteLine($"✅ Created VocabularyList with ID: {vocabularyList.VocabularyListId}");
                 
                 // 2. Tạo các Vocabulary
                 var vocabularies = new List<DataLayer.Models.Vocabulary>();
-                int vocabWithImage = 0;
-                int vocabWithoutImage = 0;
-                
                 foreach (var vocab in request.Vocabularies)
                 {
                     var vocabulary = new DataLayer.Models.Vocabulary
                     {
                         VocabularyListId = vocabularyList.VocabularyListId,
-                        Word = vocab.Word ?? string.Empty,
-                        Definition = vocab.Definition ?? string.Empty,
-                        Example = vocab.Example ?? string.Empty,
-                        TypeOfWord = vocab.TypeOfWord ?? string.Empty,
-                        Category = vocab.Category ?? string.Empty,
+                        Word = vocab.Word,
+                        Definition = vocab.Definition,
+                        Example = vocab.Example,
+                        TypeOfWord = vocab.TypeOfWord,
+                        Category = vocab.Category,
                         IsDeleted = false,
-                        ImageUrl = vocab.ImageUrl // Lưu Cloudinary URL cho từng vocabulary (có thể null)
+                        ImageUrl = vocab.ImageUrl // Lưu Cloudinary URL cho từng vocabulary
                     };
-                    
-                    if (!string.IsNullOrWhiteSpace(vocab.ImageUrl))
-                    {
-                        vocabWithImage++;
-                    }
-                    else
-                    {
-                        vocabWithoutImage++;
-                        Console.WriteLine($"⚠️ Vocabulary '{vocab.Word}' has no imageUrl");
-                    }
-                    
                     vocabularies.Add(vocabulary);
                 }
                 
-                Console.WriteLine($"📊 Vocabularies with images: {vocabWithImage}, without: {vocabWithoutImage}");
-                
                 _context.Vocabularies.AddRange(vocabularies);
                 await _context.SaveChangesAsync();
-                Console.WriteLine($"✅ Saved {vocabularies.Count} vocabularies to database");
                 
                 // 3. Tạo UserSpacedRepetition cho từng từ
                 var spacedRepetitions = vocabularies.Select(v => new DataLayer.Models.UserSpacedRepetition
