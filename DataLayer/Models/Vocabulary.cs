@@ -21,5 +21,7 @@ public partial class Vocabulary
 
     public bool? IsDeleted { get; set; }
 
+    public string? ImageUrl { get; set; } // URL ảnh từ Cloudinary cho từng vocabulary
+
     public virtual VocabularyList VocabularyList { get; set; } = null!;
 }
