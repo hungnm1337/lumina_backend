@@ -18,9 +18,6 @@ namespace lumina.Controllers
             _analyticsService = analyticsService;
         }
 
-        /// <summary>
-        /// Lấy số người dùng đang hoạt động và thống kê người dùng
-        /// </summary>
         [HttpGet("active-users")]
         public async Task<IActionResult> GetActiveUsers([FromQuery] int? days = null)
         {
@@ -41,9 +38,6 @@ namespace lumina.Controllers
             }
         }
 
-        /// <summary>
-        /// Lấy top N bài viết được xem nhiều nhất
-        /// </summary>
         [HttpGet("top-articles")]
         public async Task<IActionResult> GetTopArticles([FromQuery] int topN = 10, [FromQuery] int? days = null)
         {
@@ -58,9 +52,6 @@ namespace lumina.Controllers
             }
         }
 
-        /// <summary>
-        /// Lấy top N danh sách từ vựng được học nhiều nhất
-        /// </summary>
         [HttpGet("top-vocabulary")]
         public async Task<IActionResult> GetTopVocabulary([FromQuery] int topN = 10, [FromQuery] int? days = null)
         {
@@ -75,9 +66,6 @@ namespace lumina.Controllers
             }
         }
 
-        /// <summary>
-        /// Lấy top N sự kiện có nhiều người tham gia nhất
-        /// </summary>
         [HttpGet("top-events")]
         public async Task<IActionResult> GetTopEvents([FromQuery] int topN = 10)
         {
@@ -92,9 +80,6 @@ namespace lumina.Controllers
             }
         }
 
-        /// <summary>
-        /// Lấy top N slide được xem nhiều nhất
-        /// </summary>
         [HttpGet("top-slides")]
         public async Task<IActionResult> GetTopSlides([FromQuery] int topN = 10, [FromQuery] int? days = null)
         {
@@ -109,9 +94,6 @@ namespace lumina.Controllers
             }
         }
 
-        /// <summary>
-        /// Lấy top N bài thi được làm nhiều nhất
-        /// </summary>
         [HttpGet("top-exams")]
         public async Task<IActionResult> GetTopExams([FromQuery] int topN = 10, [FromQuery] int? days = null)
         {
@@ -126,9 +108,6 @@ namespace lumina.Controllers
             }
         }
 
-        /// <summary>
-        /// Lấy tỷ lệ hoàn thành bài thi
-        /// </summary>
         [HttpGet("exam-completion-rates")]
         public async Task<IActionResult> GetExamCompletionRates(
             [FromQuery] int? examId = null,
@@ -146,9 +125,6 @@ namespace lumina.Controllers
             }
         }
 
-        /// <summary>
-        /// Lấy tỷ lệ hoàn thành đọc bài viết
-        /// </summary>
         [HttpGet("article-completion-rates")]
         public async Task<IActionResult> GetArticleCompletionRates(
             [FromQuery] int? articleId = null,
@@ -165,9 +141,6 @@ namespace lumina.Controllers
             }
         }
 
-        /// <summary>
-        /// Lấy tỷ lệ hoàn thành học từ vựng
-        /// </summary>
         [HttpGet("vocabulary-completion-rates")]
         public async Task<IActionResult> GetVocabularyCompletionRates(
             [FromQuery] int? vocabularyListId = null,
@@ -184,9 +157,6 @@ namespace lumina.Controllers
             }
         }
 
-        /// <summary>
-        /// Lấy tỷ lệ tham gia sự kiện
-        /// </summary>
         [HttpGet("event-participation-rates")]
         public async Task<IActionResult> GetEventParticipationRates([FromQuery] int? eventId = null)
         {
@@ -201,9 +171,6 @@ namespace lumina.Controllers
             }
         }
 
-        /// <summary>
-        /// Lấy tổng quan tất cả analytics (overview)
-        /// </summary>
         [HttpGet("overview")]
         public async Task<IActionResult> GetOverview([FromQuery] int topN = 10, [FromQuery] int? days = null)
         {

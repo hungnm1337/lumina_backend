@@ -17,7 +17,6 @@ public class ManagerAnalyticsRepository : IManagerAnalyticsRepository
         _context = context;
     }
 
-    // Active Users
     public async Task<int> GetActiveUsersCountAsync(DateTime? fromDate = null)
     {
         var query = _context.Users.Where(u => u.RoleId == 4 && u.IsActive == true); // RoleId 4 = User
@@ -28,7 +27,6 @@ public class ManagerAnalyticsRepository : IManagerAnalyticsRepository
         }
         else
         {
-            // Default: active in last 24 hours
             var last24Hours = DateTime.UtcNow.AddHours(-24);
             query = query.Where(u => u.LastPracticeDate.HasValue && u.LastPracticeDate >= last24Hours);
         }
@@ -51,7 +49,6 @@ public class ManagerAnalyticsRepository : IManagerAnalyticsRepository
             .CountAsync();
     }
 
-    // Top Articles - Tính toán trực tiếp trong SQL
     public async Task<List<TopArticleDTO>> GetTopArticlesByViewsAsync(int topN, DateTime? fromDate = null)
     {
         var articlesQuery = _context.Articles
@@ -64,7 +61,6 @@ public class ManagerAnalyticsRepository : IManagerAnalyticsRepository
             articlesQuery = articlesQuery.Where(a => a.UserArticleProgresses.Any(p => p.LastAccessedAt >= fromDate.Value));
         }
 
-        // Tính toán trực tiếp trong SQL query
         var results = await articlesQuery
             .Select(a => new TopArticleDTO
             {
@@ -127,8 +123,6 @@ public class ManagerAnalyticsRepository : IManagerAnalyticsRepository
 
     public async Task<double> GetAverageReadingTimeAsync(int articleId)
     {
-        // Note: This is a placeholder. If you have reading time tracking, implement it here.
-        // For now, we'll estimate based on progress completion time
         var completedArticles = await _context.UserArticleProgresses
             .AsNoTracking()
             .Where(p => p.ArticleId == articleId && p.CompletedAt != null)
@@ -137,7 +131,6 @@ public class ManagerAnalyticsRepository : IManagerAnalyticsRepository
         if (!completedArticles.Any())
             return 0;
 
-        // Estimate: average time between LastAccessedAt and CompletedAt
         var times = completedArticles
             .Where(p => p.CompletedAt.HasValue)
             .Select(p => (p.CompletedAt!.Value - p.LastAccessedAt).TotalMinutes)
@@ -147,7 +140,6 @@ public class ManagerAnalyticsRepository : IManagerAnalyticsRepository
         return times.Any() ? times.Average() : 0;
     }
 
-    // Top Vocabulary - Tính toán trực tiếp trong SQL
     public async Task<List<TopVocabularyDTO>> GetTopVocabularyByLearnersAsync(int topN, DateTime? fromDate = null)
     {
         var listsQuery = _context.VocabularyLists
@@ -160,7 +152,6 @@ public class ManagerAnalyticsRepository : IManagerAnalyticsRepository
             listsQuery = listsQuery.Where(v => v.UserSpacedRepetitions.Any(usr => usr.LastReviewedAt >= fromDate.Value));
         }
 
-        // Tính toán trực tiếp trong SQL query
         var results = await listsQuery
             .Select(v => new TopVocabularyDTO
             {
@@ -180,7 +171,6 @@ public class ManagerAnalyticsRepository : IManagerAnalyticsRepository
             .Take(topN)
             .ToListAsync();
 
-        // Calculate average words learned for each list - run sequentially to avoid DbContext issues
         for (int i = 0; i < results.Count; i++)
         {
             results[i].AverageWordsLearned = await GetAverageWordsLearnedAsync(results[i].VocabularyListId);
@@ -225,7 +215,6 @@ public class ManagerAnalyticsRepository : IManagerAnalyticsRepository
 
         if (learners == 0) return 0;
 
-        // Average = total words learned by all users / number of learners
         var totalLearned = await _context.UserSpacedRepetitions
             .AsNoTracking()
             .Where(usr => usr.VocabularyListId == vocabularyListId && usr.VocabularyId != null)
@@ -234,7 +223,6 @@ public class ManagerAnalyticsRepository : IManagerAnalyticsRepository
         return (double)totalLearned / learners;
     }
 
-    // Top Events - Tính participation dựa trên users active trong khoảng thời gian event
     public async Task<List<TopEventDTO>> GetTopEventsByParticipantsAsync(int topN)
     {
         var events = await _context.Events
@@ -246,7 +234,6 @@ public class ManagerAnalyticsRepository : IManagerAnalyticsRepository
         var totalUsers = await GetTotalUsersCountAsync();
         var results = new List<TopEventDTO>();
 
-        // Tính participation cho mỗi event dựa trên users active trong khoảng thời gian event
         foreach (var evt in events)
         {
             var participants = await GetEventParticipantsCountAsync(evt.EventId);
@@ -264,21 +251,17 @@ public class ManagerAnalyticsRepository : IManagerAnalyticsRepository
             });
         }
 
-        // Sắp xếp theo số lượng participants giảm dần
         return results.OrderByDescending(e => e.ParticipantCount).ToList();
     }
 
     public async Task<int> GetEventParticipantsCountAsync(int eventId)
     {
-        // Lấy thông tin event
         var evt = await _context.Events
             .AsNoTracking()
             .FirstOrDefaultAsync(e => e.EventId == eventId);
 
         if (evt == null) return 0;
 
-        // Tính số users active trong khoảng thời gian event (StartDate - EndDate)
-        // Users được coi là tham gia nếu họ active (LastPracticeDate) trong khoảng thời gian event
         var participants = await _context.Users
             .AsNoTracking()
             .Where(u => u.RoleId == 4 && // RoleId 4 = User
@@ -291,7 +274,6 @@ public class ManagerAnalyticsRepository : IManagerAnalyticsRepository
         return participants;
     }
 
-    // Top Slides
     public async Task<List<TopSlideDTO>> GetTopSlidesAsync(int topN, DateTime? fromDate = null)
     {
         var query = _context.Slides
@@ -316,7 +298,6 @@ public class ManagerAnalyticsRepository : IManagerAnalyticsRepository
             .ToListAsync();
     }
 
-    // Top Exams - Tính toán trực tiếp trong SQL
     public async Task<List<TopExamDTO>> GetTopExamsByAttemptsAsync(int topN, DateTime? fromDate = null)
     {
         var examsQuery = _context.Exams
@@ -324,7 +305,6 @@ public class ManagerAnalyticsRepository : IManagerAnalyticsRepository
             .AsNoTracking()
             .AsQueryable();
 
-        // Tính toán trực tiếp trong SQL query
         var results = await examsQuery
             .Select(e => new TopExamDTO
             {
@@ -427,7 +407,6 @@ public class ManagerAnalyticsRepository : IManagerAnalyticsRepository
         return times.Any() ? times.Average() : 0;
     }
 
-    // Completion Rates - Articles
     public async Task<int> GetArticleProgressCountAsync(int articleId, DateTime? fromDate = null)
     {
         var query = _context.UserArticleProgresses
@@ -456,7 +435,6 @@ public class ManagerAnalyticsRepository : IManagerAnalyticsRepository
         return await query.CountAsync();
     }
 
-    // Completion Rates - Vocabulary
     public async Task<int> GetVocabularyProgressCountAsync(int vocabularyListId, DateTime? fromDate = null)
     {
         var query = _context.UserSpacedRepetitions
@@ -493,7 +471,6 @@ public class ManagerAnalyticsRepository : IManagerAnalyticsRepository
             .CountAsync(v => v.VocabularyListId == vocabularyListId);
     }
 
-    // Completion Rates - Exams
     public async Task<List<ExamCompletionRateDTO>> GetExamCompletionRatesAsync(int? examId = null, string? examType = null, DateTime? fromDate = null)
     {
         var query = _context.Exams
@@ -514,7 +491,6 @@ public class ManagerAnalyticsRepository : IManagerAnalyticsRepository
 
         var results = new List<ExamCompletionRateDTO>();
 
-        // Process sequentially to avoid DbContext concurrency issues
         foreach (var exam in exams)
         {
             var attemptsQuery = _context.ExamAttempts
@@ -526,10 +502,8 @@ public class ManagerAnalyticsRepository : IManagerAnalyticsRepository
                 attemptsQuery = attemptsQuery.Where(a => a.StartTime >= fromDate.Value);
             }
 
-            // Execute queries sequentially for this exam to avoid DbContext concurrency
             var totalAttempts = await attemptsQuery.CountAsync();
             
-            // Create a new query for completed attempts to avoid reusing the same query
             var completedQuery = _context.ExamAttempts
                 .AsNoTracking()
                 .Where(a => a.ExamID == exam.ExamId && a.Status == "Completed");
@@ -556,7 +530,6 @@ public class ManagerAnalyticsRepository : IManagerAnalyticsRepository
         return results;
     }
 
-    // Completion Rates - Articles - Tính toán trực tiếp trong SQL
     public async Task<List<ArticleCompletionRateDTO>> GetArticleCompletionRatesAsync(int? articleId = null, DateTime? fromDate = null)
     {
         var query = _context.Articles
@@ -569,7 +542,6 @@ public class ManagerAnalyticsRepository : IManagerAnalyticsRepository
             query = query.Where(a => a.ArticleId == articleId.Value);
         }
 
-        // Tính toán trực tiếp trong SQL query
         var results = await query
             .Select(a => new ArticleCompletionRateDTO
             {
@@ -593,7 +565,6 @@ public class ManagerAnalyticsRepository : IManagerAnalyticsRepository
             })
             .ToListAsync();
 
-        // Calculate average reading time for each article - run sequentially
         for (int i = 0; i < results.Count; i++)
         {
             results[i].AverageReadingTime = await GetAverageReadingTimeAsync(results[i].ArticleId);
@@ -602,7 +573,6 @@ public class ManagerAnalyticsRepository : IManagerAnalyticsRepository
         return results;
     }
 
-    // Completion Rates - Vocabulary - Tính toán trực tiếp trong SQL
     public async Task<List<VocabularyCompletionRateDTO>> GetVocabularyCompletionRatesAsync(int? vocabularyListId = null, DateTime? fromDate = null)
     {
         var query = _context.VocabularyLists
@@ -615,7 +585,6 @@ public class ManagerAnalyticsRepository : IManagerAnalyticsRepository
             query = query.Where(v => v.VocabularyListId == vocabularyListId.Value);
         }
 
-        // Tính toán trực tiếp trong SQL query
         var results = await query
             .Select(v => new VocabularyCompletionRateDTO
             {
@@ -641,7 +610,6 @@ public class ManagerAnalyticsRepository : IManagerAnalyticsRepository
             })
             .ToListAsync();
 
-        // Calculate average words learned for each list - run sequentially
         for (int i = 0; i < results.Count; i++)
         {
             results[i].AverageWordsLearned = await GetAverageWordsLearnedAsync(results[i].VocabularyListId);
@@ -650,7 +618,6 @@ public class ManagerAnalyticsRepository : IManagerAnalyticsRepository
         return results;
     }
 
-    // Completion Rates - Events
     public async Task<List<EventParticipationRateDTO>> GetEventParticipationRatesAsync(int? eventId = null)
     {
         var query = _context.Events

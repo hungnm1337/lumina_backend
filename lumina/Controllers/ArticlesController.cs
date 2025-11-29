@@ -57,8 +57,6 @@ public class ArticlesController : ControllerBase
         }
     }
 
-    // Endpoint for manager to view any article (including pending/draft)
-    // Must be before {id} route to avoid conflict
     [HttpGet("manager/{id}")]
     [Authorize(Roles = "Manager")]
     public async Task<IActionResult> GetArticleByIdForManager(int id)
@@ -83,7 +81,6 @@ public class ArticlesController : ControllerBase
         return Ok(article);
     }
 
-    // API riêng cho việc xem bài viết công khai (chỉ bài đã published)
     [HttpGet("public")]
     [AllowAnonymous]
     public async Task<ActionResult<List<ArticleResponseDTO>>> GetPublicArticles()
@@ -107,7 +104,6 @@ public class ArticlesController : ControllerBase
         }
     }
 
-    // API debug để kiểm tra dữ liệu
     [HttpGet("debug")]
     [Authorize]
     public async Task<ActionResult> DebugArticles()

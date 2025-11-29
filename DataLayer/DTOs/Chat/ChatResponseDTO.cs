@@ -19,7 +19,6 @@ namespace DataLayer.DTOs.Chat
         public string? ImageDescription { get; set; } // Mô tả ảnh để tạo ảnh tự động
         public string? ImageUrl { get; set; } // URL ảnh đã được tạo (Pollinations AI)
         
-        // Thêm properties cho out_of_scope
         public bool IsOutOfScope { get; set; } = false;
         public string? ScopeMessage { get; set; }
     }

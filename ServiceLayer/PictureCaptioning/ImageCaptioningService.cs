@@ -1,11 +1,9 @@
-﻿// ImageCaptioningService.cs
-
+using System;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-using Newtonsoft.Json; // Cần có NuGet package Newtonsoft.Json
+using Newtonsoft.Json; 
 
-// Định nghĩa một class nhỏ để phân tích phản hồi
 public class CaptionResponse
 {
     public string caption { get; set; }
@@ -14,26 +12,31 @@ public class CaptionResponse
 public class ImageCaptioningService
 {
     private readonly HttpClient _httpClient;
-    private readonly string _apiEndpoint = "/caption"; // Endpoint của API Python
+    private readonly string _apiEndpoint = "/caption"; 
 
-    // HttpClient được truyền vào qua Constructor Injection
     public ImageCaptioningService(HttpClient httpClient)
     {
         _httpClient = httpClient;
-        // Cấu hình Timeout tại đây hoặc trong lúc đăng ký service
-        // Nếu bạn cấu hình BaseAddress lúc đăng ký, bạn có thể bỏ qua dòng dưới
-        // _httpClient.BaseAddress = new Uri("http://localhost:5000"); 
     }
 
     public async Task<string> GetCaptionFromImageUrl(string imageUrl)
     {
+        if (imageUrl == null)
+        {
+            throw new ArgumentNullException(nameof(imageUrl));
+        }
+
+        if (string.IsNullOrWhiteSpace(imageUrl))
+        {
+            throw new ArgumentException("Image URL cannot be null or empty", nameof(imageUrl));
+        }
+
         try
         {
             var requestBody = new { imageUrl = imageUrl };
             var jsonContent = JsonConvert.SerializeObject(requestBody);
             var httpContent = new StringContent(jsonContent, Encoding.UTF8, "application/json");
 
-            // Gửi yêu cầu POST tới /caption. HttpClient đã biết BaseAddress
             var response = await _httpClient.PostAsync(_apiEndpoint, httpContent);
             response.EnsureSuccessStatusCode();
 

@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace lumina.Controllers
 {
-    // ✅ REMOVED [Authorize] - Same as ListeningController
     [Route("api/[controller]")]
     [ApiController]
     public class ReadingController : ControllerBase
@@ -17,11 +16,6 @@ namespace lumina.Controllers
             _readingService = readingService;
         }
 
-        /// <summary>
-        /// Submit a reading answer for a specific question
-        /// </summary>
-        /// <param name="request">Contains examAttemptId, questionId, selectedOptionId</param>
-        /// <returns>Result with isCorrect and score</returns>
         [HttpPost("submit-answer")]
         [ProducesResponseType(typeof(SubmitAnswerResponseDTO), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]

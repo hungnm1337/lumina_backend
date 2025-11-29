@@ -23,9 +23,6 @@ namespace lumina.Controllers
             _statisticService = statisticService;
         }
 
-        /// <summary>
-        /// ✅ API cũ - Thống kê dashboard cơ bản (không authorize)
-        /// </summary>
         [HttpGet("dashboard-stats-basic")]
         public async Task<IActionResult> GetDashboardStatsBasic()
         {
@@ -42,7 +39,6 @@ namespace lumina.Controllers
             var firstOfMonth = new DateTime(now.Year, now.Month, 1);
             var endOfMonth = firstOfMonth.AddMonths(1);
 
-            // ✅ Tính doanh thu PHÂN BỔ cho tháng này
             var allPayments = await _systemContext.Payments
                 .Where(p => p.Status == "Success" && p.PackageId != null)
                 .Include(p => p.Package)
@@ -99,13 +95,11 @@ namespace lumina.Controllers
             var firstOfMonth = new DateTime(now.Year, now.Month, 1);
             var endOfMonth = firstOfMonth.AddMonths(1);
 
-            // ✅ Lấy 3 gói Pro theo DurationInDays
             var targetDurations = new int[] { 30, 180, 365 };
             var proPackages = await _systemContext.Packages
                 .Where(p => p.DurationInDays != null && targetDurations.Contains(p.DurationInDays.Value) && p.IsActive == true)
                 .ToListAsync();
 
-            // ✅ Đếm users theo DurationInDays (subscription active hiện tại)
             var activeSubscriptions = await _systemContext.Subscriptions
                 .Where(s => s.Status == "Active" && s.EndTime >= now)
                 .Include(s => s.Package)
@@ -126,7 +120,6 @@ namespace lumina.Controllers
                 .Distinct()
                 .Count();
 
-            // ✅ Tính doanh thu PHÂN BỔ cho tháng này theo DurationInDays
             var allPayments = await _systemContext.Payments
                 .Where(p => p.Status == "Success" && p.PackageId != null)
                 .Include(p => p.Package)
@@ -138,7 +131,7 @@ namespace lumina.Controllers
             {
                 if (payment.Package == null) continue;
 
-                var durationDays = payment.Package.DurationInDays ?? 0; // ✅ Handle nullable
+                var durationDays = payment.Package.DurationInDays ?? 0; 
                 if (!targetDurations.Contains(durationDays)) continue;
 
                 var revenuePerDay = payment.Amount / durationDays;
@@ -163,13 +156,11 @@ namespace lumina.Controllers
 
             decimal totalRevenue = revenueByDuration.Values.Sum();
 
-            // ✅ New Users trong tháng này
             var newUsers = await _systemContext.Users
                 .Where(u => u.RoleId == 4 &&
                             u.Accounts.Any(a => a.CreateAt >= firstOfMonth && a.CreateAt < endOfMonth))
                 .CountAsync();
 
-            // ✅ Upgraded Pro trong tháng này
             var upgradedPro = await _systemContext.Subscriptions
                 .Where(s => s.Status == "Active"
                             && s.StartTime >= firstOfMonth
@@ -178,14 +169,12 @@ namespace lumina.Controllers
                 .Distinct()
                 .CountAsync();
 
-            // ✅ Tổng tiền thanh toán trong tháng (không phải phân bổ)
             var monthlyPaymentTotal = await _systemContext.Payments
                 .Where(p => p.Status == "Success"
                             && p.CreatedAt >= firstOfMonth
                             && p.CreatedAt < endOfMonth)
                 .SumAsync(p => (decimal?)p.Amount) ?? 0m;
 
-            // ✅ Tạo stats cho từng gói (group theo DurationInDays)
             var packageStats = targetDurations.Select(duration =>
             {
                 var pkg = proPackages.FirstOrDefault(p => p.DurationInDays == duration);
@@ -460,9 +449,7 @@ namespace lumina.Controllers
                 return dateTime.ToString("dd/MM/yyyy");
         }
 
-        /// <summary>
-        /// ✅ Lấy 4 key metrics cho dashboard (Doanh thu, User mới, Chuyển đổi Pro, Tỷ lệ giữ chân)
-        /// </summary>
+       
         [HttpGet("dashboard-stats")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetDashboardStats()
@@ -487,9 +474,7 @@ namespace lumina.Controllers
             }
         }
 
-        /// <summary>
-        /// Lấy dữ liệu biểu đồ doanh thu theo tháng (12 tháng)
-        /// </summary>
+      
         [HttpGet("revenue-chart")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetRevenueChart([FromQuery] int year = 0)
@@ -516,9 +501,7 @@ namespace lumina.Controllers
             }
         }
 
-        /// <summary>
-        /// Lấy dữ liệu biểu đồ tăng trưởng người dùng (Free vs Pro)
-        /// </summary>
+        
         [HttpGet("user-growth-chart")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetUserGrowthChart([FromQuery] int months = 6)
@@ -543,9 +526,6 @@ namespace lumina.Controllers
             }
         }
 
-        /// <summary>
-        /// Lấy dữ liệu phân bổ gói dịch vụ (Free, Pro 1M, Pro 6M, Pro 12M)
-        /// </summary>
         [HttpGet("plan-distribution")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetPlanDistribution()
@@ -570,9 +550,7 @@ namespace lumina.Controllers
             }
         }
 
-        /// <summary>
-        /// Lấy dữ liệu phân tích theo ngày (bảng chi tiết)
-        /// </summary>
+      
         [HttpGet("daily-analytics")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetDailyAnalytics([FromQuery] int days = 7)

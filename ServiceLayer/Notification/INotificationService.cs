@@ -13,5 +13,10 @@ namespace ServiceLayer.Notification
         Task<int> CreateAsync(CreateNotificationDTO dto, int createdBy);
         Task<bool> UpdateAsync(int notificationId, UpdateNotificationDTO dto);
         Task<bool> DeleteAsync(int notificationId);
+        
+        // Thông báo tự động
+        Task<int> SendPointsNotificationAsync(int userId, int pointsEarned, int totalAccumulatedScore,
+            int correctAnswers, int totalQuestions, int timeBonus, int accuracyBonus, bool isFirstAttempt = true);
+        Task<int> SendTOEICNotificationAsync(int userId, int estimatedTOEIC, string toeicLevel, string message);
     }
 }

@@ -7,8 +7,8 @@ public class ExamCompletionRateDTO
     public string ExamType { get; set; } = string.Empty;
     public int TotalAttempts { get; set; }
     public int CompletedAttempts { get; set; }
-    public double CompletionRate { get; set; } // percentage
-    public double AverageCompletionTime { get; set; } // in minutes
+    public double CompletionRate { get; set; } 
+    public double AverageCompletionTime { get; set; }
 }
 
 

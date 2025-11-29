@@ -2,9 +2,7 @@ using System;
 
 namespace DataLayer.DTOs.Streak
 {
-    /// <summary>
-    /// DTO cho thông báo nhắc nhở streak
-    /// </summary>
+    
     public class StreakReminderDTO
     {
         public int UserId { get; set; }
@@ -16,9 +14,7 @@ namespace DataLayer.DTOs.Streak
         public DateOnly ReminderDate { get; set; }
     }
 
-    /// <summary>
-    /// Kết quả xử lý reminder job
-    /// </summary>
+   
     public class ReminderJobResultDTO
     {
         public bool Success { get; set; }

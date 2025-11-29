@@ -10,6 +10,6 @@ namespace DataLayer.DTOs.Chat
     {
         public string Message { get; set; } = null!;
         public int UserId { get; set; }
-        public string ConversationType { get; set; } = "general"; // "vocabulary", "grammar", "toeic_strategy", "practice", "general"
+        public string ConversationType { get; set; } = "general"; 
     }
 }

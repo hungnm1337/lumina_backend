@@ -25,7 +25,6 @@ public class UserArticleProgressRepository : IUserArticleProgressRepository
 
         if (existingProgress != null)
         {
-            // Update existing progress
             existingProgress.ProgressPercent = progressPercent;
             existingProgress.Status = status;
             existingProgress.LastAccessedAt = DateTime.UtcNow;
@@ -45,7 +44,6 @@ public class UserArticleProgressRepository : IUserArticleProgressRepository
         }
         else
         {
-            // Create new progress
             var newProgress = new UserArticleProgressModel
             {
                 UserId = userId,

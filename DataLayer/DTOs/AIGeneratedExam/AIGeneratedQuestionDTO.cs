@@ -11,13 +11,13 @@ namespace DataLayer.DTOs.AIGeneratedExam
         public int PartId { get; set; }
         public string QuestionType { get; set; } = null!;
         public string StemText { get; set; } = null!;
-        public string? CorrectAnswer { get; set; } // dùng khi không có Option
+        public string? CorrectAnswer { get; set; }
         public string? Explanation { get; set; }
         public int ScoreWeight { get; set; }
         public int Time { get; set; }
 
         public string? SampleAnswer { get; set; }
 
-        public List<AIGeneratedOptionDTO>? Options { get; set; } // null cho Speaking, Writing
+        public List<AIGeneratedOptionDTO>? Options { get; set; }
     }
 }
