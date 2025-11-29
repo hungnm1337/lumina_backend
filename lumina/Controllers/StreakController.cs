@@ -46,7 +46,7 @@ namespace lumina.Controllers
         }
 
         
-        [HttpPost("admin/trigger-daily-job")]
+       /* [HttpPost("admin/trigger-daily-job")]
         // [Authorize(Roles = "Admin")] //  Bỏ comment ở production
         public IActionResult TriggerDailyJob()
         {
@@ -77,10 +77,10 @@ namespace lumina.Controllers
                     message = "Failed to trigger job"
                 });
             }
-        }
+        }*/
 
         
-        [HttpPost("admin/test-auto-process/{userId}")]
+       /* [HttpPost("admin/test-auto-process/{userId}")]
         // [Authorize(Roles = "Admin")] // ⚠️ Bỏ comment ở production
         public async Task<IActionResult> TestAutoProcess(int userId)
         {
@@ -112,7 +112,7 @@ namespace lumina.Controllers
                     message = "Internal server error"
                 });
             }
-        }
+        }*/
 
         
         [HttpGet("admin/users-needing-process")]
