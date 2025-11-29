@@ -74,7 +74,7 @@ namespace lumina.Controllers
                     return StatusCode(503, new
                     {
                         success = false,
-                        message = "Gemini API hiện đang quá tải, vui lòng thử lại sau.",
+                        message = " API hiện đang quá tải, vui lòng thử lại sau.",
                         detail = ex.Message
                     });
                 }
@@ -130,7 +130,7 @@ namespace lumina.Controllers
 
 
         // Endpoint để Staff gửi yêu cầu tạo đề thi
-        [HttpPost("generate-exam")]
+/*        [HttpPost("generate-exam")]
         public async Task<IActionResult> GenerateExam([FromBody] CreateExamRequest request)
         {
             try
@@ -153,7 +153,7 @@ namespace lumina.Controllers
             {
                 return BadRequest(new { message = ex.Message });
             }
-        }
+        }*/
 
     }
 }
