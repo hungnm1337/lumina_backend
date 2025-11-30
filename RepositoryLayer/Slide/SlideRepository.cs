@@ -20,7 +20,7 @@ namespace RepositoryLayer.Slide
         public async Task<List<SlideDTO>> GetAllAsync(string? keyword = null, bool? isActive = null)
         {
             var query = _context.Slides
-                .Include(s => s.CreateByNavigation) // Join với Users table
+                .Include(s => s.CreateByNavigation) 
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(keyword))
@@ -44,7 +44,7 @@ namespace RepositoryLayer.Slide
                 SlideName = s.SlideName,
                 UpdateBy = s.UpdateBy,
                 CreateBy = s.CreateBy,
-                CreatedByName = s.CreateByNavigation?.FullName ?? null, // Lấy tên người tạo
+                CreatedByName = s.CreateByNavigation?.FullName ?? null, 
                 IsActive = s.IsActive,
                 UpdateAt = s.UpdateAt,
                 CreateAt = s.CreateAt
@@ -54,7 +54,7 @@ namespace RepositoryLayer.Slide
         public async Task<SlideDTO?> GetByIdAsync(int slideId)
         {
             var s = await _context.Slides
-                .Include(s => s.CreateByNavigation) // Join với Users table
+                .Include(s => s.CreateByNavigation) 
                 .FirstOrDefaultAsync(x => x.SlideId == slideId);
             if (s == null) return null;
             return new SlideDTO
@@ -64,7 +64,7 @@ namespace RepositoryLayer.Slide
                 SlideName = s.SlideName,
                 UpdateBy = s.UpdateBy,
                 CreateBy = s.CreateBy,
-                CreatedByName = s.CreateByNavigation?.FullName ?? null, // Lấy tên người tạo
+                CreatedByName = s.CreateByNavigation?.FullName ?? null, 
                 IsActive = s.IsActive,
                 UpdateAt = s.UpdateAt,
                 CreateAt = s.CreateAt

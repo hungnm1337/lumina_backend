@@ -26,9 +26,6 @@ public class ReportController : ControllerBase
         _unitOfWork = unitOfWork;
     }
 
-    /// <summary>
-    /// Create a new report
-    /// </summary>
     [HttpPost]
     public async Task<IActionResult> CreateReport([FromBody] UserReportRequest request)
     {
@@ -65,9 +62,6 @@ public class ReportController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Get report by ID
-    /// </summary>
     [HttpGet("{id}")]
     public async Task<IActionResult> GetReportById(int id)
     {
@@ -89,9 +83,6 @@ public class ReportController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Get all reports by role (Admin: System, Manager/Staff: Article/Exam)
-    /// </summary>
     [HttpGet("by-role")]
     //[Authorize(Roles = "Admin,Manager,Staff")]
     public async Task<IActionResult> GetReportsByRole()
@@ -121,9 +112,6 @@ public class ReportController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Get all reports created by the current user
-    /// </summary>
     [HttpGet("my-reports")]
     public async Task<IActionResult> GetMyReports()
     {
@@ -145,9 +133,6 @@ public class ReportController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Reply to a report (Admin and Manager only)
-    /// </summary>
     [HttpPut("{id}/reply")]
     //[Authorize(Roles = "Admin,Manager")]
     public async Task<IActionResult> ReplyToReport(int id, [FromBody] UserReportRequest request)

@@ -25,7 +25,6 @@ public sealed class AuthController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> Login([FromBody] LoginRequestDTO request)
     {
-        // Model validation được xử lý tự động bởi ASP.NET Core
         if (!ModelState.IsValid)
         {
             return BadRequest(new ErrorResponse("Invalid login request"));

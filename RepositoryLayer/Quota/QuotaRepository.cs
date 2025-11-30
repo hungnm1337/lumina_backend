@@ -23,7 +23,6 @@ namespace RepositoryLayer.Quota
                 throw new Exception($"User with ID {userId} not found");
             }
 
-            // Check if user has active premium subscription
             var hasActiveSubscription = user.Subscriptions.Any(s =>
                 s.Status == "Active" &&
                 s.EndTime.HasValue &&
@@ -49,10 +48,8 @@ namespace RepositoryLayer.Quota
                 throw new Exception($"User with ID {userId} not found");
             }
 
-            // Check and reset quota if new month
             await CheckAndResetQuotaAsync(userId);
 
-            // Increment the appropriate counter
             switch (skill.ToLower())
             {
                 case "reading":
@@ -61,10 +58,8 @@ namespace RepositoryLayer.Quota
                 case "listening":
                     user.MonthlyListeningAttempts++;
                     break;
-                // Speaking and Writing don't have quotas for free tier (blocked entirely)
                 case "speaking":
                 case "writing":
-                    // Only increment for premium users (they have unlimited)
                     break;
             }
 
@@ -79,7 +74,6 @@ namespace RepositoryLayer.Quota
             var now = DateTime.UtcNow;
             var lastReset = user.LastQuotaReset;
 
-            // Check if it's a new month
             if (lastReset.Year != now.Year || lastReset.Month != now.Month)
             {
                 user.MonthlyReadingAttempts = 0;

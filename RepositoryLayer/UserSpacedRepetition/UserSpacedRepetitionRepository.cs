@@ -18,7 +18,6 @@ namespace RepositoryLayer.UserSpacedRepetition
 
         public async Task<DataLayer.Models.UserSpacedRepetition?> GetByUserAndListAsync(int userId, int vocabularyListId)
         {
-            // Get folder-level record (VocabularyId is null)
             return await _context.UserSpacedRepetitions
                 .Include(usr => usr.VocabularyList)
                 .FirstOrDefaultAsync(usr => usr.UserId == userId 
@@ -39,11 +38,11 @@ namespace RepositoryLayer.UserSpacedRepetition
             var now = DateTime.UtcNow;
             return await _context.UserSpacedRepetitions
                 .Where(usr => usr.UserId == userId 
-                    && usr.VocabularyId != null  // Chỉ lấy word-level records
+                    && usr.VocabularyId != null  
                     && usr.NextReviewAt.HasValue 
-                    && usr.NextReviewAt.Value <= now  // Đủ điều kiện: đã đến hạn review
+                    && usr.NextReviewAt.Value <= now  
                     && (usr.Status == "New" || usr.Status == "Learning")
-                    && usr.ReviewCount > 0)  // Chỉ lấy những từ đã được review
+                    && usr.ReviewCount > 0)  
                 .Include(usr => usr.VocabularyList)
                 .Include(usr => usr.Vocabulary)
                 .OrderBy(usr => usr.NextReviewAt)
@@ -82,7 +81,6 @@ namespace RepositoryLayer.UserSpacedRepetition
 
         public async Task<bool> ExistsAsync(int userId, int vocabularyListId)
         {
-            // Check for folder-level record (VocabularyId is null)
             return await _context.UserSpacedRepetitions
                 .AnyAsync(usr => usr.UserId == userId 
                     && usr.VocabularyListId == vocabularyListId 

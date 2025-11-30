@@ -6,9 +6,11 @@ public class ArticleCompletionRateDTO
     public string Title { get; set; } = string.Empty;
     public int TotalReaders { get; set; }
     public int CompletedReaders { get; set; }
-    public double CompletionRate { get; set; } // percentage
-    public double AverageReadingTime { get; set; } // in minutes
+    public double CompletionRate { get; set; } 
+    public double AverageReadingTime { get; set; } 
 }
+
+
 
 
 

@@ -30,9 +30,6 @@ public class SmtpEmailSender : IEmailSender
         _enableSsl = smtpSection.GetValue("EnableSsl", true);
     }
 
-    /// <summary>
-    /// ✅ THÊM METHOD MỚI: Gửi email tùy chỉnh
-    /// </summary>
     public async Task SendEmailAsync(string toEmail, string subject, string body, bool isHtml = true)
     {
         using var message = new MailMessage

@@ -8,6 +8,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="lumina\**" />
+    <Content Remove="lumina\**" />
+    <EmbeddedResource Remove="lumina\**" />
+    <None Remove="lumina\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
     <PackageReference Include="CloudinaryDotNet" Version="1.27.7" />
     <PackageReference Include="coverlet.collector" Version="6.0.4">
@@ -15,6 +22,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="EPPlus" Version="8.2.0" />
+    <PackageReference Include="FluentAssertions" Version="8.8.0" />
     <PackageReference Include="Google.Apis.AnalyticsData.v1beta" Version="1.68.0.3608" />
     <PackageReference Include="Google.Apis.Auth" Version="1.71.0" />
     <PackageReference Include="Hangfire.AspNetCore" Version="1.8.22" />

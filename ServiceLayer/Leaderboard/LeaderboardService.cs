@@ -82,7 +82,6 @@ namespace ServiceLayer.Leaderboard
             var exists = await _repository.ExistsSeasonNumberAsync(seasonNumber, excludeId);
             if (exists) throw new ArgumentException("SeasonNumber already exists");
 
-            // Validate date overlap across all seasons (active or ended). Any intersection is not allowed.
             var overlap = await _repository.ExistsDateOverlapAsync(start, end, excludeId);
             if (overlap) throw new ArgumentException("Date range overlaps with an existing season");
         }
@@ -134,16 +133,11 @@ namespace ServiceLayer.Leaderboard
 
         public async Task AutoManageSeasonsAsync()
         {
-            // Tự động kích hoạt seasons đã đến ngày bắt đầu
             await _repository.AutoActivateSeasonAsync();
             
-            // Tự động kết thúc seasons đã hết hạn
             await _repository.AutoEndSeasonAsync();
         }
 
-        // ============================================
-        // CALCULATE SEASON SCORE - TOEIC SCORING SYSTEM
-        // ============================================
         
         // Bảng quy đổi TOEIC Listening (100 câu → 5-495 điểm)
         // Nguồn: logic_quy_doi_toeic_61_markdown.md (lines 82-139)
@@ -239,17 +233,13 @@ namespace ServiceLayer.Leaderboard
 
         public async Task<CalculateScoreResponseDTO> CalculateSeasonScoreAsync(int userId, CalculateScoreRequestDTO request)
         {
-            // Validate: Chỉ tính điểm cho Listening (1) và Reading (2)
             if (request.ExamPartId != 1 && request.ExamPartId != 2)
             {
                 throw new ArgumentException("Chỉ tính điểm cho Listening (ExamPartId=1) và Reading (ExamPartId=2)");
             }
 
-            // ✅ Cho phép CorrectAnswers = 0 để vẫn có thể tạo notification động viên
-            // Nếu không có câu nào đúng, vẫn tạo notification nhưng không cộng điểm
             bool hasCorrectAnswers = request.CorrectAnswers > 0;
 
-            // 1. Kiểm tra xem đã làm ĐỀ NÀY chưa (theo ExamId + ExamPartId)
             var examAttempt = await _context.ExamAttempts
                 .FirstOrDefaultAsync(ea => ea.AttemptID == request.ExamAttemptId);
             
@@ -258,7 +248,6 @@ namespace ServiceLayer.Leaderboard
                 throw new ArgumentException("ExamAttempt không tồn tại");
             }
 
-            // Kiểm tra xem đã làm đề này (ExamId + ExamPartId) lần đầu chưa
             var isFirstTimeDoingThisExam = !await _context.ExamAttempts
                 .AnyAsync(ea => 
                     ea.UserID == userId
@@ -267,7 +256,6 @@ namespace ServiceLayer.Leaderboard
                     && ea.Status == "Completed"
                     && ea.AttemptID < request.ExamAttemptId); // Có attempt nào trước đó đã hoàn thành không
 
-            // 2. Kiểm tra season
             var currentSeason = await _context.Leaderboards
                 .FirstOrDefaultAsync(l => l.IsActive);
             
@@ -283,48 +271,39 @@ namespace ServiceLayer.Leaderboard
 
             bool isFirstAttemptInSeason = userLeaderboard == null || userLeaderboard.FirstAttemptDate == null;
 
-            // 3. LẤY ESTIMATED TOEIC (CHỈ LISTENING + READING)
             var estimatedTOEIC = await GetEstimatedTOEICScore(userId);
             
-            // 4. XÁC ĐỊNH LEVEL CONFIG
             var levelConfig = GetLevelConfig(estimatedTOEIC);
             
-            // 5. TÍNH BASE POINTS (chỉ khi có câu đúng)
             var basePoints = hasCorrectAnswers ? request.CorrectAnswers * levelConfig.BasePointsPerCorrect : 0;
             
-            // 6. TIME BONUS (chỉ khi có câu đúng)
             var timeBonus = hasCorrectAnswers ? CalculateTimeBonus(
                 request.TimeSpentSeconds, 
                 request.ExpectedTimeSeconds,
                 levelConfig.TimeBonusPercent
             ) : 0;
             
-            // 7. ACCURACY BONUS (chỉ khi >= 80% và có câu đúng)
             var accuracyRate = request.TotalQuestions > 0 ? (double)request.CorrectAnswers / request.TotalQuestions : 0;
             var accuracyBonus = hasCorrectAnswers && accuracyRate >= 0.8 
                 ? CalculateAccuracyBonus(accuracyRate, basePoints, levelConfig.AccuracyBonusPercent)
                 : 0;
             
-            // 8. TỔNG ĐIỂM TÍCH LŨY CHO LẦN NÀY
             var totalScore = basePoints + timeBonus + accuracyBonus;
             
-            // 9. CẬP NHẬT LEADERBOARD (chỉ khi có điểm VÀ làm lần đầu)
             int totalAccumulatedScore = totalScore;
 
-            // ✅ CHỈ CỘNG ĐIỂM KHI LÀM LẦN ĐẦU (không cho spam)
             bool shouldAddPoints = hasCorrectAnswers && isFirstTimeDoingThisExam;
 
             if (shouldAddPoints)
             {
                 if (userLeaderboard == null)
                 {
-                    // Tạo mới - Lần đầu tiên trong season
                     userLeaderboard = new DataLayer.Models.UserLeaderboard
                     {
                         LeaderboardId = currentSeason.LeaderboardId,
                         UserId = userId,
-                        Score = totalScore, // ĐIỂM TÍCH LŨY
-                        EstimatedTOEICScore = Math.Min(estimatedTOEIC, 990), // TOEIC lần đầu
+                        Score = totalScore, 
+                        EstimatedTOEICScore = Math.Min(estimatedTOEIC, 990), 
                         FirstAttemptDate = DateTime.UtcNow
                     };
                     _context.UserLeaderboards.Add(userLeaderboard);
@@ -333,14 +312,11 @@ namespace ServiceLayer.Leaderboard
                 }
                 else
                 {
-                    // Đã có bản ghi - CỘNG DỒN ĐIỂM TÍCH LŨY (chỉ lần đầu)
                     userLeaderboard.Score += totalScore;
                     totalAccumulatedScore = userLeaderboard.Score;
 
-                    // CẬP NHẬT TOEIC (chỉ khi làm đề lần đầu)
                     userLeaderboard.EstimatedTOEICScore = Math.Min(estimatedTOEIC, 990);
                     
-                    // Chỉ set FirstAttemptDate lần đầu trong season
                     if (isFirstAttemptInSeason)
                     {
                         userLeaderboard.FirstAttemptDate = DateTime.UtcNow;
@@ -348,11 +324,9 @@ namespace ServiceLayer.Leaderboard
                 }
 
                 await _context.SaveChangesAsync();
-                Console.WriteLine($"✅ [LeaderboardService] User {userId} - First attempt. Added {totalScore} points. Total: {totalAccumulatedScore}");
             }
             else
             {
-                // Không cộng điểm (làm lại hoặc không có câu đúng)
                 if (userLeaderboard != null)
                 {
                     totalAccumulatedScore = userLeaderboard.Score;
@@ -360,66 +334,46 @@ namespace ServiceLayer.Leaderboard
                 
                 if (!hasCorrectAnswers)
                 {
-                    Console.WriteLine($"⚠️ [LeaderboardService] User {userId} has 0 correct answers. No points added, but notification will still be sent.");
+                    Console.WriteLine($" [LeaderboardService] User {userId} has 0 correct answers. No points added, but notification will still be sent.");
                 }
                 else if (!isFirstTimeDoingThisExam)
                 {
-                    Console.WriteLine($"⚠️ [LeaderboardService] User {userId} - Not first attempt. No points added (anti-spam). Total remains: {totalAccumulatedScore}");
+                    Console.WriteLine($" [LeaderboardService] User {userId} - Not first attempt. No points added (anti-spam). Total remains: {totalAccumulatedScore}");
                 }
             }
             
             // Tạo thông báo chúc mừng hoàn thành part (tiếng Anh)
             var currentTOEICMessage = GetCompletionMessage(totalScore, isFirstTimeDoingThisExam);
             
-            // Gửi thông báo tự động: Điểm tích lũy
-            // ✅ ĐẢM BẢO LUÔN TẠO NOTIFICATION, KỂ CẢ KHI CÓ LỖI
-            Console.WriteLine($"📢 [LeaderboardService] ========== START SENDING NOTIFICATION ==========");
-            Console.WriteLine($"📢 [LeaderboardService] UserId: {userId}");
-            Console.WriteLine($"📢 [LeaderboardService] TotalScore: {totalScore}");
-            Console.WriteLine($"📢 [LeaderboardService] TotalAccumulatedScore: {totalAccumulatedScore}");
-            Console.WriteLine($"📢 [LeaderboardService] CorrectAnswers: {request.CorrectAnswers}/{request.TotalQuestions}");
-            Console.WriteLine($"📢 [LeaderboardService] TimeBonus: {timeBonus}");
-            Console.WriteLine($"📢 [LeaderboardService] AccuracyBonus: {accuracyBonus}");
-            Console.WriteLine($"📢 [LeaderboardService] IsFirstAttempt: {isFirstTimeDoingThisExam}");
-            Console.WriteLine($"📢 [LeaderboardService] ShouldAddPoints: {shouldAddPoints}");
-            Console.WriteLine($"📢 [LeaderboardService] NotificationService is null: {_notificationService == null}");
+            
             
             try
             {
                 if (_notificationService == null)
                 {
-                    Console.WriteLine($"❌ [LeaderboardService] CRITICAL: NotificationService is NULL!");
+                    Console.WriteLine($" [LeaderboardService] CRITICAL: NotificationService is NULL!");
                     throw new InvalidOperationException("NotificationService is not injected!");
                 }
                 
-                Console.WriteLine($"📢 [LeaderboardService] Calling SendPointsNotificationAsync...");
-                // ✅ Truyền thêm thông tin về việc có cộng điểm hay không
+                Console.WriteLine($" [LeaderboardService] Calling SendPointsNotificationAsync...");
                 var notificationId = await _notificationService.SendPointsNotificationAsync(
                     userId, 
-                    shouldAddPoints ? totalScore : 0, // Điểm được cộng (0 nếu làm lại)
+                    shouldAddPoints ? totalScore : 0, 
                     totalAccumulatedScore,
                     request.CorrectAnswers,
                     request.TotalQuestions,
                     timeBonus,
                     accuracyBonus,
-                    isFirstTimeDoingThisExam // Thông tin về lần đầu hay không
+                    isFirstTimeDoingThisExam 
                 );
-                Console.WriteLine($"✅ [LeaderboardService] Points notification {notificationId} sent successfully to user {userId}");
-                Console.WriteLine($"📢 [LeaderboardService] ========== NOTIFICATION SENT SUCCESSFULLY ==========");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ [LeaderboardService] ========== FAILED TO SEND NOTIFICATION ==========");
-                Console.WriteLine($"❌ [LeaderboardService] Exception Type: {ex.GetType().Name}");
-                Console.WriteLine($"❌ [LeaderboardService] Message: {ex.Message}");
-                Console.WriteLine($"❌ [LeaderboardService] StackTrace: {ex.StackTrace}");
                 if (ex.InnerException != null)
                 {
-                    Console.WriteLine($"❌ [LeaderboardService] InnerException: {ex.InnerException.Message}");
-                    Console.WriteLine($"❌ [LeaderboardService] InnerStackTrace: {ex.InnerException.StackTrace}");
+                    Console.WriteLine($" [LeaderboardService] InnerException: {ex.InnerException.Message}");
+                    Console.WriteLine($" [LeaderboardService] InnerStackTrace: {ex.InnerException.StackTrace}");
                 }
-                // ✅ KHÔNG THROW LẠI - ĐỂ API VẪN TRẢ VỀ THÀNH CÔNG
-                // Nhưng notification sẽ không được tạo nếu có lỗi
             }
 
             // Gửi thông báo tự động: Kết quả TOEIC (chỉ khi làm đề lần đầu)
@@ -427,14 +381,14 @@ namespace ServiceLayer.Leaderboard
             {
                 try
                 {
-                    Console.WriteLine($"📢 [LeaderboardService] Sending TOEIC notification to user {userId}...");
+                    Console.WriteLine($" [LeaderboardService] Sending TOEIC notification to user {userId}...");
                     var toeicNotificationId = await _notificationService.SendTOEICNotificationAsync(userId, estimatedTOEIC, levelConfig.Level, currentTOEICMessage);
-                    Console.WriteLine($"✅ [LeaderboardService] TOEIC notification {toeicNotificationId} sent successfully to user {userId}");
+                    Console.WriteLine($" [LeaderboardService] TOEIC notification {toeicNotificationId} sent successfully to user {userId}");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"❌ [LeaderboardService] Failed to send TOEIC notification: {ex.Message}");
-                    Console.WriteLine($"   StackTrace: {ex.StackTrace}");
+                    Console.WriteLine($" [LeaderboardService] Failed to send TOEIC notification: {ex.Message}");
+                    Console.WriteLine($"  StackTrace: {ex.StackTrace}");
                 }
             }
             

@@ -16,8 +16,9 @@ namespace DataLayer.DTOs.Chat
         public bool HasSaveOption { get; set; } = false;
         public string? SaveAction { get; set; }
         public List<GeneratedVocabularyDTO>? Vocabularies { get; set; }
+        public string? ImageDescription { get; set; } // Mô tả ảnh để tạo ảnh tự động
+        public string? ImageUrl { get; set; } // URL ảnh đã được tạo (Pollinations AI)
         
-        // Thêm properties cho out_of_scope
         public bool IsOutOfScope { get; set; } = false;
         public string? ScopeMessage { get; set; }
     }
@@ -29,5 +30,7 @@ namespace DataLayer.DTOs.Chat
         public string Example { get; set; } = null!;
         public string TypeOfWord { get; set; } = null!;
         public string Category { get; set; } = null!;
+        public string? ImageDescription { get; set; } // Mô tả ảnh cho từng từ vựng
+        public string? ImageUrl { get; set; } // URL ảnh đã được tạo (Pollinations AI)
     }
 }

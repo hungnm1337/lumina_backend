@@ -6,10 +6,12 @@ public class TopVocabularyDTO
     public string ListName { get; set; } = string.Empty;
     public int LearnerCount { get; set; }
     public double AverageWordsLearned { get; set; }
-    public double CompletionRate { get; set; } // percentage
+    public double CompletionRate { get; set; } 
     public int TotalWords { get; set; }
     public DateTime CreatedAt { get; set; }
 }
+
+
 
 
 

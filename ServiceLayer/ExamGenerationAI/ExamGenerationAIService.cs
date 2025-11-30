@@ -22,14 +22,10 @@ namespace ServiceLayer.ExamGenerationAI
             _openAIOptions = openAIOptions.Value;
             _httpClient = httpClient;
 
-            // ✅ SET AUTHORIZATION HEADER 1 LẦN DUY NHẤT TRONG CONSTRUCTOR
             _httpClient.DefaultRequestHeaders.Authorization = 
                 new AuthenticationHeaderValue("Bearer", _openAIOptions.ApiKey);
         }
 
-        // ========================================
-        // ✅ OPENAI API CALL (FIXED)
-        // ========================================
         public async Task<string> GenerateResponseAsync(string prompt)
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(600));
@@ -73,9 +69,6 @@ namespace ServiceLayer.ExamGenerationAI
             }
         }
 
-        // ========================================
-        // ✅ PARSE USER REQUEST (GIỮ NGUYÊN)
-        // ========================================
         public async Task<(int partNumber, int quantity, string? topic)> ParseUserRequestAsync(string userRequest)
         {
             var parsePrompt = PromptFactory.CreateParsingPrompt(userRequest);
@@ -89,31 +82,23 @@ namespace ServiceLayer.ExamGenerationAI
             return (parseResult.PartNumber, parseResult.Quantity, parseResult.Topic);
         }
 
-        // ========================================
-        // ✅ GENERATE EXAM (ĐƠN GIẢN HÓA - FIXED BATCH SIZE = 10)
-        // ========================================
         public async Task<AIGeneratedExamDTO> GenerateExamAsync(
             int partNumber, 
             int quantity, 
             string? topic)
         {
-            const int maxBatchSize = 10; // ✅ CỐ ĐỊNH 10
+            const int maxBatchSize = 10; 
             
             if (quantity > maxBatchSize)
             {
-                Console.WriteLine($"⚠️ Quantity {quantity} > {maxBatchSize}, switching to batch mode...");
                 return await GenerateExamInBatchesAsync(partNumber, quantity, topic, maxBatchSize);
             }
             else
             {
-                Console.WriteLine($"✅ Quantity {quantity} <= {maxBatchSize}, generating directly...");
                 return await GenerateSingleBatchAsync(partNumber, quantity, topic);
             }
         }
 
-        // ========================================
-        // ✅ DETECT INTENT (GIỮ NGUYÊN)
-        // ========================================
         public async Task<IntentResult> DetectIntentAsync(string userRequest)
         {
             var prompt = $@"
@@ -135,9 +120,6 @@ Trả về JSON:
             return JsonConvert.DeserializeObject<IntentResult>(textJson);
         }
 
-        // ========================================
-        // ✅ GENERAL CHAT (SỬA LẠI - PLAIN TEXT ONLY)
-        // ========================================
         public async Task<string> GeneralChatAsync(string userRequest)
         {
             var chatPrompt = $@"
@@ -145,7 +127,7 @@ You are a friendly TOEIC expert assistant. Answer naturally in PLAIN TEXT.
 
 User question: ""{userRequest}""
 
-🚨 CRITICAL OUTPUT RULES:
+ CRITICAL OUTPUT RULES:
 1. Respond ONLY in PLAIN TEXT format (absolutely NO JSON!)
 2. Use simple formatting for readability:
    - **text** for emphasis/bold
@@ -159,7 +141,7 @@ Example responses:
 
 ---
 **For general questions:**
-Chào bạn! 😊
+Chào bạn! 
 
 **TOEIC Reading Part 5** là phần Incomplete Sentences (Hoàn thành câu).
 
@@ -179,11 +161,11 @@ Chào bạn! 😊
 3. Loại trừ các đáp án sai
 4. Thời gian: 30 câu trong 15 phút
 
-Chúc bạn ôn tập tốt! 🌟
+Chúc bạn ôn tập tốt! 
 
 ---
 **For vocabulary requests:**
-Chào bạn! 😊
+Chào bạn! 
 
 **10 từ vựng về thiên nhiên:**
 
@@ -217,9 +199,9 @@ Chào bạn! 😊
 10. **Island** (đảo)
     The island has pristine white beaches.
 
-💡 **Mẹo:** Tạo câu ví dụ của riêng bạn để nhớ từ tốt hơn!
+ **Mẹo:** Tạo câu ví dụ của riêng bạn để nhớ từ tốt hơn!
 
-Chúc bạn học tốt! 🌟
+Chúc bạn học tốt! 
 
 ---
 
@@ -227,13 +209,9 @@ Now answer the user's question (PLAIN TEXT, NO JSON):";
 
             var responseText = await GenerateResponseAsync(chatPrompt);
             
-            // ✅ Clean response - loại bỏ JSON nếu AI vẫn cố trả
             return CleanChatResponseSimple(responseText);
         }
 
-        // ========================================
-        // ✅ HÀM CLEAN ĐƠN GIẢN - CHỈ GIỮ TEXT THUẦN
-        // ========================================
         private string CleanChatResponseSimple(string text)
         {
             if (string.IsNullOrWhiteSpace(text))
@@ -241,7 +219,6 @@ Now answer the user's question (PLAIN TEXT, NO JSON):";
 
             try
             {
-                // 1️⃣ Loại bỏ markdown code blocks
                 text = System.Text.RegularExpressions.Regex.Replace(
                     text,
                     @"```(json|markdown|html|text)?\s*([\s\S]*?)\s*```",
@@ -249,10 +226,8 @@ Now answer the user's question (PLAIN TEXT, NO JSON):";
                     System.Text.RegularExpressions.RegexOptions.IgnoreCase
                 );
 
-                // 2️⃣ Nếu AI trả JSON → Extract text từ bên trong
                 var trimmed = text.Trim();
                 
-                // Xử lý JSON object: { "response": "..." }
                 if (trimmed.StartsWith("{") && trimmed.EndsWith("}"))
                 {
                     try
@@ -278,7 +253,6 @@ Now answer the user's question (PLAIN TEXT, NO JSON):";
                     }
                 }
                 
-                // Xử lý JSON array: [...] → Convert sang text
                 if (trimmed.StartsWith("[") && trimmed.EndsWith("]"))
                 {
                     try
@@ -292,7 +266,6 @@ Now answer the user's question (PLAIN TEXT, NO JSON):";
                             
                             foreach (var item in jsonArray)
                             {
-                                // Hỗ trợ nhiều tên key
                                 string word = item.GetValueOrDefault("word") 
                                            ?? item.GetValueOrDefault("tu_vung") 
                                            ?? item.GetValueOrDefault("vocabulary") 
@@ -323,7 +296,6 @@ Now answer the user's question (PLAIN TEXT, NO JSON):";
                     }
                 }
 
-                // 3️⃣ Xóa prefix/suffix thừa
                 text = text
                     .Replace("Sure! ", "")
                     .Replace("Sure, ", "")
@@ -337,20 +309,15 @@ Now answer the user's question (PLAIN TEXT, NO JSON):";
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"⚠️ CleanChatResponseSimple error: {ex.Message}");
                 return text; // Return nguyên nếu lỗi
             }
         }
 
-        // ========================================
-        // ✅ CLEAN AI RESPONSE (GIỮ NGUYÊN)
-        // ========================================
         private string CleanAIResponse(string text)
         {
             if (string.IsNullOrWhiteSpace(text))
                 return text;
 
-            // 1️⃣ Loại bỏ các cặp ```json ... ```
             text = System.Text.RegularExpressions.Regex.Replace(
                 text,
                 @"```(json|markdown|html)?\s*([\s\S]*?)\s*```",
@@ -358,7 +325,6 @@ Now answer the user's question (PLAIN TEXT, NO JSON):";
                 System.Text.RegularExpressions.RegexOptions.IgnoreCase
             );
 
-            // 2️⃣ Xóa các từ dư, ký tự markdown
             text = text
                 .Replace("**", "")
                 .Replace("##", "")
@@ -369,7 +335,6 @@ Now answer the user's question (PLAIN TEXT, NO JSON):";
                 .Replace("Sure!", "")
                 .Trim();
 
-            // 3️⃣ Chỉ giữ phần JSON thật giữa { và }
             int firstBrace = text.IndexOf('{');
             int lastBrace = text.LastIndexOf('}');
             if (firstBrace >= 0 && lastBrace > firstBrace)
@@ -378,16 +343,12 @@ Now answer the user's question (PLAIN TEXT, NO JSON):";
             return text.Trim();
         }
 
-        // ========================================
-        // ✅ BATCH PROCESSING METHODS
-        // ========================================
         private async Task<AIGeneratedExamDTO> GenerateExamInBatchesAsync(
             int partNumber, 
             int totalQuantity, 
             string? topic,
             int batchSize)
         {
-            // ✅ 1. Khởi tạo đối tượng kết quả rỗng
             var combinedExam = new AIGeneratedExamDTO
             {
                 ExamExamTitle = $"AI Generated TOEIC Part {partNumber}",
@@ -399,7 +360,6 @@ Now answer the user's question (PLAIN TEXT, NO JSON):";
             int remaining = totalQuantity;
             int currentBatch = 1;
 
-            // ✅ 2. Vòng lặp tạo từng batch
             while (remaining > 0)
             {
                 int currentQuantity = Math.Min(batchSize, remaining);
@@ -408,44 +368,33 @@ Now answer the user's question (PLAIN TEXT, NO JSON):";
 
                 try
                 {
-                    // ✅ 3. Gọi OpenAI tạo 1 batch
                     var batchExam = await GenerateSingleBatchAsync(partNumber, currentQuantity, topic);
                     
-                    // ✅ 4. Ghép kết quả vào danh sách tổng
                     if (batchExam?.Prompts != null && batchExam.Prompts.Any())
                     {
                         combinedExam.Prompts.AddRange(batchExam.Prompts);
-                        Console.WriteLine($"✅ Batch {currentBatch} completed: {batchExam.Prompts.Count} items added (Total: {combinedExam.Prompts.Count}/{totalQuantity})");
                     }
                     else
                     {
-                        Console.WriteLine($"⚠️ Batch {currentBatch} returned empty result!");
                     }
                     
                     remaining -= currentQuantity;
                     currentBatch++;
                     
-                    // ✅ 5. Delay nhẹ tránh rate limit
                     if (remaining > 0)
                     {
-                        Console.WriteLine("⏳ Waiting 500ms before next batch...");
                         await Task.Delay(500);
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"❌ Batch {currentBatch} failed: {ex.Message}");
                     throw new InvalidOperationException($"Batch processing failed at batch {currentBatch}: {ex.Message}", ex);
                 }
             }
 
-            Console.WriteLine($"🎉 Batch processing completed: {combinedExam.Prompts.Count}/{totalQuantity} items generated");
             return combinedExam;
         }
 
-        // ========================================
-        // 3. THÊM HÀM TẠO 1 BATCH ĐƠN
-        // ========================================
         private async Task<AIGeneratedExamDTO> GenerateSingleBatchAsync(
             int partNumber, 
             int quantity, 
@@ -454,21 +403,18 @@ Now answer the user's question (PLAIN TEXT, NO JSON):";
             const int MAX_RETRIES = 3;
             int attempt = 0;
 
-            // ✅ SỬA ĐÂY
             var config = PromptFactory.GetPartConfiguration(partNumber); 
-            Console.WriteLine($"📋 Part {partNumber} config: {config.QuestionsPerPrompt} Q/Prompt, expecting {quantity} prompts");
+            Console.WriteLine($" Part {partNumber} config: {config.QuestionsPerPrompt} Q/Prompt, expecting {quantity} prompts");
 
             while (attempt < MAX_RETRIES)
             {
                 try
                 {
                     attempt++;
-                    Console.WriteLine($"🔄 Attempt {attempt}/{MAX_RETRIES} to generate {quantity} prompts...");
 
                     var genPrompt = PromptFactory.GetGenerationPrompt(partNumber, quantity, topic);
                     var textJson = await GenerateResponseAsync(genPrompt);
 
-                    Console.WriteLine($"✅ [OpenAI] Raw Response Preview: {textJson.Substring(0, Math.Min(300, textJson.Length))}...");
 
                     textJson = CleanAIResponse(textJson);
                     var examDto = JsonConvert.DeserializeObject<AIGeneratedExamDTO>(textJson);
@@ -478,13 +424,11 @@ Now answer the user's question (PLAIN TEXT, NO JSON):";
                         throw new InvalidOperationException("AI returned invalid exam structure");
                     }
 
-                    // ✅ VALIDATION CHUNG CHO TẤT CẢ PART
                     int receivedPrompts = examDto.Prompts.Count;
                     bool isValid = (receivedPrompts == quantity);
                     
                     Console.WriteLine($"📊 Part {partNumber}: Received {receivedPrompts}/{quantity} prompts");
 
-                    // ✅ KIỂM TRA THÊM SỐ LƯỢNG QUESTIONS (CHỈ ĐỂ LOG)
                     if (config.QuestionsPerPrompt > 1)
                     {
                         foreach (var prompt in examDto.Prompts)
@@ -492,45 +436,44 @@ Now answer the user's question (PLAIN TEXT, NO JSON):";
                             int questionsCount = prompt.Questions?.Count ?? 0;
                             if (questionsCount != config.QuestionsPerPrompt)
                             {
-                                Console.WriteLine($"⚠️ Warning: Prompt has {questionsCount} questions, expected {config.QuestionsPerPrompt}");
+                                Console.WriteLine($" Warning: Prompt has {questionsCount} questions, expected {config.QuestionsPerPrompt}");
                             }
                         }
                     }
 
-                    // ✅ XỬ LÝ KẾT QUẢ
                     if (!isValid)
                     {
-                        Console.WriteLine($"⚠️ Warning: Expected {quantity} prompts but got {receivedPrompts}");
+                        Console.WriteLine($" Warning: Expected {quantity} prompts but got {receivedPrompts}");
                         
                         // BỔ SUNG NẾI THIẾU ÍT
                         if (receivedPrompts >= quantity - 2 && receivedPrompts < quantity)
                         {
                             int missingCount = quantity - receivedPrompts;
-                            Console.WriteLine($"📌 Attempting to fill missing {missingCount} prompts...");
+                            Console.WriteLine($" Attempting to fill missing {missingCount} prompts...");
                             
                             var supplementExam = await GenerateSingleBatchAsync(partNumber, missingCount, topic);
                             
                             if (supplementExam?.Prompts != null)
                             {
                                 examDto.Prompts.AddRange(supplementExam.Prompts.Take(missingCount));
-                                Console.WriteLine($"✅ Added {missingCount} supplementary prompts");
+                                Console.WriteLine($" Added {missingCount} supplementary prompts");
                             }
                         }
                         // RETRY NẾI SAI QUỚN
                         else if (attempt < MAX_RETRIES)
                         {
-                            Console.WriteLine($"❌ Discrepancy too large. Retrying...");
+                            Console.WriteLine($" Discrepancy too large. Retrying...");
                             await Task.Delay(1000);
                             continue;
                         }
                         else
                         {
-                            Console.WriteLine($"⚠️ Max retries reached. Returning {receivedPrompts} prompts instead of {quantity}");
+                            Console.WriteLine($" Max retries reached. Returning {receivedPrompts} prompts instead of {quantity}");
                         }
                     }
                     else
                     {
-                        Console.WriteLine($"✅ Perfect! Received exactly {quantity} prompts");
+                        Console.WriteLine($" Perfect! Received exactly {quantity} prompts");
                     }
 
                     // Generate image URLs
@@ -546,7 +489,7 @@ Now answer the user's question (PLAIN TEXT, NO JSON):";
                 }
                 catch (JsonSerializationException ex)
                 {
-                    Console.WriteLine($"❌ JSON Parse Error (Attempt {attempt}): {ex.Message}");
+                    Console.WriteLine($" JSON Parse Error (Attempt {attempt}): {ex.Message}");
                     
                     if (attempt >= MAX_RETRIES)
                     {
@@ -557,7 +500,7 @@ Now answer the user's question (PLAIN TEXT, NO JSON):";
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"❌ GenerateSingleBatchAsync Error (Attempt {attempt}): {ex.Message}");
+                    Console.WriteLine($" GenerateSingleBatchAsync Error (Attempt {attempt}): {ex.Message}");
                     
                     if (attempt >= MAX_RETRIES)
                     {
@@ -582,9 +525,6 @@ Now answer the user's question (PLAIN TEXT, NO JSON):";
             return imageUrl;
         }
 
-        // ========================================
-        // 4. THÊM HELPER: XÁC ĐỊNH SKILL TỪ PART NUMBER
-        // ========================================
         private static string GetSkillFromPart(int partNumber)
         {
             return partNumber switch

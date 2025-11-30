@@ -32,6 +32,11 @@ namespace ServiceLayer.UserNoteAI
 
         public async Task<ChatResponseDTO> AskQuestionAsync(ChatRequestDTO request)
         {
+            if (request == null)
+            {
+                throw new ArgumentNullException(nameof(request));
+            }
+
             try
             {
                 if (string.IsNullOrWhiteSpace(request.UserQuestion))
@@ -89,6 +94,11 @@ namespace ServiceLayer.UserNoteAI
 
         public async Task<ChatConversationResponseDTO> ContinueConversationAsync(ChatRequestDTO request)
         {
+            if (request == null)
+            {
+                throw new ArgumentNullException(nameof(request));
+            }
+
             try
             {
                 // Build conversation context
@@ -147,6 +157,16 @@ namespace ServiceLayer.UserNoteAI
 
         public async Task<ChatResponseDTO> GenerateSuggestedQuestionsAsync(string lessonContent, string? lessonTitle = null)
         {
+            if (lessonContent == null)
+            {
+                throw new ArgumentNullException(nameof(lessonContent));
+            }
+
+            if (string.IsNullOrWhiteSpace(lessonContent))
+            {
+                throw new ArgumentException("Lesson content cannot be null or empty", nameof(lessonContent));
+            }
+
             try
             {
                 var prompt = CreateSuggestedQuestionsPrompt(lessonContent, lessonTitle);
@@ -184,6 +204,26 @@ namespace ServiceLayer.UserNoteAI
 
         public async Task<ChatResponseDTO> ExplainConceptAsync(string concept, string lessonContext)
         {
+            if (concept == null)
+            {
+                throw new ArgumentNullException(nameof(concept));
+            }
+
+            if (string.IsNullOrWhiteSpace(concept))
+            {
+                throw new ArgumentException("Concept cannot be null or empty", nameof(concept));
+            }
+
+            if (lessonContext == null)
+            {
+                throw new ArgumentNullException(nameof(lessonContext));
+            }
+
+            if (string.IsNullOrWhiteSpace(lessonContext))
+            {
+                throw new ArgumentException("Lesson context cannot be null or empty", nameof(lessonContext));
+            }
+
             try
             {
                 var prompt = CreateConceptExplanationPrompt(concept, lessonContext);

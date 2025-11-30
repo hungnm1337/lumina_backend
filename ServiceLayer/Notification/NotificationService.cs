@@ -30,12 +30,9 @@ namespace ServiceLayer.Notification
             _context = context;
         }
 
-        /// <summary>
-        /// Lấy UserID của system user (admin hoặc user đầu tiên) để dùng cho CreatedBy
-        /// </summary>
+        
         private async Task<int> GetSystemUserIdAsync()
         {
-            // Ưu tiên tìm admin user (RoleId = 1 thường là Admin)
             var adminUser = await _context.Users
                 .Where(u => u.IsActive == true && u.RoleId == 1)
                 .OrderBy(u => u.UserId)
@@ -46,7 +43,6 @@ namespace ServiceLayer.Notification
                 return adminUser.UserId;
             }
 
-            // Nếu không có admin, lấy user đầu tiên
             var firstUser = await _context.Users
                 .Where(u => u.IsActive == true)
                 .OrderBy(u => u.UserId)
@@ -57,8 +53,7 @@ namespace ServiceLayer.Notification
                 return firstUser.UserId;
             }
 
-            // Fallback: dùng 1 (thường là admin user đầu tiên)
-            Console.WriteLine($"⚠️ [NotificationService] No active users found, using fallback UserID = 1");
+            Console.WriteLine($" [NotificationService] No active users found, using fallback UserID = 1");
             return 1;
         }
 
@@ -123,7 +118,6 @@ namespace ServiceLayer.Notification
                 await _userNotificationRepo.CreateAsync(userNotification);
             }
 
-            // ✅ Broadcast realtime notification đến các users cụ thể qua SignalR
             try
             {
                 var notificationData = new
@@ -139,7 +133,7 @@ namespace ServiceLayer.Notification
                     (dto.RoleIds == null || dto.RoleIds.Count == 0))
                 {
                     await _hubContext.Clients.Group("AllUsers").SendAsync("ReceiveNotification", notificationData);
-                    Console.WriteLine($"✅ Broadcasted notification {notificationId} to all users");
+                    Console.WriteLine($" Broadcasted notification {notificationId} to all users");
                 }
                 else
                 {
@@ -152,12 +146,12 @@ namespace ServiceLayer.Notification
                             await _hubContext.Clients.Client(connectionId).SendAsync("ReceiveNotification", notificationData);
                         }
                     }
-                    Console.WriteLine($"✅ Broadcasted notification {notificationId} to {userIds.Count} specific users");
+                    Console.WriteLine($" Broadcasted notification {notificationId} to {userIds.Count} specific users");
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"⚠️ Failed to broadcast notification: {ex.Message}");
+                Console.WriteLine($" Failed to broadcast notification: {ex.Message}");
             }
 
             return notificationId;
@@ -197,7 +191,7 @@ namespace ServiceLayer.Notification
             int notificationId = 0;
             try
             {
-                Console.WriteLine($"📢 [NotificationService] Starting SendPointsNotificationAsync for user {userId}");
+                Console.WriteLine($" [NotificationService] Starting SendPointsNotificationAsync for user {userId}");
                 Console.WriteLine($"   - PointsEarned: {pointsEarned}");
                 Console.WriteLine($"   - TotalAccumulatedScore: {totalAccumulatedScore}");
                 Console.WriteLine($"   - CorrectAnswers: {correctAnswers}/{totalQuestions}");
@@ -206,7 +200,6 @@ namespace ServiceLayer.Notification
                 double accuracyRate = totalQuestions > 0 ? (double)correctAnswers / totalQuestions : 0;
                 int accuracyPercent = (int)(accuracyRate * 100);
                 
-                // Tạo thông điệp động viên/khen chê dựa trên kết quả
                 string encouragementMessage = GetEncouragementMessage(accuracyRate, timeBonus, accuracyBonus, pointsEarned);
                 
                 string title = "🎯 Điểm tích lũy mới!";
@@ -254,7 +247,7 @@ namespace ServiceLayer.Notification
                 };
 
                 notificationId = await _notificationRepo.CreateAsync(notification);
-                Console.WriteLine($"✅ [NotificationService] Points Notification {notificationId} created in database. Title: {title}");
+                Console.WriteLine($" [NotificationService] Points Notification {notificationId} created in database. Title: {title}");
 
                 // Gửi cho user cụ thể
                 var userNotification = new UserNotification
@@ -265,7 +258,7 @@ namespace ServiceLayer.Notification
                     CreateAt = DateTime.UtcNow
                 };
                 var userNotificationId = await _userNotificationRepo.CreateAsync(userNotification);
-                Console.WriteLine($"✅ [NotificationService] Points UserNotification {userNotificationId} created for user {userId}. NotificationId: {notificationId}");
+                Console.WriteLine($" [NotificationService] Points UserNotification {userNotificationId} created for user {userId}. NotificationId: {notificationId}");
 
                 // Broadcast realtime
                 try
@@ -280,25 +273,25 @@ namespace ServiceLayer.Notification
                             content = content,
                             createdAt = notification.CreatedAt
                         });
-                        Console.WriteLine($"✅ [NotificationService] Broadcasted points notification {notificationId} to user {userId} via SignalR (ConnectionId: {connectionId})");
+                        Console.WriteLine($" [NotificationService] Broadcasted points notification {notificationId} to user {userId} via SignalR (ConnectionId: {connectionId})");
                     }
                     else
                     {
-                        Console.WriteLine($"⚠️ [NotificationService] User {userId} is not connected to SignalR. Notification {notificationId} saved to database and will be shown on next page load.");
+                        Console.WriteLine($" [NotificationService] User {userId} is not connected to SignalR. Notification {notificationId} saved to database and will be shown on next page load.");
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"⚠️ [NotificationService] Failed to broadcast points notification: {ex.Message}");
+                    Console.WriteLine($" [NotificationService] Failed to broadcast points notification: {ex.Message}");
                     Console.WriteLine($"   StackTrace: {ex.StackTrace}");
                 }
                 
-                Console.WriteLine($"✅ [NotificationService] Points notification {notificationId} completed for user {userId}");
+                Console.WriteLine($" [NotificationService] Points notification {notificationId} completed for user {userId}");
                 return notificationId;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ [NotificationService] CRITICAL ERROR in SendPointsNotificationAsync for user {userId}:");
+                Console.WriteLine($" [NotificationService] CRITICAL ERROR in SendPointsNotificationAsync for user {userId}:");
                 Console.WriteLine($"   Message: {ex.Message}");
                 Console.WriteLine($"   StackTrace: {ex.StackTrace}");
                 if (ex.InnerException != null)
@@ -316,7 +309,7 @@ namespace ServiceLayer.Notification
             int notificationId = 0;
             try
             {
-                Console.WriteLine($"📢 [NotificationService] Starting SendTOEICNotificationAsync for user {userId}");
+                Console.WriteLine($" [NotificationService] Starting SendTOEICNotificationAsync for user {userId}");
                 Console.WriteLine($"   - EstimatedTOEIC: {estimatedTOEIC}");
                 Console.WriteLine($"   - TOEICLevel: {toeicLevel}");
                 
@@ -325,7 +318,7 @@ namespace ServiceLayer.Notification
 
                 // Lấy system user ID để dùng cho CreatedBy
                 var systemUserId = await GetSystemUserIdAsync();
-                Console.WriteLine($"📢 [NotificationService] Using system UserID: {systemUserId} for CreatedBy (TOEIC)");
+                Console.WriteLine($" [NotificationService] Using system UserID: {systemUserId} for CreatedBy (TOEIC)");
 
                 var notification = new DataLayer.Models.Notification
                 {
@@ -338,7 +331,7 @@ namespace ServiceLayer.Notification
                 };
 
                 notificationId = await _notificationRepo.CreateAsync(notification);
-                Console.WriteLine($"✅ [NotificationService] TOEIC Notification {notificationId} created in database. Title: {title}");
+                Console.WriteLine($" [NotificationService] TOEIC Notification {notificationId} created in database. Title: {title}");
 
                 // Gửi cho user cụ thể
                 var userNotification = new UserNotification
@@ -349,7 +342,7 @@ namespace ServiceLayer.Notification
                     CreateAt = DateTime.UtcNow
                 };
                 var userNotificationId = await _userNotificationRepo.CreateAsync(userNotification);
-                Console.WriteLine($"✅ [NotificationService] TOEIC UserNotification {userNotificationId} created for user {userId}. NotificationId: {notificationId}");
+                Console.WriteLine($" [NotificationService] TOEIC UserNotification {userNotificationId} created for user {userId}. NotificationId: {notificationId}");
 
                 // Broadcast realtime
                 try
@@ -364,25 +357,25 @@ namespace ServiceLayer.Notification
                             content = content,
                             createdAt = notification.CreatedAt
                         });
-                        Console.WriteLine($"✅ [NotificationService] Broadcasted TOEIC notification {notificationId} to user {userId} via SignalR (ConnectionId: {connectionId})");
+                        Console.WriteLine($" [NotificationService] Broadcasted TOEIC notification {notificationId} to user {userId} via SignalR (ConnectionId: {connectionId})");
                     }
                     else
                     {
-                        Console.WriteLine($"⚠️ [NotificationService] User {userId} is not connected to SignalR. Notification {notificationId} saved to database and will be shown on next page load.");
+                        Console.WriteLine($" [NotificationService] User {userId} is not connected to SignalR. Notification {notificationId} saved to database and will be shown on next page load.");
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"⚠️ [NotificationService] Failed to broadcast TOEIC notification: {ex.Message}");
+                    Console.WriteLine($" [NotificationService] Failed to broadcast TOEIC notification: {ex.Message}");
                     Console.WriteLine($"   StackTrace: {ex.StackTrace}");
                 }
                 
-                Console.WriteLine($"✅ [NotificationService] TOEIC notification {notificationId} completed for user {userId}");
+                Console.WriteLine($" [NotificationService] TOEIC notification {notificationId} completed for user {userId}");
                 return notificationId;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ [NotificationService] CRITICAL ERROR in SendTOEICNotificationAsync for user {userId}:");
+                Console.WriteLine($" [NotificationService] CRITICAL ERROR in SendTOEICNotificationAsync for user {userId}:");
                 Console.WriteLine($"   Message: {ex.Message}");
                 Console.WriteLine($"   StackTrace: {ex.StackTrace}");
                 if (ex.InnerException != null)
@@ -396,7 +389,6 @@ namespace ServiceLayer.Notification
             return notificationId;
         }
 
-        // Tạo thông điệp động viên/khen chê dựa trên kết quả
         private string GetEncouragementMessage(double accuracyRate, int timeBonus, int accuracyBonus, int totalPoints)
         {
             int accuracyPercent = (int)(accuracyRate * 100);
@@ -404,43 +396,43 @@ namespace ServiceLayer.Notification
             // Khen ngợi khi đạt độ chính xác cao
             if (accuracyRate >= 0.95)
             {
-                return "🌟 Xuất sắc! Bạn đã làm rất tốt! Hãy tiếp tục phát huy!";
+                return " Xuất sắc! Bạn đã làm rất tốt! Hãy tiếp tục phát huy!";
             }
             else if (accuracyRate >= 0.90)
             {
-                return "⭐ Tuyệt vời! Kết quả rất ấn tượng! Cố gắng duy trì nhé!";
+                return " Tuyệt vời! Kết quả rất ấn tượng! Cố gắng duy trì nhé!";
             }
             else if (accuracyRate >= 0.80)
             {
                 if (timeBonus > 0 && accuracyBonus > 0)
                 {
-                    return "💪 Tốt lắm! Bạn vừa nhanh vừa chính xác! Tiếp tục như vậy nhé!";
+                    return " Tốt lắm! Bạn vừa nhanh vừa chính xác! Tiếp tục như vậy nhé!";
                 }
                 else if (timeBonus > 0)
                 {
-                    return "⚡ Tốt! Bạn làm bài rất nhanh! Hãy cố gắng tăng độ chính xác lên nhé!";
+                    return " Tốt! Bạn làm bài rất nhanh! Hãy cố gắng tăng độ chính xác lên nhé!";
                 }
                 else if (accuracyBonus > 0)
                 {
-                    return "🎯 Tốt! Độ chính xác của bạn rất cao! Hãy cố gắng làm nhanh hơn một chút!";
+                    return " Tốt! Độ chính xác của bạn rất cao! Hãy cố gắng làm nhanh hơn một chút!";
                 }
-                return "👍 Tốt! Bạn đã làm khá tốt! Hãy tiếp tục luyện tập để cải thiện hơn nữa!";
+                return " Tốt! Bạn đã làm khá tốt! Hãy tiếp tục luyện tập để cải thiện hơn nữa!";
             }
             else if (accuracyRate >= 0.70)
             {
-                return "📚 Không tệ! Bạn đang tiến bộ. Hãy ôn lại những câu sai và cố gắng lần sau nhé!";
+                return " Không tệ! Bạn đang tiến bộ. Hãy ôn lại những câu sai và cố gắng lần sau nhé!";
             }
             else if (accuracyRate >= 0.60)
             {
-                return "💡 Cần cố gắng thêm! Hãy xem lại bài học và luyện tập nhiều hơn. Bạn sẽ làm tốt hơn!";
+                return " Cần cố gắng thêm! Hãy xem lại bài học và luyện tập nhiều hơn. Bạn sẽ làm tốt hơn!";
             }
             else if (accuracyRate >= 0.50)
             {
-                return "📖 Đừng nản lòng! Mỗi lần làm bài là một cơ hội học hỏi. Hãy xem lại và cố gắng lần sau!";
+                return " Đừng nản lòng! Mỗi lần làm bài là một cơ hội học hỏi. Hãy xem lại và cố gắng lần sau!";
             }
             else
             {
-                return "🌱 Mọi hành trình đều bắt đầu từ bước đầu tiên! Hãy kiên trì luyện tập, bạn sẽ tiến bộ!";
+                return " Mọi hành trình đều bắt đầu từ bước đầu tiên! Hãy kiên trì luyện tập, bạn sẽ tiến bộ!";
             }
         }
     }

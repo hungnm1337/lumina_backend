@@ -52,31 +52,23 @@ namespace ServiceLayer.Exam.Speaking
 
                 if (!string.IsNullOrWhiteSpace(result.Transcript) && result.Transcript != ".")
                 {
-                    return result; // ✅ Thành công
+                    return result; 
                 }
 
                 if (attempt < maxRetries - 1)
                 {
                     Console.WriteLine($"[Speaking] Azure retry {attempt + 1}/{maxRetries}, waiting {delayMs}ms");
                     await Task.Delay(delayMs);
-                    delayMs *= 2; // Exponential backoff
+                    delayMs *= 2;
                 }
             }
 
-            Console.WriteLine($"[Speaking] ❌ Azure failed after {maxRetries} retries. URL: {audioUrl}");
             return result; 
         }
         public async Task<SpeakingScoringResultDTO> ProcessAndScoreAnswerAsync(IFormFile audioFile, int questionId, int attemptId)
         {
-            // ✅ DEBUG: Enhanced logging
-            Console.WriteLine($"[Speaking] ========== BEGIN ProcessAndScoreAnswerAsync ==========");
-            Console.WriteLine($"[Speaking] QuestionId: {questionId}, AttemptId: {attemptId}");
-            Console.WriteLine($"[Speaking] Audio file size: {audioFile.Length} bytes");
-            Console.WriteLine($"[Speaking] Audio content type: {audioFile.ContentType}");
-            Console.WriteLine($"[Speaking] Audio file name: {audioFile.FileName}");
 
             var uploadResult = await _uploadService.UploadFileAsync(audioFile);
-            // Include Part để lấy PartCode
             var question = await _unitOfWork.Questions.GetAsync(
                 q => q.QuestionId == questionId,
                 includeProperties: "Part"
@@ -87,7 +79,6 @@ namespace ServiceLayer.Exam.Speaking
             }
             
             string partCode = question.Part?.PartCode ?? "";
-            Console.WriteLine($"[Speaking] QuestionId={questionId}, PartCode={partCode}, QuestionType={question.QuestionType}");
 
             var cloudName = _configuration["CloudinarySettings:CloudName"];
             var publicId = uploadResult.PublicId; 
@@ -102,14 +93,10 @@ namespace ServiceLayer.Exam.Speaking
 
             var azureResult = await RetryAzureRecognitionAsync(transformedMp3Url, question.SampleAnswer, maxRetries: 3);
 
-            // ✅ FIX: Early return with zero scores when no speech detected
             bool isTranscriptEmpty = string.IsNullOrWhiteSpace(azureResult.Transcript) || azureResult.Transcript.Trim() == ".";
             
             if (isTranscriptEmpty)
             {
-                Console.WriteLine("[Speaking] ❌ No speech detected - returning zero scores");
-                
-                // Save to database with zero scores
                 var zeroAnswer = new UserAnswerSpeaking
                 {
                     AttemptID = attemptId,
@@ -129,7 +116,6 @@ namespace ServiceLayer.Exam.Speaking
                 await _unitOfWork.UserAnswersSpeaking.AddAsync(zeroAnswer);
                 await _unitOfWork.CompleteAsync();
 
-                Console.WriteLine($"[Speaking] Saved zero-score answer to database: QuestionId={questionId}, AttemptId={attemptId}");
 
                 return new SpeakingScoringResultDTO
                 {
@@ -153,7 +139,6 @@ namespace ServiceLayer.Exam.Speaking
 
             var nlpResult = await GetNlpScoresAsync(azureResult.Transcript, question.SampleAnswer);
 
-            // ✅ FIX Bug #2: Use ScoringWeightService for consistent scoring
             var weights = _scoringWeightService.GetWeightsForPart(partCode);
             var overallScore = _scoringWeightService.CalculateOverallScore(
                 weights,
@@ -167,7 +152,6 @@ namespace ServiceLayer.Exam.Speaking
 
             Console.WriteLine($"[Speaking] OverallScore calculated: {overallScore:F1} for PartCode={partCode}");
 
-            // Save speaking answer to database
             var userAnswerSpeaking = new UserAnswerSpeaking
             {
                 AttemptID = attemptId,
@@ -181,7 +165,7 @@ namespace ServiceLayer.Exam.Speaking
                 GrammarScore = (decimal?)nlpResult.Grammar_score,
                 VocabularyScore = (decimal?)nlpResult.Vocabulary_score,
                 ContentScore = (decimal?)nlpResult.Content_score,
-                OverallScore = (decimal?)overallScore  // ✅ Store overall score in DB
+                OverallScore = (decimal?)overallScore  
             };
 
             await _unitOfWork.UserAnswersSpeaking.AddAsync(userAnswerSpeaking);
@@ -189,7 +173,6 @@ namespace ServiceLayer.Exam.Speaking
 
             Console.WriteLine($"[Speaking] Saved answer to database: UserAnswerSpeakingId={userAnswerSpeaking.UserAnswerSpeakingId}, QuestionId={questionId}, AttemptId={attemptId}");
 
-            // Trả về DTO đầy đủ cho frontend
             return new SpeakingScoringResultDTO
             {
                 Transcript = azureResult.Transcript == "." ? "[Không nhận diện được giọng nói]" : azureResult.Transcript,
@@ -227,14 +210,10 @@ namespace ServiceLayer.Exam.Speaking
             catch { }
         }
         
-        /// <summary>
-        /// DEPRECATED: This method is replaced by ScoringWeightService.CalculateOverallScore()
-        /// Kept for backwards compatibility during migration.
-        /// </summary>
+        
         [Obsolete("Use ScoringWeightService.CalculateOverallScore() instead", false)]
         private float CalculateOverallScore(string partCode, string questionType, SpeechAnalysisDTO azureResult, NlpResponseDTO nlpResult)
         {
-            // ✅ FIX Bug #2: Delegate to ScoringWeightService for consistency
             Console.WriteLine($"[DEPRECATED] CalculateOverallScore called - using ScoringWeightService instead");
 
             var weights = _scoringWeightService.GetWeightsForPart(partCode);
@@ -249,10 +228,7 @@ namespace ServiceLayer.Exam.Speaking
             );
         }
 
-        /// <summary>
-        /// ✅ FIX Bug #4: Get NLP scores with fallback mechanism
-        /// If NLP service is unavailable/timeout, return fallback scores instead of crashing
-        /// </summary>
+       
         private async Task<NlpResponseDTO> GetNlpScoresAsync(string transcript, string sampleAnswer)
         {
             try
@@ -263,7 +239,6 @@ namespace ServiceLayer.Exam.Speaking
 
                 if (string.IsNullOrEmpty(nlpServiceUrl))
                 {
-                    Console.WriteLine("[NLP] ⚠️ NLP Service URL is not configured, using fallback scores");
                     return GetFallbackNlpScores(transcript, sampleAnswer);
                 }
 
@@ -273,51 +248,33 @@ namespace ServiceLayer.Exam.Speaking
                     Sample_answer = sampleAnswer
                 };
 
-                Console.WriteLine($"[NLP] Calling NLP service at: {nlpServiceUrl}/score_nlp");
                 var response = await client.PostAsJsonAsync($"{nlpServiceUrl}/score_nlp", request);
 
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine($"[NLP] ⚠️ Service returned {response.StatusCode}: {errorContent}");
-                    Console.WriteLine($"[NLP] Using fallback scores");
                     return GetFallbackNlpScores(transcript, sampleAnswer);
                 }
 
                 var result = await response.Content.ReadFromJsonAsync<NlpResponseDTO>();
-                Console.WriteLine($"[NLP] ✅ Success: Grammar={result.Grammar_score:F1}, Vocab={result.Vocabulary_score:F1}, Content={result.Content_score:F1}");
                 return result;
             }
             catch (TaskCanceledException ex)
             {
-                // Timeout occurred
-                Console.WriteLine($"[NLP] ⏱️ Timeout after 30 seconds: {ex.Message}");
-                Console.WriteLine($"[NLP] Using fallback scores");
                 return GetFallbackNlpScores(transcript, sampleAnswer);
             }
             catch (HttpRequestException ex)
             {
-                // Network error (NLP service down, connection refused, etc.)
-                Console.WriteLine($"[NLP] 🔌 Network error: {ex.Message}");
-                Console.WriteLine($"[NLP] Using fallback scores");
                 return GetFallbackNlpScores(transcript, sampleAnswer);
             }
             catch (Exception ex)
             {
-                // Any other error
-                Console.WriteLine($"[NLP] ❌ Unexpected error: {ex.Message}");
-                Console.WriteLine($"[NLP] Using fallback scores");
                 return GetFallbackNlpScores(transcript, sampleAnswer);
             }
         }
 
-        /// <summary>
-        /// Fallback NLP scores when service is unavailable.
-        /// Uses heuristic-based scoring based on transcript characteristics.
-        /// </summary>
         private NlpResponseDTO GetFallbackNlpScores(string transcript, string sampleAnswer)
         {
-            // ✅ FIX: Return 0 for empty transcript
             if (string.IsNullOrWhiteSpace(transcript) || transcript.Trim() == ".")
             {
                 Console.WriteLine("[NLP] Fallback: Empty transcript - returning zero scores");
@@ -329,20 +286,16 @@ namespace ServiceLayer.Exam.Speaking
                 };
             }
 
-            // Basic heuristic scoring based on transcript characteristics
             float grammarScore = 50f;
             float vocabularyScore = 50f;
             float contentScore = 50f;
 
-            // Transcript length heuristic (longer = better content coverage)
             int transcriptLength = transcript.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
             int sampleLength = string.IsNullOrWhiteSpace(sampleAnswer) ? 20 : sampleAnswer.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
 
-            // Content score: based on length ratio (capped at 100)
             float lengthRatio = (float)transcriptLength / Math.Max(sampleLength, 1);
-            contentScore = Math.Min(lengthRatio * 60f, 75f); // Max 75 for fallback
+            contentScore = Math.Min(lengthRatio * 60f, 75f); 
 
-            // Grammar score: assume reasonable if they spoke enough words
             if (transcriptLength >= 5)
             {
                 grammarScore = 60f;
@@ -356,7 +309,6 @@ namespace ServiceLayer.Exam.Speaking
                 grammarScore = 40f;
             }
 
-            // Vocabulary score: similar to grammar
             vocabularyScore = grammarScore;
 
             Console.WriteLine($"[NLP] Fallback scores: Grammar={grammarScore:F1}, Vocab={vocabularyScore:F1}, Content={contentScore:F1}");

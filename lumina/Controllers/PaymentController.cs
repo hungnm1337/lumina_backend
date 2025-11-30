@@ -28,9 +28,6 @@ namespace lumina.Controllers
             _logger = logger;
         }
 
-        /// <summary>
-        /// Create payment link for package subscription
-        /// </summary>
         [HttpPost("create-link")]
         [Authorize]
         public async Task<IActionResult> CreatePaymentLink([FromBody] CreatePaymentRequest request)
@@ -43,14 +40,12 @@ namespace lumina.Controllers
                     return Unauthorized(new { message = "User not authenticated" });
                 }
 
-                // Validate package exists
                 var package = await _context.Packages.FindAsync(request.PackageId);
                 if (package == null)
                 {
                     return NotFound(new { message = "Package not found" });
                 }
 
-                // Validate amount matches package price
                 if (package.Price.HasValue && request.Amount != package.Price.Value)
                 {
                     return BadRequest(new { message = "Amount does not match package price" });
@@ -72,9 +67,6 @@ namespace lumina.Controllers
             }
         }
 
-        /// <summary>
-        /// PayOS webhook handler for payment notifications
-        /// </summary>
         [HttpPost("webhook")]
         [AllowAnonymous]
         public async Task<IActionResult> HandleWebhook([FromBody] System.Text.Json.JsonElement body)
@@ -160,9 +152,6 @@ namespace lumina.Controllers
         }
         
 
-        /// <summary>
-        /// Get user's subscription status
-        /// </summary>
         [HttpGet("subscription-status")]
         [Authorize]
         public async Task<IActionResult> GetSubscriptionStatus()

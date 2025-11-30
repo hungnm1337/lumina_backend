@@ -7,9 +7,7 @@ using System.Threading.Tasks;
 
 namespace DataLayer.DTOs.UserAnswer
 {
-    /// <summary>
-    /// Request DTO for submitting a speaking answer
-    /// </summary>
+    
     public class SpeakingAnswerRequestDTO
     {
         public int ExamAttemptId { get; set; }
@@ -21,9 +19,7 @@ namespace DataLayer.DTOs.UserAnswer
         public string Transcript { get; set; }
     }
 
-    /// <summary>
-    /// Response DTO for speaking answer with detailed scores
-    /// </summary>
+    
     public class SpeakingAnswerResponseDTO
     {
         public int UserAnswerSpeakingId { get; set; }

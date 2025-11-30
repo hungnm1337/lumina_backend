@@ -1,4 +1,4 @@
-﻿
+
 using DataLayer.DTOs.Exam.Writting;
 using DataLayer.DTOs.UserAnswer;
 using Microsoft.Extensions.Configuration;
@@ -7,8 +7,6 @@ using RepositoryLayer.Exam.Writting;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using GenerativeAI.Core;
-using GenerativeAI;
 
 
 namespace ServiceLayer.Exam.Writting
@@ -17,17 +15,31 @@ namespace ServiceLayer.Exam.Writting
     {
         private readonly IConfiguration _configuration;
         private readonly IWrittingRepository _writtingRepository;
+        private readonly IGenerativeAIService _generativeAIService;
         private readonly string _apiKey;
 
-        public WritingService(IConfiguration configuration, IWrittingRepository writtingRepository)
+        public WritingService(IConfiguration configuration, IWrittingRepository writtingRepository, IGenerativeAIService generativeAIService)
         {
             _configuration = configuration;
             _writtingRepository = writtingRepository;
+            _generativeAIService = generativeAIService;
             _apiKey = _configuration["Gemini:ApiKey"] ?? throw new InvalidOperationException("Gemini API key is not configured.");
         }
 
         public async Task<bool> SaveWritingAnswer(WritingAnswerRequestDTO writingAnswerRequestDTO)
         {
+            if (writingAnswerRequestDTO == null)
+                throw new ArgumentNullException(nameof(writingAnswerRequestDTO), "Request cannot be null.");
+
+            if (writingAnswerRequestDTO.AttemptID <= 0)
+                throw new ArgumentException("Attempt ID must be greater than zero.", nameof(writingAnswerRequestDTO.AttemptID));
+
+            if (writingAnswerRequestDTO.QuestionId <= 0)
+                throw new ArgumentException("Question ID must be greater than zero.", nameof(writingAnswerRequestDTO.QuestionId));
+
+            if (string.IsNullOrWhiteSpace(writingAnswerRequestDTO.UserAnswerContent))
+                throw new ArgumentException("User Answer Content cannot be empty.", nameof(writingAnswerRequestDTO.UserAnswerContent));
+
             try
             {
                 return await _writtingRepository.SaveWritingAnswer(writingAnswerRequestDTO);
@@ -43,13 +55,8 @@ namespace ServiceLayer.Exam.Writting
             try
             {
                 var prompt = CreatePromptP1(request);
-                var modelName = "gemini-2.5-flash";
 
-                var generativeModel = new GenerativeModel(_apiKey, new ModelParams { Model = modelName });
-
-                var response = await generativeModel.GenerateContentAsync(prompt);
-
-                var responseText = response.Text;
+                var responseText = await _generativeAIService.GenerateContentAsync(prompt);
 
                 if (string.IsNullOrEmpty(responseText))
                 {
@@ -80,13 +87,8 @@ namespace ServiceLayer.Exam.Writting
             try
             {
                 var prompt = CreatePromptP23(request);
-                var modelName = "gemini-2.5-flash";
 
-                var generativeModel = new GenerativeModel(_apiKey, new ModelParams { Model = modelName });
-
-                var response = await generativeModel.GenerateContentAsync(prompt);
-
-                var responseText = response.Text;
+                var responseText = await _generativeAIService.GenerateContentAsync(prompt);
 
                 if (string.IsNullOrEmpty(responseText))
                 {

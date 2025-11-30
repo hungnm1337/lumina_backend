@@ -309,15 +309,12 @@ namespace RepositoryLayer.Leaderboard
                 var totalQuestions = answers.Count;
                 var accuracyRate = totalQuestions > 0 ? (decimal)correctCount / totalQuestions : 0;
                 
-                // Lấy độ khó trung bình (giả sử có field DifficultyLevel trong Question)
-                var avgDifficulty = 1.0m; // Default Medium
+                var avgDifficulty = 1.0m; 
 
-                // Tính thời gian làm bài
                 var timeSpent = attempt.EndTime.HasValue 
                     ? (attempt.EndTime.Value - attempt.StartTime).TotalMinutes 
                     : 0;
 
-                // Tính điểm theo công thức TOEIC
                 var estimatedToeic = await CalculateEstimatedTOEICScore(attempt.UserID, leaderboardId);
                 var scoreConfig = GetScoreConfigByTOEIC(estimatedToeic);
                 
@@ -334,7 +331,6 @@ namespace RepositoryLayer.Leaderboard
                 userScores[attempt.UserID] += totalScore;
             }
 
-            // Lưu vào UserLeaderboards
             foreach (var kvp in userScores)
             {
                 _context.UserLeaderboards.Add(new UserLeaderboard
@@ -355,11 +351,8 @@ namespace RepositoryLayer.Leaderboard
 
             if (archiveScores)
             {
-                // TODO: Implement archiving logic (lưu vào bảng LeaderboardArchive)
-                // Có thể tạo bảng mới để lưu lịch sử điểm của các season đã kết thúc
             }
 
-            // Reset điểm về 0
             var userLeaderboards = await _context.UserLeaderboards
                 .Where(ul => ul.LeaderboardId == leaderboardId)
                 .ToListAsync();
@@ -395,7 +388,6 @@ namespace RepositoryLayer.Leaderboard
             var rank = await GetUserRankInSeasonAsync(userId, leaderboardId);
             var estimatedToeic = await CalculateEstimatedTOEICScore(userId, leaderboardId);
             
-            // Tính stats từ attempts
             var attempts = await _context.ExamAttempts
                 .Where(ea => ea.UserID == userId 
                     && ea.Status == "Completed"
