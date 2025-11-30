@@ -76,8 +76,12 @@ namespace Lumina.Tests.ServiceTests
             await context.DisposeAsync();
         }
 
-        [Fact]
-        public async Task CreatePromptWithQuestionsAsync_ValidInput_ReturnsPromptId()
+        #region CreatePromptWithQuestionsAsync Tests
+
+        [Theory]
+        [InlineData(true)]  // With options
+        [InlineData(false)] // Without options
+        public async Task CreatePromptWithQuestionsAsync_ValidInput_ReturnsPromptId(bool includeOptions)
         {
             var (service, context, repoMock) = CreateService();
             try
@@ -85,7 +89,7 @@ namespace Lumina.Tests.ServiceTests
                 context.ExamParts.Add(new ExamPart { PartId = 1, PartCode = "P1", MaxQuestions = 10, Title = "Part 1" });
                 await context.SaveChangesAsync();
 
-                var dto = CreatePromptDto(1, 2);
+                var dto = CreatePromptDto(1, 2, includeOptions);
                 repoMock
                     .Setup(r => r.AddPromptAsync(It.IsAny<Prompt>()))
                     .ReturnsAsync((Prompt p) =>
@@ -103,16 +107,24 @@ namespace Lumina.Tests.ServiceTests
                         return q;
                     });
 
-                repoMock
-                    .Setup(r => r.AddOptionsAsync(It.IsAny<IEnumerable<Option>>()))
-                    .Returns(Task.CompletedTask);
+                if (includeOptions)
+                {
+                    repoMock
+                        .Setup(r => r.AddOptionsAsync(It.IsAny<IEnumerable<Option>>()))
+                        .Returns(Task.CompletedTask);
+                }
 
                 var result = await service.CreatePromptWithQuestionsAsync(dto);
 
                 Assert.Equal(99, result);
                 repoMock.Verify(r => r.AddPromptAsync(It.IsAny<Prompt>()), Times.Once);
                 repoMock.Verify(r => r.AddQuestionAsync(It.IsAny<Question>()), Times.Exactly(dto.Questions.Count));
-                repoMock.Verify(r => r.AddOptionsAsync(It.IsAny<IEnumerable<Option>>()), Times.Exactly(dto.Questions.Count));
+                
+                if (includeOptions)
+                {
+                    repoMock.Verify(r => r.AddOptionsAsync(It.IsAny<IEnumerable<Option>>()), Times.Exactly(dto.Questions.Count));
+                }
+                
                 repoMock.VerifyNoOtherCalls();
             }
             finally
@@ -122,12 +134,114 @@ namespace Lumina.Tests.ServiceTests
         }
 
         [Fact]
-        public async Task CreatePromptWithQuestionsAsync_MissingExamPart_ThrowsException()
+        public async Task CreatePromptWithQuestionsAsync_MultiplePartIds_AssignsCorrectQuestionNumbers()
         {
             var (service, context, repoMock) = CreateService();
             try
             {
-                var dto = CreatePromptDto(partId: 5);
+                // Setup two different parts
+                context.ExamParts.AddRange(
+                    new ExamPart { PartId = 1, PartCode = "P1", MaxQuestions = 10, Title = "Part 1" },
+                    new ExamPart { PartId = 2, PartCode = "P2", MaxQuestions = 10, Title = "Part 2" }
+                );
+                
+                // Add existing questions for both parts
+                context.Questions.AddRange(
+                    new Question { QuestionId = 1, PartId = 1, QuestionNumber = 1, QuestionType = "MC", StemText = "Q1" },
+                    new Question { QuestionId = 2, PartId = 2, QuestionNumber = 1, QuestionType = "MC", StemText = "Q2" }
+                );
+                await context.SaveChangesAsync();
+
+                // Create DTO with questions from multiple parts
+                var dto = new CreatePromptWithQuestionsDTO
+                {
+                    Title = "Mixed Prompt",
+                    ContentText = "Content",
+                    Skill = "Mixed",
+                    Questions = new List<QuestionWithOptionsDTO>
+                    {
+                        CreateQuestionDto(1, 1, false),
+                        CreateQuestionDto(2, 1, false),
+                        CreateQuestionDto(1, 2, false)
+                    }
+                };
+
+                repoMock
+                    .Setup(r => r.AddPromptAsync(It.IsAny<Prompt>()))
+                    .ReturnsAsync((Prompt p) =>
+                    {
+                        p.PromptId = 100;
+                        return p;
+                    });
+
+                var questionIndex = 0;
+                repoMock
+                    .Setup(r => r.AddQuestionAsync(It.IsAny<Question>()))
+                    .ReturnsAsync((Question q) =>
+                    {
+                        q.QuestionId = ++questionIndex;
+                        return q;
+                    });
+
+                var result = await service.CreatePromptWithQuestionsAsync(dto);
+
+                Assert.Equal(100, result);
+                repoMock.Verify(r => r.AddQuestionAsync(It.IsAny<Question>()), Times.Exactly(3));
+            }
+            finally
+            {
+                await DisposeContextAsync(context);
+            }
+        }
+
+        [Fact]
+        public async Task CreatePromptWithQuestionsAsync_PartWithNoExistingQuestions_StartsFromOne()
+        {
+            var (service, context, repoMock) = CreateService();
+            try
+            {
+                // Add part with no existing questions
+                context.ExamParts.Add(new ExamPart { PartId = 1, PartCode = "P1", MaxQuestions = 10, Title = "Part 1" });
+                await context.SaveChangesAsync();
+
+                var dto = CreatePromptDto(1, 1, false);
+                
+                repoMock
+                    .Setup(r => r.AddPromptAsync(It.IsAny<Prompt>()))
+                    .ReturnsAsync((Prompt p) =>
+                    {
+                        p.PromptId = 50;
+                        return p;
+                    });
+
+                Question capturedQuestion = null;
+                repoMock
+                    .Setup(r => r.AddQuestionAsync(It.IsAny<Question>()))
+                    .ReturnsAsync((Question q) =>
+                    {
+                        capturedQuestion = q;
+                        q.QuestionId = 1;
+                        return q;
+                    });
+
+                await service.CreatePromptWithQuestionsAsync(dto);
+
+                Assert.NotNull(capturedQuestion);
+                Assert.Equal(1, capturedQuestion.QuestionNumber);
+            }
+            finally
+            {
+                await DisposeContextAsync(context);
+            }
+        }
+
+        [Fact]
+        public async Task CreatePromptWithQuestionsAsync_MissingExamPart_RollsBackAndThrows()
+        {
+            var (service, context, repoMock) = CreateService();
+            try
+            {
+                var dto = CreatePromptDto(partId: 999);
 
                 repoMock
                     .Setup(r => r.AddPromptAsync(It.IsAny<Prompt>()))
@@ -150,7 +264,7 @@ namespace Lumina.Tests.ServiceTests
         }
 
         [Fact]
-        public async Task CreatePromptWithQuestionsAsync_ExceedMaxQuestions_ThrowsException()
+        public async Task CreatePromptWithQuestionsAsync_ExceedMaxQuestions_RollsBackAndThrows()
         {
             var (service, context, repoMock) = CreateService();
             try
@@ -189,25 +303,33 @@ namespace Lumina.Tests.ServiceTests
             }
         }
 
-        [Fact]
-        public async Task GetPromptsPagedAsync_WithPartId_ReturnsData()
+        #endregion
+
+        #region GetPromptsPagedAsync Tests
+
+        [Theory]
+        [InlineData(1, 10, 1)]
+        [InlineData(2, 20, null)]
+        public async Task GetPromptsPagedAsync_ForwardsParametersToRepository(int page, int size, int? partId)
         {
             var (service, context, repoMock) = CreateService();
             try
             {
-                var expected = (new List<PromptDto>
-                {
-                    new() { PromptId = 1, PartId = 1, Title = "Prompt", Skill = "Listening", ContentText = "c", ReferenceAudioUrl = "", ReferenceImageUrl = "", Questions = new List<QuestionDto>() }
-                }, 5);
+                var expected = partId.HasValue
+                    ? (new List<PromptDto>
+                    {
+                        new() { PromptId = 1, PartId = partId.Value, Title = "Prompt", Skill = "Listening", ContentText = "c", ReferenceAudioUrl = "", ReferenceImageUrl = "", Questions = new List<QuestionDto>() }
+                    }, 5)
+                    : (new List<PromptDto>(), 0);
 
                 repoMock
-                    .Setup(r => r.GetPromptsPagedAsync(1, 10, 1))
+                    .Setup(r => r.GetPromptsPagedAsync(page, size, partId))
                     .ReturnsAsync(expected);
 
-                var result = await service.GetPromptsPagedAsync(1, 10, 1);
+                var result = await service.GetPromptsPagedAsync(page, size, partId);
 
                 Assert.Equal(expected, result);
-                repoMock.Verify(r => r.GetPromptsPagedAsync(1, 10, 1), Times.Once);
+                repoMock.Verify(r => r.GetPromptsPagedAsync(page, size, partId), Times.Once);
                 repoMock.VerifyNoOtherCalls();
             }
             finally
@@ -216,31 +338,14 @@ namespace Lumina.Tests.ServiceTests
             }
         }
 
-        [Fact]
-        public async Task GetPromptsPagedAsync_WithoutPartId_ForwardsParameters()
-        {
-            var (service, context, repoMock) = CreateService();
-            try
-            {
-                var expected = (new List<PromptDto>(), 0);
-                repoMock
-                    .Setup(r => r.GetPromptsPagedAsync(2, 20, null))
-                    .ReturnsAsync(expected);
+        #endregion
 
-                var result = await service.GetPromptsPagedAsync(2, 20, null);
+        #region AddQuestionAsync Tests
 
-                Assert.Equal(expected, result);
-                repoMock.Verify(r => r.GetPromptsPagedAsync(2, 20, null), Times.Once);
-                repoMock.VerifyNoOtherCalls();
-            }
-            finally
-            {
-                await DisposeContextAsync(context);
-            }
-        }
-
-        [Fact]
-        public async Task AddQuestionAsync_ValidInput_ReturnsNewId()
+        [Theory]
+        [InlineData(10)]
+        [InlineData(100)]
+        public async Task AddQuestionAsync_ValidInput_ReturnsNewId(int expectedId)
         {
             var (service, context, repoMock) = CreateService();
             try
@@ -248,11 +353,11 @@ namespace Lumina.Tests.ServiceTests
                 var dto = new QuestionCrudDto { PartId = 1, QuestionType = "type", StemText = "stem" };
                 repoMock
                     .Setup(r => r.AddQuestionAsync(dto))
-                    .ReturnsAsync(10);
+                    .ReturnsAsync(expectedId);
 
                 var result = await service.AddQuestionAsync(dto);
 
-                Assert.Equal(10, result);
+                Assert.Equal(expectedId, result);
                 repoMock.Verify(r => r.AddQuestionAsync(dto), Times.Once);
                 repoMock.VerifyNoOtherCalls();
             }
@@ -284,8 +389,14 @@ namespace Lumina.Tests.ServiceTests
             }
         }
 
-        [Fact]
-        public async Task UpdateQuestionAsync_ValidInput_ReturnsTrue()
+        #endregion
+
+        #region UpdateQuestionAsync Tests
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task UpdateQuestionAsync_ReturnsRepositoryResult(bool expectedResult)
         {
             var (service, context, repoMock) = CreateService();
             try
@@ -293,11 +404,11 @@ namespace Lumina.Tests.ServiceTests
                 var dto = new QuestionCrudDto { PartId = 1, QuestionType = "type", StemText = "stem" };
                 repoMock
                     .Setup(r => r.UpdateQuestionAsync(dto))
-                    .ReturnsAsync(true);
+                    .ReturnsAsync(expectedResult);
 
                 var result = await service.UpdateQuestionAsync(dto);
 
-                Assert.True(result);
+                Assert.Equal(expectedResult, result);
                 repoMock.Verify(r => r.UpdateQuestionAsync(dto), Times.Once);
                 repoMock.VerifyNoOtherCalls();
             }
@@ -307,28 +418,9 @@ namespace Lumina.Tests.ServiceTests
             }
         }
 
-        [Fact]
-        public async Task UpdateQuestionAsync_RepositoryReturnsFalse_ReturnsFalse()
-        {
-            var (service, context, repoMock) = CreateService();
-            try
-            {
-                var dto = new QuestionCrudDto { PartId = 1, QuestionType = "type", StemText = "stem" };
-                repoMock
-                    .Setup(r => r.UpdateQuestionAsync(dto))
-                    .ReturnsAsync(false);
+        #endregion
 
-                var result = await service.UpdateQuestionAsync(dto);
-
-                Assert.False(result);
-                repoMock.Verify(r => r.UpdateQuestionAsync(dto), Times.Once);
-                repoMock.VerifyNoOtherCalls();
-            }
-            finally
-            {
-                await DisposeContextAsync(context);
-            }
-        }
+        #region DeleteQuestionAsync Tests
 
         [Fact]
         public async Task DeleteQuestionAsync_ValidInput_ReturnsTrue()
@@ -372,6 +464,10 @@ namespace Lumina.Tests.ServiceTests
                 await DisposeContextAsync(context);
             }
         }
+
+        #endregion
+
+        #region GetStatisticsAsync Tests
 
         [Fact]
         public async Task GetStatisticsAsync_RepositoryReturnsValue_ReturnsDto()
@@ -417,8 +513,14 @@ namespace Lumina.Tests.ServiceTests
             }
         }
 
-        [Fact]
-        public async Task EditPromptWithQuestionsAsync_RepositoryReturnsTrue_ReturnsTrue()
+        #endregion
+
+        #region EditPromptWithQuestionsAsync Tests
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task EditPromptWithQuestionsAsync_ReturnsRepositoryResult(bool expectedResult)
         {
             var (service, context, repoMock) = CreateService();
             try
@@ -426,11 +528,11 @@ namespace Lumina.Tests.ServiceTests
                 var dto = new PromptEditDto { PromptId = 1, Title = "T", Skill = "S", ContentText = "C" };
                 repoMock
                     .Setup(r => r.EditPromptWithQuestionsAsync(dto))
-                    .ReturnsAsync(true);
+                    .ReturnsAsync(expectedResult);
 
                 var result = await service.EditPromptWithQuestionsAsync(dto);
 
-                Assert.True(result);
+                Assert.Equal(expectedResult, result);
                 repoMock.Verify(r => r.EditPromptWithQuestionsAsync(dto), Times.Once);
                 repoMock.VerifyNoOtherCalls();
             }
@@ -440,31 +542,14 @@ namespace Lumina.Tests.ServiceTests
             }
         }
 
-        [Fact]
-        public async Task EditPromptWithQuestionsAsync_RepositoryReturnsFalse_ReturnsFalse()
-        {
-            var (service, context, repoMock) = CreateService();
-            try
-            {
-                var dto = new PromptEditDto { PromptId = 2, Title = "T", Skill = "S", ContentText = "C" };
-                repoMock
-                    .Setup(r => r.EditPromptWithQuestionsAsync(dto))
-                    .ReturnsAsync(false);
+        #endregion
 
-                var result = await service.EditPromptWithQuestionsAsync(dto);
+        #region SavePromptsWithQuestionsAndOptionsAsync Tests
 
-                Assert.False(result);
-                repoMock.Verify(r => r.EditPromptWithQuestionsAsync(dto), Times.Once);
-                repoMock.VerifyNoOtherCalls();
-            }
-            finally
-            {
-                await DisposeContextAsync(context);
-            }
-        }
-
-        [Fact]
-        public async Task SavePromptsWithQuestionsAndOptionsAsync_ValidInput_PersistsEntities()
+        [Theory]
+        [InlineData(true)]  // With options
+        [InlineData(false)] // Without options
+        public async Task SavePromptsWithQuestionsAndOptionsAsync_ValidInput_PersistsEntities(bool includeOptions)
         {
             var (service, context, repoMock) = CreateService();
             try
@@ -474,15 +559,23 @@ namespace Lumina.Tests.ServiceTests
 
                 var promptDtos = new List<CreatePromptWithQuestionsDTO>
                 {
-                    CreatePromptDto(3, 1),
-                    CreatePromptDto(3, 2)
+                    CreatePromptDto(3, 1, includeOptions),
+                    CreatePromptDto(3, 2, includeOptions)
                 };
 
                 var result = await service.SavePromptsWithQuestionsAndOptionsAsync(promptDtos, 3);
 
                 Assert.Equal(promptDtos.Count, result.Count);
                 Assert.Equal(3, context.Questions.Count());
-                Assert.Equal(6, context.Options.Count());
+                
+                if (includeOptions)
+                {
+                    Assert.Equal(6, context.Options.Count());
+                }
+                else
+                {
+                    Assert.Empty(context.Options);
+                }
             }
             finally
             {
@@ -491,7 +584,7 @@ namespace Lumina.Tests.ServiceTests
         }
 
         [Fact]
-        public async Task SavePromptsWithQuestionsAndOptionsAsync_MissingPart_ThrowsException()
+        public async Task SavePromptsWithQuestionsAndOptionsAsync_MissingPart_RollsBackAndThrows()
         {
             var (service, context, repoMock) = CreateService();
             try
@@ -508,7 +601,7 @@ namespace Lumina.Tests.ServiceTests
         }
 
         [Fact]
-        public async Task SavePromptsWithQuestionsAndOptionsAsync_ExceedsMaxQuestions_ThrowsException()
+        public async Task SavePromptsWithQuestionsAndOptionsAsync_ExceedsMaxQuestions_RollsBackAndThrows()
         {
             var (service, context, repoMock) = CreateService();
             try
@@ -526,6 +619,10 @@ namespace Lumina.Tests.ServiceTests
                 await DisposeContextAsync(context);
             }
         }
+
+        #endregion
+
+        #region GetAvailableSlots Tests
 
         [Fact]
         public async Task GetAvailableSlots_ValidRequest_ReturnsAvailable()
@@ -593,19 +690,25 @@ namespace Lumina.Tests.ServiceTests
             }
         }
 
-        [Fact]
-        public async Task DeletePromptAsync_RepositoryReturnsTrue_ReturnsTrue()
+        #endregion
+
+        #region DeletePromptAsync Tests
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task DeletePromptAsync_ReturnsRepositoryResult(bool expectedResult)
         {
             var (service, context, repoMock) = CreateService();
             try
             {
                 repoMock
                     .Setup(r => r.DeletePromptAsync(3))
-                    .ReturnsAsync(true);
+                    .ReturnsAsync(expectedResult);
 
                 var result = await service.DeletePromptAsync(3);
 
-                Assert.True(result);
+                Assert.Equal(expectedResult, result);
                 repoMock.Verify(r => r.DeletePromptAsync(3), Times.Once);
                 repoMock.VerifyNoOtherCalls();
             }
@@ -627,6 +730,7 @@ namespace Lumina.Tests.ServiceTests
 
                 var ex = await Assert.ThrowsAsync<Exception>(() => service.DeletePromptAsync(4));
                 Assert.Contains("Lỗi khi xóa prompt", ex.Message);
+                Assert.Contains("boom", ex.Message);
 
                 repoMock.Verify(r => r.DeletePromptAsync(4), Times.Once);
                 repoMock.VerifyNoOtherCalls();
@@ -636,6 +740,8 @@ namespace Lumina.Tests.ServiceTests
                 await DisposeContextAsync(context);
             }
         }
+
+        #endregion
     }
 }
 
