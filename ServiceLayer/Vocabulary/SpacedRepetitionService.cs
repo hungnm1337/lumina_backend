@@ -77,6 +77,15 @@ namespace ServiceLayer.Vocabulary
 
         public async Task<ReviewVocabularyResponseDTO> ReviewVocabularyAsync(int userId, ReviewVocabularyRequestDTO request)
         {
+            if (request == null)
+            {
+                return new ReviewVocabularyResponseDTO
+                {
+                    Success = false,
+                    Message = "Request cannot be null"
+                };
+            }
+
             UserSpacedRepetition? repetition = null;
 
             // Option 1: Use existing UserSpacedRepetitionId (backward compatible)

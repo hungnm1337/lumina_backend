@@ -214,48 +214,48 @@ var assemblies = [
     "name": "ServiceLayer",
     "classes": [
       { "name": "ExamPartService", "rp": "ServiceLayer_ExamPartService.html", "cl": 10, "ucl": 0, "cal": 10, "tl": 28, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ExamService", "rp": "ServiceLayer_ExamService.html", "cl": 20, "ucl": 137, "cal": 157, "tl": 190, "cb": 4, "tb": 38, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ImageCaptioningService", "rp": "ServiceLayer_ImageCaptioningService.html", "cl": 31, "ucl": 9, "cal": 40, "tl": 63, "cb": 7, "tb": 12, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "RoleService", "rp": "ServiceLayer_RoleService.html", "cl": 0, "ucl": 12, "cal": 12, "tl": 26, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ImageCaptioningService", "rp": "ServiceLayer_ImageCaptioningService.html", "cl": 31, "ucl": 0, "cal": 31, "tl": 63, "cb": 7, "tb": 8, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "ServiceLayer.Analytics.AnalyticsService", "rp": "ServiceLayer_AnalyticsService.html", "cl": 0, "ucl": 330, "cal": 330, "tl": 407, "cb": 0, "tb": 36, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.Article.ArticleService", "rp": "ServiceLayer_ArticleService.html", "cl": 0, "ucl": 374, "cal": 374, "tl": 445, "cb": 0, "tb": 156, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.Auth.AuthService", "rp": "ServiceLayer_AuthService.html", "cl": 434, "ucl": 216, "cal": 650, "tl": 748, "cb": 87, "tb": 234, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.Article.ArticleService", "rp": "ServiceLayer_ArticleService.html", "cl": 310, "ucl": 38, "cal": 348, "tl": 445, "cb": 86, "tb": 112, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.Auth.AuthService", "rp": "ServiceLayer_AuthService.html", "cl": 434, "ucl": 65, "cal": 499, "tl": 748, "cb": 87, "tb": 120, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "ServiceLayer.Auth.GoogleAuthService", "rp": "ServiceLayer_GoogleAuthService.html", "cl": 0, "ucl": 45, "cal": 45, "tl": 103, "cb": 0, "tb": 6, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "ServiceLayer.Auth.JwtTokenService", "rp": "ServiceLayer_JwtTokenService.html", "cl": 0, "ucl": 44, "cal": 44, "tl": 87, "cb": 0, "tb": 8, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.Auth.PasswordResetService", "rp": "ServiceLayer_PasswordResetService.html", "cl": 113, "ucl": 51, "cal": 164, "tl": 207, "cb": 28, "tb": 64, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.Chat.ChatService", "rp": "ServiceLayer_ChatService.html", "cl": 0, "ucl": 439, "cal": 439, "tl": 591, "cb": 0, "tb": 120, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.Auth.PasswordResetService", "rp": "ServiceLayer_PasswordResetService.html", "cl": 113, "ucl": 4, "cal": 117, "tl": 207, "cb": 28, "tb": 32, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.Chat.ChatService", "rp": "ServiceLayer_ChatService.html", "cl": 486, "ucl": 75, "cal": 561, "tl": 763, "cb": 145, "tb": 202, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "ServiceLayer.Event.EventService", "rp": "ServiceLayer_EventService.html", "cl": 0, "ucl": 41, "cal": 41, "tl": 71, "cb": 0, "tb": 2, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.Exam.ExamAttempt.ExamAttemptService", "rp": "ServiceLayer_ExamAttemptService.html", "cl": 175, "ucl": 66, "cal": 241, "tl": 291, "cb": 57, "tb": 124, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.Exam.Listening.ListeningService", "rp": "ServiceLayer_ListeningService.html", "cl": 72, "ucl": 19, "cal": 91, "tl": 103, "cb": 12, "tb": 24, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.Exam.Reading.ReadingService", "rp": "ServiceLayer_ReadingService.html", "cl": 80, "ucl": 16, "cal": 96, "tl": 118, "cb": 20, "tb": 30, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.Exam.Speaking.ScoringWeightService", "rp": "ServiceLayer_ScoringWeightService.html", "cl": 0, "ucl": 142, "cal": 142, "tl": 145, "cb": 0, "tb": 36, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.Exam.Speaking.SpeakingScoringService", "rp": "ServiceLayer_SpeakingScoringService.html", "cl": 0, "ucl": 285, "cal": 285, "tl": 324, "cb": 0, "tb": 90, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.Exam.ExamAttempt.ExamAttemptService", "rp": "ServiceLayer_ExamAttemptService.html", "cl": 175, "ucl": 29, "cal": 204, "tl": 291, "cb": 57, "tb": 80, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.Exam.ExamService", "rp": "ServiceLayer_ExamService.html", "cl": 62, "ucl": 71, "cal": 133, "tl": 196, "cb": 12, "tb": 26, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.Exam.Listening.ListeningService", "rp": "ServiceLayer_ListeningService.html", "cl": 72, "ucl": 0, "cal": 72, "tl": 103, "cb": 12, "tb": 12, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.Exam.Reading.ReadingService", "rp": "ServiceLayer_ReadingService.html", "cl": 80, "ucl": 0, "cal": 80, "tl": 118, "cb": 20, "tb": 20, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.Exam.Speaking.ScoringWeightService", "rp": "ServiceLayer_ScoringWeightService.html", "cl": 0, "ucl": 115, "cal": 115, "tl": 145, "cb": 0, "tb": 18, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.Exam.Speaking.SpeakingScoringService", "rp": "ServiceLayer_SpeakingScoringService.html", "cl": 175, "ucl": 55, "cal": 230, "tl": 324, "cb": 26, "tb": 44, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "ServiceLayer.Exam.Writting.GenerativeAIService", "rp": "ServiceLayer_GenerativeAIService.html", "cl": 0, "ucl": 10, "cal": 10, "tl": 26, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.Exam.Writting.WritingService", "rp": "ServiceLayer_WritingService.html", "cl": 21, "ucl": 172, "cal": 193, "tl": 227, "cb": 9, "tb": 34, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.ExamGenerationAI.ExamGenerationAIService", "rp": "ServiceLayer_ExamGenerationAIService.html", "cl": 0, "ucl": 518, "cal": 518, "tl": 540, "cb": 0, "tb": 246, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.Import.ImportService", "rp": "ServiceLayer_ImportService.html", "cl": 0, "ucl": 215, "cal": 215, "tl": 237, "cb": 0, "tb": 156, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.Leaderboard.LeaderboardService", "rp": "ServiceLayer_LeaderboardService.html", "cl": 0, "ucl": 420, "cal": 420, "tl": 492, "cb": 0, "tb": 140, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.ManagerAnalytics.ManagerAnalyticsService", "rp": "ServiceLayer_ManagerAnalyticsService.html", "cl": 0, "ucl": 143, "cal": 143, "tl": 162, "cb": 0, "tb": 36, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.MockTest.MockTestService", "rp": "ServiceLayer_MockTestService.html", "cl": 105, "ucl": 114, "cal": 219, "tl": 266, "cb": 41, "tb": 220, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.Notification.NotificationService", "rp": "ServiceLayer_NotificationService.html", "cl": 0, "ucl": 333, "cal": 333, "tl": 439, "cb": 0, "tb": 82, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.Exam.Writting.WritingService", "rp": "ServiceLayer_WritingService.html", "cl": 21, "ucl": 129, "cal": 150, "tl": 227, "cb": 9, "tb": 22, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.ExamGenerationAI.ExamGenerationAIService", "rp": "ServiceLayer_ExamGenerationAIService.html", "cl": 281, "ucl": 114, "cal": 395, "tl": 540, "cb": 48, "tb": 128, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.Import.ImportService", "rp": "ServiceLayer_ImportService.html", "cl": 0, "ucl": 179, "cal": 179, "tl": 237, "cb": 0, "tb": 90, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.Leaderboard.LeaderboardService", "rp": "ServiceLayer_LeaderboardService.html", "cl": 0, "ucl": 355, "cal": 355, "tl": 492, "cb": 0, "tb": 84, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.ManagerAnalytics.ManagerAnalyticsService", "rp": "ServiceLayer_ManagerAnalyticsService.html", "cl": 0, "ucl": 107, "cal": 107, "tl": 162, "cb": 0, "tb": 18, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.MockTest.MockTestService", "rp": "ServiceLayer_MockTestService.html", "cl": 105, "ucl": 76, "cal": 181, "tl": 266, "cb": 41, "tb": 120, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.Notification.NotificationService", "rp": "ServiceLayer_NotificationService.html", "cl": 0, "ucl": 309, "cal": 309, "tl": 439, "cb": 0, "tb": 72, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "ServiceLayer.Notification.UserNotificationService", "rp": "ServiceLayer_UserNotificationService.html", "cl": 0, "ucl": 20, "cal": 20, "tl": 44, "cb": 0, "tb": 4, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "ServiceLayer.Packages.PackageService", "rp": "ServiceLayer_PackageService.html", "cl": 11, "ucl": 0, "cal": 11, "tl": 29, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.Payment.PayOSService", "rp": "ServiceLayer_PayOSService.html", "cl": 0, "ucl": 214, "cal": 214, "tl": 251, "cb": 0, "tb": 102, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.Questions.QuestionService", "rp": "ServiceLayer_QuestionService.html", "cl": 0, "ucl": 202, "cal": 202, "tl": 238, "cb": 0, "tb": 70, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.Quota.QuotaService", "rp": "ServiceLayer_QuotaService.html", "cl": 0, "ucl": 97, "cal": 97, "tl": 119, "cb": 0, "tb": 24, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.Payment.PayOSService", "rp": "ServiceLayer_PayOSService.html", "cl": 99, "ucl": 68, "cal": 167, "tl": 251, "cb": 31, "tb": 60, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.Questions.QuestionService", "rp": "ServiceLayer_QuestionService.html", "cl": 160, "ucl": 0, "cal": 160, "tl": 238, "cb": 36, "tb": 38, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.Quota.QuotaService", "rp": "ServiceLayer_QuotaService.html", "cl": 84, "ucl": 0, "cal": 84, "tl": 119, "cb": 12, "tb": 12, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "ServiceLayer.Report.ReportService", "rp": "ServiceLayer_ReportService.html", "cl": 0, "ucl": 77, "cal": 77, "tl": 132, "cb": 0, "tb": 6, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.Role.RoleService", "rp": "ServiceLayer_RoleService.html", "cl": 12, "ucl": 0, "cal": 12, "tl": 28, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "ServiceLayer.Slide.SlideService", "rp": "ServiceLayer_SlideService.html", "cl": 0, "ucl": 13, "cal": 13, "tl": 39, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.Speech.AzureSpeechService", "rp": "ServiceLayer_AzureSpeechService.html", "cl": 0, "ucl": 331, "cal": 331, "tl": 344, "cb": 0, "tb": 108, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.Speech.AzureSpeechService", "rp": "ServiceLayer_AzureSpeechService.html", "cl": 32, "ucl": 216, "cal": 248, "tl": 344, "cb": 8, "tb": 56, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "ServiceLayer.Statistic.StatisticService", "rp": "ServiceLayer_StatisticService.html", "cl": 0, "ucl": 65, "cal": 65, "tl": 103, "cb": 0, "tb": 8, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.Streak.StreakService", "rp": "ServiceLayer_StreakService.html", "cl": 0, "ucl": 326, "cal": 326, "tl": 503, "cb": 0, "tb": 82, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.Subscription.SubscriptionService", "rp": "ServiceLayer_SubscriptionService.html", "cl": 0, "ucl": 44, "cal": 44, "tl": 79, "cb": 0, "tb": 2, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.TextToSpeech.TextToSpeechService", "rp": "ServiceLayer_TextToSpeechService.html", "cl": 0, "ucl": 64, "cal": 64, "tl": 114, "cb": 0, "tb": 12, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.UploadFile.UploadService", "rp": "ServiceLayer_UploadService.html", "cl": 35, "ucl": 88, "cal": 123, "tl": 108, "cb": 8, "tb": 74, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.User.UserService", "rp": "ServiceLayer_UserService.html", "cl": 0, "ucl": 68, "cal": 68, "tl": 134, "cb": 0, "tb": 28, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.UserNote.UserNoteService", "rp": "ServiceLayer_UserNoteService.html", "cl": 50, "ucl": 6, "cal": 56, "tl": 96, "cb": 20, "tb": 22, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.UserNoteAI.AIChatService", "rp": "ServiceLayer_AIChatService.html", "cl": 201, "ucl": 196, "cal": 397, "tl": 467, "cb": 36, "tb": 120, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.Vocabulary.SpacedRepetitionService", "rp": "ServiceLayer_SpacedRepetitionService.html", "cl": 0, "ucl": 331, "cal": 331, "tl": 422, "cb": 0, "tb": 124, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.Vocabulary.VocabularyListService", "rp": "ServiceLayer_VocabularyListService.html", "cl": 0, "ucl": 80, "cal": 80, "tl": 120, "cb": 0, "tb": 14, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.Streak.StreakService", "rp": "ServiceLayer_StreakService.html", "cl": 280, "ucl": 46, "cal": 326, "tl": 503, "cb": 64, "tb": 82, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.Subscription.SubscriptionService", "rp": "ServiceLayer_SubscriptionService.html", "cl": 40, "ucl": 4, "cal": 44, "tl": 79, "cb": 2, "tb": 2, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.TextToSpeech.TextToSpeechService", "rp": "ServiceLayer_TextToSpeechService.html", "cl": 49, "ucl": 15, "cal": 64, "tl": 114, "cb": 9, "tb": 12, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.UploadFile.UploadService", "rp": "ServiceLayer_UploadService.html", "cl": 58, "ucl": 9, "cal": 67, "tl": 108, "cb": 17, "tb": 20, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.User.UserService", "rp": "ServiceLayer_UserService.html", "cl": 68, "ucl": 0, "cal": 68, "tl": 134, "cb": 24, "tb": 28, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.UserNote.UserNoteService", "rp": "ServiceLayer_UserNoteService.html", "cl": 50, "ucl": 0, "cal": 50, "tl": 96, "cb": 20, "tb": 20, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.UserNoteAI.AIChatService", "rp": "ServiceLayer_AIChatService.html", "cl": 201, "ucl": 113, "cal": 314, "tl": 467, "cb": 36, "tb": 70, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.Vocabulary.SpacedRepetitionService", "rp": "ServiceLayer_SpacedRepetitionService.html", "cl": 302, "ucl": 15, "cal": 317, "tl": 431, "cb": 85, "tb": 106, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.Vocabulary.VocabularyListService", "rp": "ServiceLayer_VocabularyListService.html", "cl": 51, "ucl": 29, "cal": 80, "tl": 120, "cb": 12, "tb": 14, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
     ]},
 ];
 
@@ -276,106 +276,22 @@ var riskHotspots = [
       { "value": 90, "exceeded": true },
     ]},
   {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Import.ImportService", "reportPath": "ServiceLayer_ImportService.html", "methodName": "ImportQuestionsFromExcelAsync()", "methodShortName": "ImportQuestionsFromExcelAsync()", "fileIndex": 0, "line": 50,
-    "metrics": [
-      { "value": 8190, "exceeded": true },
-      { "value": 90, "exceeded": true },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.MockTest.MockTestService", "reportPath": "ServiceLayer_MockTestService.html", "methodName": "BuildAnalysisPrompt(DataLayer.DTOs.UserAnswer.ExamAttemptDetailResponseDTO,System.Collections.Generic.List`1<System.String>)", "methodShortName": "BuildAnalysisPrompt(...)", "fileIndex": 0, "line": 77,
-    "metrics": [
-      { "value": 8190, "exceeded": true },
-      { "value": 90, "exceeded": true },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Chat.ChatService", "reportPath": "ServiceLayer_ChatService.html", "methodName": "CallGeminiAPI()", "methodShortName": "CallGeminiAPI()", "fileIndex": 0, "line": 352,
-    "metrics": [
-      { "value": 3660, "exceeded": true },
-      { "value": 60, "exceeded": true },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.ExamGenerationAI.ExamGenerationAIService", "reportPath": "ServiceLayer_ExamGenerationAIService.html", "methodName": "CleanChatResponseSimple(System.String)", "methodShortName": "CleanChatResponseSimple(...)", "fileIndex": 0, "line": 216,
-    "metrics": [
-      { "value": 2756, "exceeded": true },
-      { "value": 52, "exceeded": true },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.ExamGenerationAI.ExamGenerationAIService", "reportPath": "ServiceLayer_ExamGenerationAIService.html", "methodName": "CleanChatResponseSimple(System.String)", "methodShortName": "CleanChatResponseSimple(...)", "fileIndex": 0, "line": 238,
-    "metrics": [
-      { "value": 2756, "exceeded": true },
-      { "value": 52, "exceeded": true },
-    ]},
-  {
     "assembly": "ServiceLayer", "class": "ServiceLayer.Leaderboard.LeaderboardService", "reportPath": "ServiceLayer_LeaderboardService.html", "methodName": "CalculateSeasonScoreAsync()", "methodShortName": "CalculateSeasonScoreAsync()", "fileIndex": 0, "line": 195,
     "metrics": [
       { "value": 1640, "exceeded": true },
       { "value": 40, "exceeded": true },
     ]},
   {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Payment.PayOSService", "reportPath": "ServiceLayer_PayOSService.html", "methodName": "CreatePaymentLinkAsync()", "methodShortName": "CreatePaymentLinkAsync()", "fileIndex": 0, "line": 46,
+    "assembly": "ServiceLayer", "class": "ServiceLayer.ExamGenerationAI.ExamGenerationAIService", "reportPath": "ServiceLayer_ExamGenerationAIService.html", "methodName": "CleanChatResponseSimple(System.String)", "methodShortName": "CleanChatResponseSimple(...)", "fileIndex": 0, "line": 216,
     "metrics": [
-      { "value": 1640, "exceeded": true },
-      { "value": 40, "exceeded": true },
+      { "value": 1022, "exceeded": true },
+      { "value": 52, "exceeded": true },
     ]},
   {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Payment.PayOSService", "reportPath": "ServiceLayer_PayOSService.html", "methodName": "CreatePaymentLinkAsync()", "methodShortName": "CreatePaymentLinkAsync()", "fileIndex": 0, "line": 49,
+    "assembly": "ServiceLayer", "class": "ServiceLayer.Chat.ChatService", "reportPath": "ServiceLayer_ChatService.html", "methodName": "CallGeminiAPI()", "methodShortName": "CallGeminiAPI()", "fileIndex": 0, "line": 457,
     "metrics": [
-      { "value": 1640, "exceeded": true },
-      { "value": 40, "exceeded": true },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Chat.ChatService", "reportPath": "ServiceLayer_ChatService.html", "methodName": "DetermineQuestionType(System.String)", "methodShortName": "DetermineQuestionType(...)", "fileIndex": 0, "line": 146,
-    "metrics": [
-      { "value": 1482, "exceeded": true },
-      { "value": 38, "exceeded": true },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.ExamGenerationAI.ExamGenerationAIService", "reportPath": "ServiceLayer_ExamGenerationAIService.html", "methodName": "GenerateSingleBatchAsync()", "methodShortName": "GenerateSingleBatchAsync()", "fileIndex": 0, "line": 402,
-    "metrics": [
-      { "value": 1190, "exceeded": true },
-      { "value": 34, "exceeded": true },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.ExamGenerationAI.ExamGenerationAIService", "reportPath": "ServiceLayer_ExamGenerationAIService.html", "methodName": "GenerateSingleBatchAsync()", "methodShortName": "GenerateSingleBatchAsync()", "fileIndex": 0, "line": 453,
-    "metrics": [
-      { "value": 1190, "exceeded": true },
-      { "value": 34, "exceeded": true },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Exam.ExamAttempt.ExamAttemptService", "reportPath": "ServiceLayer_ExamAttemptService.html", "methodName": "FinalizeAttemptAsync()", "methodShortName": "FinalizeAttemptAsync()", "fileIndex": 0, "line": 56,
-    "metrics": [
-      { "value": 1056, "exceeded": true },
-      { "value": 32, "exceeded": true },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.UploadFile.UploadService", "reportPath": "ServiceLayer_UploadService.html", "methodName": "UploadFileAsync()", "methodShortName": "UploadFileAsync()", "fileIndex": 0, "line": 28,
-    "metrics": [
-      { "value": 1056, "exceeded": true },
-      { "value": 32, "exceeded": true },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Exam.Speaking.SpeakingScoringService", "reportPath": "ServiceLayer_SpeakingScoringService.html", "methodName": "ProcessAndScoreAnswerAsync()", "methodShortName": "ProcessAndScoreAnswerAsync()", "fileIndex": 0, "line": 70,
-    "metrics": [
-      { "value": 702, "exceeded": true },
-      { "value": 26, "exceeded": true },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Streak.StreakService", "reportPath": "ServiceLayer_StreakService.html", "methodName": "AwardMilestoneRewardsAsync()", "methodShortName": "AwardMilestoneRewardsAsync()", "fileIndex": 0, "line": 446,
-    "metrics": [
-      { "value": 600, "exceeded": true },
-      { "value": 24, "exceeded": true },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Streak.StreakService", "reportPath": "ServiceLayer_StreakService.html", "methodName": "UpdateOnValidPracticeAsync()", "methodShortName": "UpdateOnValidPracticeAsync()", "fileIndex": 0, "line": 100,
-    "metrics": [
-      { "value": 600, "exceeded": true },
-      { "value": 24, "exceeded": true },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.UploadFile.UploadService", "reportPath": "ServiceLayer_UploadService.html", "methodName": "UploadFromUrlAsync()", "methodShortName": "UploadFromUrlAsync()", "fileIndex": 0, "line": 98,
-    "metrics": [
-      { "value": 600, "exceeded": true },
-      { "value": 24, "exceeded": true },
+      { "value": 822, "exceeded": true },
+      { "value": 114, "exceeded": true },
     ]},
   {
     "assembly": "ServiceLayer", "class": "ServiceLayer.Notification.NotificationService", "reportPath": "ServiceLayer_NotificationService.html", "methodName": "CreateAsync()", "methodShortName": "CreateAsync()", "fileIndex": 0, "line": 76,
@@ -390,55 +306,13 @@ var riskHotspots = [
       { "value": 90, "exceeded": true },
     ]},
   {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Leaderboard.LeaderboardService", "reportPath": "ServiceLayer_LeaderboardService.html", "methodName": "CalculateSeasonScoreAsync()", "methodShortName": "CalculateSeasonScoreAsync()", "fileIndex": 0, "line": 198,
-    "metrics": [
-      { "value": 420, "exceeded": true },
-      { "value": 20, "exceeded": true },
-    ]},
-  {
     "assembly": "ServiceLayer", "class": "ServiceLayer.Notification.NotificationService", "reportPath": "ServiceLayer_NotificationService.html", "methodName": "GetEncouragementMessage(System.Double,System.Int32,System.Int32,System.Int32)", "methodShortName": "GetEncouragementMessage(...)", "fileIndex": 0, "line": 393,
     "metrics": [
       { "value": 420, "exceeded": true },
       { "value": 20, "exceeded": true },
     ]},
   {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Questions.QuestionService", "reportPath": "ServiceLayer_QuestionService.html", "methodName": "CreatePromptWithQuestionsAsync()", "methodShortName": "CreatePromptWithQuestionsAsync()", "fileIndex": 0, "line": 30,
-    "metrics": [
-      { "value": 420, "exceeded": true },
-      { "value": 20, "exceeded": true },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Vocabulary.SpacedRepetitionService", "reportPath": "ServiceLayer_SpacedRepetitionService.html", "methodName": "ReviewVocabularyAsync()", "methodShortName": "ReviewVocabularyAsync()", "fileIndex": 0, "line": 79,
-    "metrics": [
-      { "value": 420, "exceeded": true },
-      { "value": 20, "exceeded": true },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Auth.AuthService", "reportPath": "ServiceLayer_AuthService.html", "methodName": "VerifyRegistrationAsync()", "methodShortName": "VerifyRegistrationAsync()", "fileIndex": 0, "line": 218,
-    "metrics": [
-      { "value": 342, "exceeded": true },
-      { "value": 18, "exceeded": true },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Questions.QuestionService", "reportPath": "ServiceLayer_QuestionService.html", "methodName": "SavePromptsWithQuestionsAndOptionsAsync()", "methodShortName": "SavePromptsWithQuestionsAndOptionsAsync()", "fileIndex": 0, "line": 133,
-    "metrics": [
-      { "value": 342, "exceeded": true },
-      { "value": 18, "exceeded": true },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Questions.QuestionService", "reportPath": "ServiceLayer_QuestionService.html", "methodName": "SavePromptsWithQuestionsAndOptionsAsync()", "methodShortName": "SavePromptsWithQuestionsAndOptionsAsync()", "fileIndex": 0, "line": 139,
-    "metrics": [
-      { "value": 342, "exceeded": true },
-      { "value": 18, "exceeded": true },
-    ]},
-  {
     "assembly": "ServiceLayer", "class": "ServiceLayer.Exam.ExamAttempt.ExamAttemptService", "reportPath": "ServiceLayer_ExamAttemptService.html", "methodName": "CalculateSpeakingOverallScore(DataLayer.Models.UserAnswerSpeaking)", "methodShortName": "CalculateSpeakingOverallScore(...)", "fileIndex": 0, "line": 230,
-    "metrics": [
-      { "value": 272, "exceeded": true },
-      { "value": 16, "exceeded": true },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Exam.ExamAttempt.ExamAttemptService", "reportPath": "ServiceLayer_ExamAttemptService.html", "methodName": "CalculateSpeakingOverallScore(DataLayer.Models.UserAnswerSpeaking)", "methodShortName": "CalculateSpeakingOverallScore(...)", "fileIndex": 0, "line": 203,
     "metrics": [
       { "value": 272, "exceeded": true },
       { "value": 16, "exceeded": true },
@@ -450,55 +324,13 @@ var riskHotspots = [
       { "value": 16, "exceeded": true },
     ]},
   {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.MockTest.MockTestService", "reportPath": "ServiceLayer_MockTestService.html", "methodName": "ParseAIResponse(System.String)", "methodShortName": "ParseAIResponse(...)", "fileIndex": 0, "line": 220,
+    "assembly": "ServiceLayer", "class": "ServiceLayer.ExamGenerationAI.ExamGenerationAIService", "reportPath": "ServiceLayer_ExamGenerationAIService.html", "methodName": "GenerateSingleBatchAsync()", "methodShortName": "GenerateSingleBatchAsync()", "fileIndex": 0, "line": 402,
     "metrics": [
-      { "value": 272, "exceeded": true },
-      { "value": 16, "exceeded": true },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Article.ArticleService", "reportPath": "ServiceLayer_ArticleService.html", "methodName": "UpdateArticleAsync()", "methodShortName": "UpdateArticleAsync()", "fileIndex": 0, "line": 144,
-    "metrics": [
-      { "value": 210, "exceeded": true },
-      { "value": 14, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Auth.AuthService", "reportPath": "ServiceLayer_AuthService.html", "methodName": "CreateUsernameCandidateFromEmail(System.String)", "methodShortName": "CreateUsernameCandidateFromEmail(...)", "fileIndex": 0, "line": 610,
-    "metrics": [
-      { "value": 210, "exceeded": true },
-      { "value": 14, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Auth.AuthService", "reportPath": "ServiceLayer_AuthService.html", "methodName": "RefreshTokenAsync()", "methodShortName": "RefreshTokenAsync()", "fileIndex": 0, "line": 717,
-    "metrics": [
-      { "value": 210, "exceeded": true },
-      { "value": 14, "exceeded": false },
+      { "value": 246, "exceeded": true },
+      { "value": 34, "exceeded": true },
     ]},
   {
     "assembly": "ServiceLayer", "class": "ServiceLayer.Exam.Speaking.ScoringWeightService", "reportPath": "ServiceLayer_ScoringWeightService.html", "methodName": "GetWeightsForPart(System.String)", "methodShortName": "GetWeightsForPart(...)", "fileIndex": 0, "line": 17,
-    "metrics": [
-      { "value": 210, "exceeded": true },
-      { "value": 14, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Exam.Speaking.ScoringWeightService", "reportPath": "ServiceLayer_ScoringWeightService.html", "methodName": "GetWeightsForPart(System.String)", "methodShortName": "GetWeightsForPart(...)", "fileIndex": 0, "line": 26,
-    "metrics": [
-      { "value": 210, "exceeded": true },
-      { "value": 14, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Exam.Speaking.SpeakingScoringService", "reportPath": "ServiceLayer_SpeakingScoringService.html", "methodName": "ProcessAndScoreAnswerAsync()", "methodShortName": "ProcessAndScoreAnswerAsync()", "fileIndex": 0, "line": 69,
-    "metrics": [
-      { "value": 210, "exceeded": true },
-      { "value": 14, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.ExamGenerationAI.ExamGenerationAIService", "reportPath": "ServiceLayer_ExamGenerationAIService.html", "methodName": "GenerateResponseAsync()", "methodShortName": "GenerateResponseAsync()", "fileIndex": 0, "line": 30,
-    "metrics": [
-      { "value": 210, "exceeded": true },
-      { "value": 14, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.ExamGenerationAI.ExamGenerationAIService", "reportPath": "ServiceLayer_ExamGenerationAIService.html", "methodName": "GenerateResponseAsync()", "methodShortName": "GenerateResponseAsync()", "fileIndex": 0, "line": 34,
     "metrics": [
       { "value": 210, "exceeded": true },
       { "value": 14, "exceeded": false },
@@ -510,34 +342,16 @@ var riskHotspots = [
       { "value": 14, "exceeded": false },
     ]},
   {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Leaderboard.LeaderboardService", "reportPath": "ServiceLayer_LeaderboardService.html", "methodName": "ValidateAsync()", "methodShortName": "ValidateAsync()", "fileIndex": 0, "line": 76,
-    "metrics": [
-      { "value": 210, "exceeded": true },
-      { "value": 14, "exceeded": false },
-    ]},
-  {
     "assembly": "ServiceLayer", "class": "ServiceLayer.Notification.NotificationService", "reportPath": "ServiceLayer_NotificationService.html", "methodName": "SendPointsNotificationAsync()", "methodShortName": "SendPointsNotificationAsync()", "fileIndex": 0, "line": 190,
     "metrics": [
       { "value": 210, "exceeded": true },
       { "value": 14, "exceeded": false },
     ]},
   {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Article.ArticleService", "reportPath": "ServiceLayer_ArticleService.html", "methodName": "CreateArticleAsync()", "methodShortName": "CreateArticleAsync()", "fileIndex": 0, "line": 20,
+    "assembly": "ServiceLayer", "class": "ServiceLayer.Streak.StreakService", "reportPath": "ServiceLayer_StreakService.html", "methodName": "AwardMilestoneRewardsAsync()", "methodShortName": "AwardMilestoneRewardsAsync()", "fileIndex": 0, "line": 446,
     "metrics": [
-      { "value": 156, "exceeded": true },
-      { "value": 12, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Article.ArticleService", "reportPath": "ServiceLayer_ArticleService.html", "methodName": "GetArticleByIdAsync()", "methodShortName": "GetArticleByIdAsync()", "fileIndex": 0, "line": 310,
-    "metrics": [
-      { "value": 156, "exceeded": true },
-      { "value": 12, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Article.ArticleService", "reportPath": "ServiceLayer_ArticleService.html", "methodName": "GetArticleByIdAsync()", "methodShortName": "GetArticleByIdAsync()", "fileIndex": 0, "line": 279,
-    "metrics": [
-      { "value": 156, "exceeded": true },
-      { "value": 12, "exceeded": false },
+      { "value": 186, "exceeded": true },
+      { "value": 24, "exceeded": true },
     ]},
   {
     "assembly": "ServiceLayer", "class": "ServiceLayer.Auth.AuthService", "reportPath": "ServiceLayer_AuthService.html", "methodName": "ResolveRegistrationConflictMessage(Microsoft.EntityFrameworkCore.DbUpdateException)", "methodShortName": "ResolveRegistrationConflictMessage(...)", "fileIndex": 0, "line": 591,
@@ -546,109 +360,7 @@ var riskHotspots = [
       { "value": 12, "exceeded": false },
     ]},
   {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Auth.AuthService", "reportPath": "ServiceLayer_AuthService.html", "methodName": "ResolveRegistrationConflictMessage(Microsoft.EntityFrameworkCore.DbUpdateException)", "methodShortName": "ResolveRegistrationConflictMessage(...)", "fileIndex": 0, "line": 629,
-    "metrics": [
-      { "value": 156, "exceeded": true },
-      { "value": 12, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Auth.PasswordResetService", "reportPath": "ServiceLayer_PasswordResetService.html", "methodName": "ResetPasswordAsync()", "methodShortName": "ResetPasswordAsync()", "fileIndex": 0, "line": 147,
-    "metrics": [
-      { "value": 156, "exceeded": true },
-      { "value": 12, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Chat.ChatService", "reportPath": "ServiceLayer_ChatService.html", "methodName": "ProcessMessage()", "methodShortName": "ProcessMessage()", "fileIndex": 0, "line": 35,
-    "metrics": [
-      { "value": 156, "exceeded": true },
-      { "value": 12, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.User.UserService", "reportPath": "ServiceLayer_UserService.html", "methodName": "ChangePasswordAsync()", "methodShortName": "ChangePasswordAsync()", "fileIndex": 0, "line": 101,
-    "metrics": [
-      { "value": 156, "exceeded": true },
-      { "value": 12, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Vocabulary.SpacedRepetitionService", "reportPath": "ServiceLayer_SpacedRepetitionService.html", "methodName": "CalculateStatus(DataLayer.Models.UserSpacedRepetition)", "methodShortName": "CalculateStatus(...)", "fileIndex": 0, "line": 273,
-    "metrics": [
-      { "value": 156, "exceeded": true },
-      { "value": 12, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Vocabulary.SpacedRepetitionService", "reportPath": "ServiceLayer_SpacedRepetitionService.html", "methodName": "GetByUserAndListAsync()", "methodShortName": "GetByUserAndListAsync()", "fileIndex": 0, "line": 184,
-    "metrics": [
-      { "value": 156, "exceeded": true },
-      { "value": 12, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Article.ArticleService", "reportPath": "ServiceLayer_ArticleService.html", "methodName": "GetArticleByIdForManagerAsync()", "methodShortName": "GetArticleByIdForManagerAsync()", "fileIndex": 0, "line": 344,
-    "metrics": [
-      { "value": 110, "exceeded": true },
-      { "value": 10, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Auth.AuthService", "reportPath": "ServiceLayer_AuthService.html", "methodName": "SendRegistrationOtpAsync()", "methodShortName": "SendRegistrationOtpAsync()", "fileIndex": 0, "line": 115,
-    "metrics": [
-      { "value": 110, "exceeded": true },
-      { "value": 10, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Exam.Speaking.SpeakingScoringService", "reportPath": "ServiceLayer_SpeakingScoringService.html", "methodName": "GetFallbackNlpScores(System.String,System.String)", "methodShortName": "GetFallbackNlpScores(...)", "fileIndex": 0, "line": 277,
-    "metrics": [
-      { "value": 110, "exceeded": true },
-      { "value": 10, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Exam.Speaking.SpeakingScoringService", "reportPath": "ServiceLayer_SpeakingScoringService.html", "methodName": "GetFallbackNlpScores(System.String,System.String)", "methodShortName": "GetFallbackNlpScores(...)", "fileIndex": 0, "line": 300,
-    "metrics": [
-      { "value": 110, "exceeded": true },
-      { "value": 10, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.ExamGenerationAI.ExamGenerationAIService", "reportPath": "ServiceLayer_ExamGenerationAIService.html", "methodName": "GetSkillFromPart(System.Int32)", "methodShortName": "GetSkillFromPart(...)", "fileIndex": 0, "line": 529,
-    "metrics": [
-      { "value": 110, "exceeded": true },
-      { "value": 10, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.ExamGenerationAI.ExamGenerationAIService", "reportPath": "ServiceLayer_ExamGenerationAIService.html", "methodName": "GenerateExamInBatchesAsync()", "methodShortName": "GenerateExamInBatchesAsync()", "fileIndex": 0, "line": 351,
-    "metrics": [
-      { "value": 110, "exceeded": true },
-      { "value": 10, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.ExamGenerationAI.ExamGenerationAIService", "reportPath": "ServiceLayer_ExamGenerationAIService.html", "methodName": "GetSkillFromPart(System.Int32)", "methodShortName": "GetSkillFromPart(...)", "fileIndex": 0, "line": 589,
-    "metrics": [
-      { "value": 110, "exceeded": true },
-      { "value": 10, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.ExamGenerationAI.ExamGenerationAIService", "reportPath": "ServiceLayer_ExamGenerationAIService.html", "methodName": "GenerateExamInBatchesAsync()", "methodShortName": "GenerateExamInBatchesAsync()", "fileIndex": 0, "line": 389,
-    "metrics": [
-      { "value": 110, "exceeded": true },
-      { "value": 10, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Payment.PayOSService", "reportPath": "ServiceLayer_PayOSService.html", "methodName": ".ctor(Microsoft.Extensions.Configuration.IConfiguration,System.Net.Http.IHttpClientFactory,Microsoft.Extensions.Logging.ILogger`1<ServiceLayer.Payment.PayOSService>)", "methodShortName": ".ctor(...)", "fileIndex": 0, "line": 27,
-    "metrics": [
-      { "value": 110, "exceeded": true },
-      { "value": 10, "exceeded": false },
-    ]},
-  {
     "assembly": "ServiceLayer", "class": "ServiceLayer.Payment.PayOSService", "reportPath": "ServiceLayer_PayOSService.html", "methodName": "VerifyWebhookAsync()", "methodShortName": "VerifyWebhookAsync()", "fileIndex": 0, "line": 135,
-    "metrics": [
-      { "value": 110, "exceeded": true },
-      { "value": 10, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Payment.PayOSService", "reportPath": "ServiceLayer_PayOSService.html", "methodName": "VerifyWebhookAsync()", "methodShortName": "VerifyWebhookAsync()", "fileIndex": 0, "line": 140,
-    "metrics": [
-      { "value": 110, "exceeded": true },
-      { "value": 10, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Quota.QuotaService", "reportPath": "ServiceLayer_QuotaService.html", "methodName": "CheckQuotaAsync()", "methodShortName": "CheckQuotaAsync()", "fileIndex": 0, "line": 25,
     "metrics": [
       { "value": 110, "exceeded": true },
       { "value": 10, "exceeded": false },
@@ -660,79 +372,7 @@ var riskHotspots = [
       { "value": 10, "exceeded": false },
     ]},
   {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Speech.AzureSpeechService", "reportPath": "ServiceLayer_AzureSpeechService.html", "methodName": "RecognizeFromUrlAsync()", "methodShortName": "RecognizeFromUrlAsync()", "fileIndex": 0, "line": 269,
-    "metrics": [
-      { "value": 110, "exceeded": true },
-      { "value": 10, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Speech.AzureSpeechService", "reportPath": "ServiceLayer_AzureSpeechService.html", "methodName": "AnalyzePronunciationFromUrlAsync()", "methodShortName": "AnalyzePronunciationFromUrlAsync()", "fileIndex": 0, "line": 106,
-    "metrics": [
-      { "value": 110, "exceeded": true },
-      { "value": 10, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Speech.AzureSpeechService", "reportPath": "ServiceLayer_AzureSpeechService.html", "methodName": "RecognizeFromUrlAsync()", "methodShortName": "RecognizeFromUrlAsync()", "fileIndex": 0, "line": 301,
-    "metrics": [
-      { "value": 110, "exceeded": true },
-      { "value": 10, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Streak.StreakService", "reportPath": "ServiceLayer_StreakService.html", "methodName": "ApplyAutoFreezeOrResetAsync()", "methodShortName": "ApplyAutoFreezeOrResetAsync()", "fileIndex": 0, "line": 225,
-    "metrics": [
-      { "value": 110, "exceeded": true },
-      { "value": 10, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.UploadFile.UploadService", "reportPath": "ServiceLayer_UploadService.html", "methodName": "UploadFromUrlAsync()", "methodShortName": "UploadFromUrlAsync()", "fileIndex": 0, "line": 71,
-    "metrics": [
-      { "value": 110, "exceeded": true },
-      { "value": 10, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.User.UserService", "reportPath": "ServiceLayer_UserService.html", "methodName": "GetUserByIdAsync()", "methodShortName": "GetUserByIdAsync()", "fileIndex": 0, "line": 33,
-    "metrics": [
-      { "value": 110, "exceeded": true },
-      { "value": 10, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Auth.AuthService", "reportPath": "ServiceLayer_AuthService.html", "methodName": "CreateGoogleAccountAsync()", "methodShortName": "CreateGoogleAccountAsync()", "fileIndex": 0, "line": 492,
-    "metrics": [
-      { "value": 72, "exceeded": true },
-      { "value": 8, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Auth.AuthService", "reportPath": "ServiceLayer_AuthService.html", "methodName": "GoogleLoginAsync()", "methodShortName": "GoogleLoginAsync()", "fileIndex": 0, "line": 81,
-    "metrics": [
-      { "value": 72, "exceeded": true },
-      { "value": 8, "exceeded": false },
-    ]},
-  {
     "assembly": "ServiceLayer", "class": "ServiceLayer.Auth.JwtTokenService", "reportPath": "ServiceLayer_JwtTokenService.html", "methodName": ".ctor(Microsoft.Extensions.Configuration.IConfiguration)", "methodShortName": ".ctor(...)", "fileIndex": 0, "line": 26,
-    "metrics": [
-      { "value": 72, "exceeded": true },
-      { "value": 8, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Auth.PasswordResetService", "reportPath": "ServiceLayer_PasswordResetService.html", "methodName": "SendPasswordResetCodeAsync()", "methodShortName": "SendPasswordResetCodeAsync()", "fileIndex": 0, "line": 49,
-    "metrics": [
-      { "value": 72, "exceeded": true },
-      { "value": 8, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Exam.Speaking.SpeakingScoringService", "reportPath": "ServiceLayer_SpeakingScoringService.html", "methodName": "EnsureCloudinaryAssetReady()", "methodShortName": "EnsureCloudinaryAssetReady()", "fileIndex": 0, "line": 192,
-    "metrics": [
-      { "value": 72, "exceeded": true },
-      { "value": 8, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Exam.Speaking.SpeakingScoringService", "reportPath": "ServiceLayer_SpeakingScoringService.html", "methodName": "RetryAzureRecognitionAsync()", "methodShortName": "RetryAzureRecognitionAsync()", "fileIndex": 0, "line": 44,
-    "metrics": [
-      { "value": 72, "exceeded": true },
-      { "value": 8, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Exam.Speaking.SpeakingScoringService", "reportPath": "ServiceLayer_SpeakingScoringService.html", "methodName": "EnsureCloudinaryAssetReady()", "methodShortName": "EnsureCloudinaryAssetReady()", "fileIndex": 0, "line": 190,
     "metrics": [
       { "value": 72, "exceeded": true },
       { "value": 8, "exceeded": false },
@@ -744,31 +384,13 @@ var riskHotspots = [
       { "value": 8, "exceeded": false },
     ]},
   {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Notification.NotificationService", "reportPath": "ServiceLayer_NotificationService.html", "methodName": "UpdateAsync()", "methodShortName": "UpdateAsync()", "fileIndex": 0, "line": 92,
-    "metrics": [
-      { "value": 72, "exceeded": true },
-      { "value": 8, "exceeded": false },
-    ]},
-  {
     "assembly": "ServiceLayer", "class": "ServiceLayer.Speech.AzureSpeechService", "reportPath": "ServiceLayer_AzureSpeechService.html", "methodName": "AnalyzePronunciationAsync()", "methodShortName": "AnalyzePronunciationAsync()", "fileIndex": 0, "line": 32,
     "metrics": [
       { "value": 72, "exceeded": true },
       { "value": 8, "exceeded": false },
     ]},
   {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Speech.AzureSpeechService", "reportPath": "ServiceLayer_AzureSpeechService.html", "methodName": "AnalyzePronunciationAsync()", "methodShortName": "AnalyzePronunciationAsync()", "fileIndex": 0, "line": 34,
-    "metrics": [
-      { "value": 72, "exceeded": true },
-      { "value": 8, "exceeded": false },
-    ]},
-  {
     "assembly": "ServiceLayer", "class": "ServiceLayer.Statistic.StatisticService", "reportPath": "ServiceLayer_StatisticService.html", "methodName": "GetDashboardStatsAsync()", "methodShortName": "GetDashboardStatsAsync()", "fileIndex": 0, "line": 19,
-    "metrics": [
-      { "value": 72, "exceeded": true },
-      { "value": 8, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Streak.StreakService", "reportPath": "ServiceLayer_StreakService.html", "methodName": "GetStreakSummaryAsync()", "methodShortName": "GetStreakSummaryAsync()", "fileIndex": 0, "line": 43,
     "metrics": [
       { "value": 72, "exceeded": true },
       { "value": 8, "exceeded": false },
@@ -786,127 +408,19 @@ var riskHotspots = [
       { "value": 8, "exceeded": false },
     ]},
   {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.UserNoteAI.AIChatService", "reportPath": "ServiceLayer_AIChatService.html", "methodName": "BuildConversationContext(DataLayer.DTOs.AI.ChatRequestDTO)", "methodShortName": "BuildConversationContext(...)", "fileIndex": 0, "line": 321,
-    "metrics": [
-      { "value": 72, "exceeded": true },
-      { "value": 8, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.UserNoteAI.AIChatService", "reportPath": "ServiceLayer_AIChatService.html", "methodName": "ExtractSuggestedQuestions(System.String)", "methodShortName": "ExtractSuggestedQuestions(...)", "fileIndex": 0, "line": 359,
-    "metrics": [
-      { "value": 72, "exceeded": true },
-      { "value": 8, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.UserNoteAI.AIChatService", "reportPath": "ServiceLayer_AIChatService.html", "methodName": "ParseSuggestedQuestions(System.String)", "methodShortName": "ParseSuggestedQuestions(...)", "fileIndex": 0, "line": 382,
-    "metrics": [
-      { "value": 72, "exceeded": true },
-      { "value": 8, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Vocabulary.SpacedRepetitionService", "reportPath": "ServiceLayer_SpacedRepetitionService.html", "methodName": "CalculateNextReview(System.Int32,System.Int32,System.Int32)", "methodShortName": "CalculateNextReview(...)", "fileIndex": 0, "line": 295,
-    "metrics": [
-      { "value": 72, "exceeded": true },
-      { "value": 8, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Vocabulary.SpacedRepetitionService", "reportPath": "ServiceLayer_SpacedRepetitionService.html", "methodName": "CreateRepetitionAsync()", "methodShortName": "CreateRepetitionAsync()", "fileIndex": 0, "line": 216,
-    "metrics": [
-      { "value": 72, "exceeded": true },
-      { "value": 8, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Vocabulary.SpacedRepetitionService", "reportPath": "ServiceLayer_SpacedRepetitionService.html", "methodName": "SaveQuizResultAsync()", "methodShortName": "SaveQuizResultAsync()", "fileIndex": 0, "line": 343,
-    "metrics": [
-      { "value": 72, "exceeded": true },
-      { "value": 8, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Vocabulary.SpacedRepetitionService", "reportPath": "ServiceLayer_SpacedRepetitionService.html", "methodName": "SaveQuizResultAsync()", "methodShortName": "SaveQuizResultAsync()", "fileIndex": 0, "line": 328,
-    "metrics": [
-      { "value": 72, "exceeded": true },
-      { "value": 8, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ExamService", "reportPath": "ServiceLayer_ExamService.html", "methodName": "GetPartCompletionStatusAsync()", "methodShortName": "GetPartCompletionStatusAsync()", "fileIndex": 0, "line": 157,
-    "metrics": [
-      { "value": 42, "exceeded": true },
-      { "value": 6, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ExamService", "reportPath": "ServiceLayer_ExamService.html", "methodName": "GetPartCompletionStatusAsync()", "methodShortName": "GetPartCompletionStatusAsync()", "fileIndex": 0, "line": 161,
-    "metrics": [
-      { "value": 42, "exceeded": true },
-      { "value": 6, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Article.ArticleService", "reportPath": "ServiceLayer_ArticleService.html", "methodName": "RequestApprovalAsync()", "methodShortName": "RequestApprovalAsync()", "fileIndex": 0, "line": 232,
-    "metrics": [
-      { "value": 42, "exceeded": true },
-      { "value": 6, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Article.ArticleService", "reportPath": "ServiceLayer_ArticleService.html", "methodName": "ReviewArticleAsync()", "methodShortName": "ReviewArticleAsync()", "fileIndex": 0, "line": 283,
-    "metrics": [
-      { "value": 42, "exceeded": true },
-      { "value": 6, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Article.ArticleService", "reportPath": "ServiceLayer_ArticleService.html", "methodName": "RequestApprovalAsync()", "methodShortName": "RequestApprovalAsync()", "fileIndex": 0, "line": 199,
-    "metrics": [
-      { "value": 42, "exceeded": true },
-      { "value": 6, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Article.ArticleService", "reportPath": "ServiceLayer_ArticleService.html", "methodName": "ReviewArticleAsync()", "methodShortName": "ReviewArticleAsync()", "fileIndex": 0, "line": 251,
-    "metrics": [
-      { "value": 42, "exceeded": true },
-      { "value": 6, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Auth.AuthService", "reportPath": "ServiceLayer_AuthService.html", "methodName": "GenerateUniqueUsernameAsync()", "methodShortName": "GenerateUniqueUsernameAsync()", "fileIndex": 0, "line": 578,
-    "metrics": [
-      { "value": 42, "exceeded": true },
-      { "value": 6, "exceeded": false },
-    ]},
-  {
     "assembly": "ServiceLayer", "class": "ServiceLayer.Auth.GoogleAuthService", "reportPath": "ServiceLayer_GoogleAuthService.html", "methodName": "ValidateGoogleTokenAsync()", "methodShortName": "ValidateGoogleTokenAsync()", "fileIndex": 0, "line": 30,
     "metrics": [
       { "value": 42, "exceeded": true },
       { "value": 6, "exceeded": false },
     ]},
   {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Auth.PasswordResetService", "reportPath": "ServiceLayer_PasswordResetService.html", "methodName": "VerifyResetCodeAsync()", "methodShortName": "VerifyResetCodeAsync()", "fileIndex": 0, "line": 119,
-    "metrics": [
-      { "value": 42, "exceeded": true },
-      { "value": 6, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Chat.ChatService", "reportPath": "ServiceLayer_ChatService.html", "methodName": "SaveGeneratedVocabularies()", "methodShortName": "SaveGeneratedVocabularies()", "fileIndex": 0, "line": 480,
-    "metrics": [
-      { "value": 42, "exceeded": true },
-      { "value": 6, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.ExamGenerationAI.ExamGenerationAIService", "reportPath": "ServiceLayer_ExamGenerationAIService.html", "methodName": "CleanAIResponse(System.String)", "methodShortName": "CleanAIResponse(...)", "fileIndex": 0, "line": 317,
-    "metrics": [
-      { "value": 42, "exceeded": true },
-      { "value": 6, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.ExamGenerationAI.ExamGenerationAIService", "reportPath": "ServiceLayer_ExamGenerationAIService.html", "methodName": "CleanAIResponse(System.String)", "methodShortName": "CleanAIResponse(...)", "fileIndex": 0, "line": 349,
+    "assembly": "ServiceLayer", "class": "ServiceLayer.Exam.ExamService", "reportPath": "ServiceLayer_ExamService.html", "methodName": "GetPartCompletionStatusAsync()", "methodShortName": "GetPartCompletionStatusAsync()", "fileIndex": 0, "line": 163,
     "metrics": [
       { "value": 42, "exceeded": true },
       { "value": 6, "exceeded": false },
     ]},
   {
     "assembly": "ServiceLayer", "class": "ServiceLayer.Leaderboard.LeaderboardService", "reportPath": "ServiceLayer_LeaderboardService.html", "methodName": "GetEstimatedTOEICScore()", "methodShortName": "GetEstimatedTOEICScore()", "fileIndex": 0, "line": 369,
-    "metrics": [
-      { "value": 42, "exceeded": true },
-      { "value": 6, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Leaderboard.LeaderboardService", "reportPath": "ServiceLayer_LeaderboardService.html", "methodName": "GetEstimatedTOEICScore()", "methodShortName": "GetEstimatedTOEICScore()", "fileIndex": 0, "line": 327,
     "metrics": [
       { "value": 42, "exceeded": true },
       { "value": 6, "exceeded": false },
@@ -936,76 +450,22 @@ var riskHotspots = [
       { "value": 6, "exceeded": false },
     ]},
   {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Speech.AzureSpeechService", "reportPath": "ServiceLayer_AzureSpeechService.html", "methodName": "NormalizeReferenceText(System.String)", "methodShortName": "NormalizeReferenceText(...)", "fileIndex": 0, "line": 359,
-    "metrics": [
-      { "value": 42, "exceeded": true },
-      { "value": 6, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Speech.AzureSpeechService", "reportPath": "ServiceLayer_AzureSpeechService.html", "methodName": "PerformContinuousRecognition()", "methodShortName": "PerformContinuousRecognition()", "fileIndex": 0, "line": 178,
-    "metrics": [
-      { "value": 42, "exceeded": true },
-      { "value": 6, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Speech.AzureSpeechService", "reportPath": "ServiceLayer_AzureSpeechService.html", "methodName": "PerformPronunciationAssessment()", "methodShortName": "PerformPronunciationAssessment()", "fileIndex": 0, "line": 250,
-    "metrics": [
-      { "value": 42, "exceeded": true },
-      { "value": 6, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Speech.AzureSpeechService", "reportPath": "ServiceLayer_AzureSpeechService.html", "methodName": "RecognizeFromFileAsync()", "methodShortName": "RecognizeFromFileAsync()", "fileIndex": 0, "line": 336,
-    "metrics": [
-      { "value": 42, "exceeded": true },
-      { "value": 6, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Streak.StreakService", "reportPath": "ServiceLayer_StreakService.html", "methodName": "GenerateReminderMessage(System.Int32,System.Int32)", "methodShortName": "GenerateReminderMessage(...)", "fileIndex": 0, "line": 398,
-    "metrics": [
-      { "value": 42, "exceeded": true },
-      { "value": 6, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.TextToSpeech.TextToSpeechService", "reportPath": "ServiceLayer_TextToSpeechService.html", "methodName": ".ctor(Microsoft.Extensions.Configuration.IConfiguration,ServiceLayer.UploadFile.IUploadService)", "methodShortName": ".ctor(...)", "fileIndex": 0, "line": 15,
-    "metrics": [
-      { "value": 42, "exceeded": true },
-      { "value": 6, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.TextToSpeech.TextToSpeechService", "reportPath": "ServiceLayer_TextToSpeechService.html", "methodName": "GenerateAudioAsync()", "methodShortName": "GenerateAudioAsync()", "fileIndex": 0, "line": 50,
-    "metrics": [
-      { "value": 42, "exceeded": true },
-      { "value": 6, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.User.UserService", "reportPath": "ServiceLayer_UserService.html", "methodName": "UpdateCurrentUserProfileAsync()", "methodShortName": "UpdateCurrentUserProfileAsync()", "fileIndex": 0, "line": 71,
-    "metrics": [
-      { "value": 42, "exceeded": true },
-      { "value": 6, "exceeded": false },
-    ]},
-  {
     "assembly": "ServiceLayer", "class": "ServiceLayer.UserNoteAI.AIChatService", "reportPath": "ServiceLayer_AIChatService.html", "methodName": "ExtractRelatedTopics(System.String)", "methodShortName": "ExtractRelatedTopics(...)", "fileIndex": 0, "line": 447,
     "metrics": [
       { "value": 42, "exceeded": true },
       { "value": 6, "exceeded": false },
     ]},
   {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.UserNoteAI.AIChatService", "reportPath": "ServiceLayer_AIChatService.html", "methodName": "ExtractRelatedTopics(System.String)", "methodShortName": "ExtractRelatedTopics(...)", "fileIndex": 0, "line": 407,
+    "assembly": "ServiceLayer", "class": "ServiceLayer.Payment.PayOSService", "reportPath": "ServiceLayer_PayOSService.html", "methodName": "CreatePaymentLinkAsync()", "methodShortName": "CreatePaymentLinkAsync()", "fileIndex": 0, "line": 46,
     "metrics": [
-      { "value": 42, "exceeded": true },
-      { "value": 6, "exceeded": false },
+      { "value": 40, "exceeded": true },
+      { "value": 40, "exceeded": true },
     ]},
   {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Vocabulary.VocabularyListService", "reportPath": "ServiceLayer_VocabularyListService.html", "methodName": "RequestApprovalAsync()", "methodShortName": "RequestApprovalAsync()", "fileIndex": 0, "line": 72,
+    "assembly": "ServiceLayer", "class": "ServiceLayer.Chat.ChatService", "reportPath": "ServiceLayer_ChatService.html", "methodName": "DetermineQuestionType(System.String)", "methodShortName": "DetermineQuestionType(...)", "fileIndex": 0, "line": 149,
     "metrics": [
-      { "value": 42, "exceeded": true },
-      { "value": 6, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Vocabulary.VocabularyListService", "reportPath": "ServiceLayer_VocabularyListService.html", "methodName": "ReviewListAsync()", "methodShortName": "ReviewListAsync()", "fileIndex": 0, "line": 91,
-    "metrics": [
-      { "value": 42, "exceeded": true },
-      { "value": 6, "exceeded": false },
+      { "value": 38, "exceeded": true },
+      { "value": 38, "exceeded": true },
     ]},
   {
     "assembly": "ServiceLayer", "class": "ServiceLayer.Exam.ExamAttempt.ExamAttemptService", "reportPath": "ServiceLayer_ExamAttemptService.html", "methodName": "FinalizeAttemptAsync()", "methodShortName": "FinalizeAttemptAsync()", "fileIndex": 0, "line": 87,
@@ -1014,10 +474,58 @@ var riskHotspots = [
       { "value": 38, "exceeded": true },
     ]},
   {
+    "assembly": "ServiceLayer", "class": "ServiceLayer.Article.ArticleService", "reportPath": "ServiceLayer_ArticleService.html", "methodName": "UpdateArticleAsync()", "methodShortName": "UpdateArticleAsync()", "fileIndex": 0, "line": 144,
+    "metrics": [
+      { "value": 32, "exceeded": true },
+      { "value": 32, "exceeded": true },
+    ]},
+  {
+    "assembly": "ServiceLayer", "class": "ServiceLayer.Streak.StreakService", "reportPath": "ServiceLayer_StreakService.html", "methodName": "UpdateOnValidPracticeAsync()", "methodShortName": "UpdateOnValidPracticeAsync()", "fileIndex": 0, "line": 100,
+    "metrics": [
+      { "value": 24, "exceeded": false },
+      { "value": 24, "exceeded": true },
+    ]},
+  {
+    "assembly": "ServiceLayer", "class": "ServiceLayer.Vocabulary.SpacedRepetitionService", "reportPath": "ServiceLayer_SpacedRepetitionService.html", "methodName": "ReviewVocabularyAsync()", "methodShortName": "ReviewVocabularyAsync()", "fileIndex": 0, "line": 79,
+    "metrics": [
+      { "value": 22, "exceeded": false },
+      { "value": 22, "exceeded": true },
+    ]},
+  {
+    "assembly": "ServiceLayer", "class": "ServiceLayer.Exam.Reading.ReadingService", "reportPath": "ServiceLayer_ReadingService.html", "methodName": "SubmitAnswerAsync()", "methodShortName": "SubmitAnswerAsync()", "fileIndex": 0, "line": 22,
+    "metrics": [
+      { "value": 20, "exceeded": false },
+      { "value": 20, "exceeded": true },
+    ]},
+  {
+    "assembly": "ServiceLayer", "class": "ServiceLayer.Questions.QuestionService", "reportPath": "ServiceLayer_QuestionService.html", "methodName": "CreatePromptWithQuestionsAsync()", "methodShortName": "CreatePromptWithQuestionsAsync()", "fileIndex": 0, "line": 30,
+    "metrics": [
+      { "value": 20, "exceeded": false },
+      { "value": 20, "exceeded": true },
+    ]},
+  {
     "assembly": "ServiceLayer", "class": "ServiceLayer.Auth.AuthService", "reportPath": "ServiceLayer_AuthService.html", "methodName": "VerifyRegistrationAsync()", "methodShortName": "VerifyRegistrationAsync()", "fileIndex": 0, "line": 205,
     "metrics": [
       { "value": 18, "exceeded": false },
       { "value": 18, "exceeded": true },
+    ]},
+  {
+    "assembly": "ServiceLayer", "class": "ServiceLayer.Questions.QuestionService", "reportPath": "ServiceLayer_QuestionService.html", "methodName": "SavePromptsWithQuestionsAndOptionsAsync()", "methodShortName": "SavePromptsWithQuestionsAndOptionsAsync()", "fileIndex": 0, "line": 133,
+    "metrics": [
+      { "value": 18, "exceeded": false },
+      { "value": 18, "exceeded": true },
+    ]},
+  {
+    "assembly": "ServiceLayer", "class": "ServiceLayer.Chat.ChatService", "reportPath": "ServiceLayer_ChatService.html", "methodName": "ExtractVocabularyCount(System.String)", "methodShortName": "ExtractVocabularyCount(...)", "fileIndex": 0, "line": 385,
+    "metrics": [
+      { "value": 19, "exceeded": false },
+      { "value": 16, "exceeded": true },
+    ]},
+  {
+    "assembly": "ServiceLayer", "class": "ServiceLayer.Vocabulary.SpacedRepetitionService", "reportPath": "ServiceLayer_SpacedRepetitionService.html", "methodName": "CalculateNextReview(System.Int32,System.Int32,System.Int32)", "methodShortName": "CalculateNextReview(...)", "fileIndex": 0, "line": 304,
+    "metrics": [
+      { "value": 18, "exceeded": false },
+      { "value": 16, "exceeded": true },
     ]},
 ];
 
