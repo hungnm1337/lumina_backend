@@ -8,6 +8,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="lumina\**" />
+    <Content Remove="lumina\**" />
+    <EmbeddedResource Remove="lumina\**" />
+    <None Remove="lumina\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
     <PackageReference Include="CloudinaryDotNet" Version="1.27.7" />
     <PackageReference Include="coverlet.collector" Version="6.0.4">
@@ -44,10 +51,6 @@
   <ItemGroup>
     <ProjectReference Include="..\DataLayer\DataLayer.csproj" />
     <ProjectReference Include="..\ServiceLayer\ServiceLayer.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="lumina\lumina.Tests\ServiceTests\" />
   </ItemGroup>
 
 </Project>
