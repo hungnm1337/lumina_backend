@@ -245,7 +245,7 @@ var assemblies = [
       { "name": "ServiceLayer.Report.ReportService", "rp": "ServiceLayer_ReportService.html", "cl": 0, "ucl": 77, "cal": 77, "tl": 132, "cb": 0, "tb": 6, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "ServiceLayer.Role.RoleService", "rp": "ServiceLayer_RoleService.html", "cl": 12, "ucl": 0, "cal": 12, "tl": 28, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "ServiceLayer.Slide.SlideService", "rp": "ServiceLayer_SlideService.html", "cl": 0, "ucl": 13, "cal": 13, "tl": 39, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.Speech.AzureSpeechService", "rp": "ServiceLayer_AzureSpeechService.html", "cl": 32, "ucl": 216, "cal": 248, "tl": 344, "cb": 8, "tb": 56, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.Speech.AzureSpeechService", "rp": "ServiceLayer_AzureSpeechService.html", "cl": 193, "ucl": 62, "cal": 255, "tl": 354, "cb": 42, "tb": 56, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "ServiceLayer.Statistic.StatisticService", "rp": "ServiceLayer_StatisticService.html", "cl": 0, "ucl": 65, "cal": 65, "tl": 103, "cb": 0, "tb": 8, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "ServiceLayer.Streak.StreakService", "rp": "ServiceLayer_StreakService.html", "cl": 280, "ucl": 46, "cal": 326, "tl": 503, "cb": 64, "tb": 82, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "ServiceLayer.Subscription.SubscriptionService", "rp": "ServiceLayer_SubscriptionService.html", "cl": 40, "ucl": 4, "cal": 44, "tl": 79, "cb": 2, "tb": 2, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
@@ -366,12 +366,6 @@ var riskHotspots = [
       { "value": 10, "exceeded": false },
     ]},
   {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Speech.AzureSpeechService", "reportPath": "ServiceLayer_AzureSpeechService.html", "methodName": "AnalyzePronunciationFromUrlAsync()", "methodShortName": "AnalyzePronunciationFromUrlAsync()", "fileIndex": 0, "line": 95,
-    "metrics": [
-      { "value": 110, "exceeded": true },
-      { "value": 10, "exceeded": false },
-    ]},
-  {
     "assembly": "ServiceLayer", "class": "ServiceLayer.Auth.JwtTokenService", "reportPath": "ServiceLayer_JwtTokenService.html", "methodName": ".ctor(Microsoft.Extensions.Configuration.IConfiguration)", "methodShortName": ".ctor(...)", "fileIndex": 0, "line": 26,
     "metrics": [
       { "value": 72, "exceeded": true },
@@ -379,12 +373,6 @@ var riskHotspots = [
     ]},
   {
     "assembly": "ServiceLayer", "class": "ServiceLayer.Notification.NotificationService", "reportPath": "ServiceLayer_NotificationService.html", "methodName": "UpdateAsync()", "methodShortName": "UpdateAsync()", "fileIndex": 0, "line": 161,
-    "metrics": [
-      { "value": 72, "exceeded": true },
-      { "value": 8, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Speech.AzureSpeechService", "reportPath": "ServiceLayer_AzureSpeechService.html", "methodName": "AnalyzePronunciationAsync()", "methodShortName": "AnalyzePronunciationAsync()", "fileIndex": 0, "line": 32,
     "metrics": [
       { "value": 72, "exceeded": true },
       { "value": 8, "exceeded": false },
@@ -421,30 +409,6 @@ var riskHotspots = [
     ]},
   {
     "assembly": "ServiceLayer", "class": "ServiceLayer.Leaderboard.LeaderboardService", "reportPath": "ServiceLayer_LeaderboardService.html", "methodName": "GetEstimatedTOEICScore()", "methodShortName": "GetEstimatedTOEICScore()", "fileIndex": 0, "line": 369,
-    "metrics": [
-      { "value": 42, "exceeded": true },
-      { "value": 6, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Speech.AzureSpeechService", "reportPath": "ServiceLayer_AzureSpeechService.html", "methodName": "NormalizeReferenceText(System.String)", "methodShortName": "NormalizeReferenceText(...)", "fileIndex": 0, "line": 326,
-    "metrics": [
-      { "value": 42, "exceeded": true },
-      { "value": 6, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Speech.AzureSpeechService", "reportPath": "ServiceLayer_AzureSpeechService.html", "methodName": "PerformContinuousRecognition()", "methodShortName": "PerformContinuousRecognition()", "fileIndex": 0, "line": 154,
-    "metrics": [
-      { "value": 42, "exceeded": true },
-      { "value": 6, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Speech.AzureSpeechService", "reportPath": "ServiceLayer_AzureSpeechService.html", "methodName": "PerformPronunciationAssessment()", "methodShortName": "PerformPronunciationAssessment()", "fileIndex": 0, "line": 220,
-    "metrics": [
-      { "value": 42, "exceeded": true },
-      { "value": 6, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Speech.AzureSpeechService", "reportPath": "ServiceLayer_AzureSpeechService.html", "methodName": "RecognizeFromFileAsync()", "methodShortName": "RecognizeFromFileAsync()", "fileIndex": 0, "line": 303,
     "metrics": [
       { "value": 42, "exceeded": true },
       { "value": 6, "exceeded": false },
