@@ -90,63 +90,73 @@ namespace ServiceLayer.Speech
             }
         }
 
-       
+
         public async Task<SpeechAnalysisDTO> AnalyzePronunciationFromUrlAsync(string audioUrl, string referenceText, string language = null)
         {
-            var http = _httpClientFactory.CreateClient();
-            using var response = await http.GetAsync(audioUrl, HttpCompletionOption.ResponseHeadersRead);
-            if (!response.IsSuccessStatusCode)
+            try
             {
-                return new SpeechAnalysisDTO { ErrorMessage = $"Failed to fetch audio from URL. Status: {response.StatusCode}" };
-            }
-
-            Console.WriteLine($"[AzureSpeech] Downloading audio from URL: {audioUrl}");
-            var mp3Bytes = await response.Content.ReadAsByteArrayAsync();
-            Console.WriteLine($"[AzureSpeech] Audio downloaded: {mp3Bytes.Length} bytes");
-
-            var effectiveLanguage = string.IsNullOrWhiteSpace(language) ? "en-US (default)" : language;
-            Console.WriteLine($"[AzureSpeech] Using language: {effectiveLanguage}");
-
-            string finalTranscript;
-            using (var networkStream = new System.IO.MemoryStream(mp3Bytes, writable: false))
-            {
-                finalTranscript = await PerformContinuousRecognition(networkStream, language);
-            }
-
-            if (string.IsNullOrWhiteSpace(finalTranscript))
-            {
-                return new SpeechAnalysisDTO { ErrorMessage = "No speech recognized" };
-            }
-
-
-            using (var networkStream = new System.IO.MemoryStream(mp3Bytes, writable: false))
-            {
-                var scores = await PerformPronunciationAssessment(networkStream, finalTranscript, language);
-
-                if (scores != null)
+                var http = _httpClientFactory.CreateClient();
+                using var response = await http.GetAsync(audioUrl, HttpCompletionOption.ResponseHeadersRead);
+                if (!response.IsSuccessStatusCode)
                 {
-                    Console.WriteLine($"[AzureSpeech] Pass 2 completed. Scores: P={scores.PronunciationScore:F1}, A={scores.AccuracyScore:F1}, F={scores.FluencyScore:F1}, C={scores.CompletenessScore:F1}");
-                    return new SpeechAnalysisDTO
-                    {
-                        Transcript = finalTranscript,
-                        PronunciationScore = scores.PronunciationScore,
-                        AccuracyScore = scores.AccuracyScore,
-                        FluencyScore = scores.FluencyScore,
-                        CompletenessScore = scores.CompletenessScore
-                    };
+                    return new SpeechAnalysisDTO { ErrorMessage = $"Failed to fetch audio from URL. Status: {response.StatusCode}" };
                 }
-                else
+
+                Console.WriteLine($"[AzureSpeech] Downloading audio from URL: {audioUrl}");
+                var mp3Bytes = await response.Content.ReadAsByteArrayAsync();
+                Console.WriteLine($"[AzureSpeech] Audio downloaded: {mp3Bytes.Length} bytes");
+
+                var effectiveLanguage = string.IsNullOrWhiteSpace(language) ? "en-US (default)" : language;
+                Console.WriteLine($"[AzureSpeech] Using language: {effectiveLanguage}");
+
+                string finalTranscript;
+                using (var networkStream = new System.IO.MemoryStream(mp3Bytes, writable: false))
                 {
-                    Console.WriteLine($"[AzureSpeech] Pass 2 failed. Using default scores.");
-                    return new SpeechAnalysisDTO
-                    {
-                        Transcript = finalTranscript,
-                        PronunciationScore = 70,
-                        AccuracyScore = 70,
-                        FluencyScore = 70,
-                        CompletenessScore = 70
-                    };
+                    finalTranscript = await PerformContinuousRecognition(networkStream, language);
                 }
+
+                if (string.IsNullOrWhiteSpace(finalTranscript))
+                {
+                    return new SpeechAnalysisDTO { ErrorMessage = "No speech recognized" };
+                }
+
+                using (var networkStream = new System.IO.MemoryStream(mp3Bytes, writable: false))
+                {
+                    var scores = await PerformPronunciationAssessment(networkStream, finalTranscript, language);
+
+                    if (scores != null)
+                    {
+                        Console.WriteLine($"[AzureSpeech] Pass 2 completed. Scores: P={scores.PronunciationScore:F1}, A={scores.AccuracyScore:F1}, F={scores.FluencyScore:F1}, C={scores.CompletenessScore:F1}");
+                        return new SpeechAnalysisDTO
+                        {
+                            Transcript = finalTranscript,
+                            PronunciationScore = scores.PronunciationScore,
+                            AccuracyScore = scores.AccuracyScore,
+                            FluencyScore = scores.FluencyScore,
+                            CompletenessScore = scores.CompletenessScore
+                        };
+                    }
+                    else
+                    {
+                        Console.WriteLine($"[AzureSpeech] Pass 2 failed. Using default scores.");
+                        return new SpeechAnalysisDTO
+                        {
+                            Transcript = finalTranscript,
+                            PronunciationScore = 70,
+                            AccuracyScore = 70,
+                            FluencyScore = 70,
+                            CompletenessScore = 70
+                        };
+                    }
+                }
+            }
+            catch (System.IO.InvalidDataException ex)
+            {
+                return new SpeechAnalysisDTO { ErrorMessage = $"Invalid audio file: {ex.Message}" };
+            }
+            catch (Exception ex)
+            {
+                return new SpeechAnalysisDTO { ErrorMessage = $"Error processing audio: {ex.Message}" };
             }
         }
 
