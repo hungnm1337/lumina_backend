@@ -27,6 +27,15 @@ namespace ServiceLayer.Event
 
         public async Task<int> CreateAsync(EventDTO dto, int userId)
         {
+            if (dto == null)
+                throw new ArgumentNullException(nameof(dto));
+
+            if (dto.EventName == null)
+                throw new ArgumentNullException(nameof(dto.EventName), "EventName cannot be null.");
+
+            if (string.IsNullOrWhiteSpace(dto.EventName))
+                throw new ArgumentException("EventName cannot be empty or whitespace.", nameof(dto.EventName));
+
             var now = DateTime.UtcNow;
             var entity = new DataLayer.Models.Event
             {
@@ -46,6 +55,15 @@ namespace ServiceLayer.Event
 
         public async Task<bool> UpdateAsync(int eventId, EventDTO dto, int userId)
         {
+            if (dto == null)
+                throw new ArgumentNullException(nameof(dto));
+
+            if (dto.EventName == null)
+                throw new ArgumentNullException(nameof(dto.EventName), "EventName cannot be null.");
+
+            if (string.IsNullOrWhiteSpace(dto.EventName))
+                throw new ArgumentException("EventName cannot be empty or whitespace.", nameof(dto.EventName));
+
             var existing = await _eventRepository.GetByIdAsync(eventId);
             if (existing == null) return false;
 

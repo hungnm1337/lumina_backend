@@ -38,6 +38,9 @@ namespace ServiceLayer.Leaderboard
 
         public async Task<int> CreateAsync(CreateLeaderboardDTO dto)
         {
+            if (dto == null)
+                throw new ArgumentNullException(nameof(dto));
+
             await ValidateAsync(dto.SeasonNumber, dto.StartDate, dto.EndDate, null);
             var now = DateTime.UtcNow;
             var entity = new DataLayer.Models.Leaderboard
@@ -55,6 +58,9 @@ namespace ServiceLayer.Leaderboard
 
         public async Task<bool> UpdateAsync(int leaderboardId, UpdateLeaderboardDTO dto)
         {
+            if (dto == null)
+                throw new ArgumentNullException(nameof(dto));
+
             await ValidateAsync(dto.SeasonNumber, dto.StartDate, dto.EndDate, leaderboardId);
             var entity = new DataLayer.Models.Leaderboard
             {
@@ -233,6 +239,9 @@ namespace ServiceLayer.Leaderboard
 
         public async Task<CalculateScoreResponseDTO> CalculateSeasonScoreAsync(int userId, CalculateScoreRequestDTO request)
         {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+
             if (request.ExamPartId != 1 && request.ExamPartId != 2)
             {
                 throw new ArgumentException("Chỉ tính điểm cho Listening (ExamPartId=1) và Reading (ExamPartId=2)");
@@ -403,10 +412,7 @@ namespace ServiceLayer.Leaderboard
                 IsFirstAttempt = isFirstTimeDoingThisExam, // True nếu làm đề này lần đầu
                 TOEICMessage = currentTOEICMessage, // Message chúc mừng bằng tiếng Anh
                 TotalAccumulatedScore = totalAccumulatedScore,
-                
-                // Metadata for frontend
-                ShowTOEICInfo = false, // Không hiển thị TOEIC info
-                DisplayLanguage = "en" // Hiển thị toàn bộ bằng tiếng Anh
+                                
             };
         }
 
