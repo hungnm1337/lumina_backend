@@ -105,12 +105,17 @@ namespace DataLayer.DTOs.Leaderboard
         public bool IsFirstAttempt { get; set; } // True nếu là lần đầu tiên làm ĐỀ này (Exam + Part)
         public string? TOEICMessage { get; set; } // Thông báo trình độ - hiển thị mỗi lần
         public int TotalAccumulatedScore { get; set; } // Tổng điểm tích lũy hiện tại
+        
+        // Metadata for frontend display
+        public bool ShowTOEICInfo { get; set; } = false; // Control whether to show TOEIC section
+        public string DisplayLanguage { get; set; } = "en"; // "en" or "vi"
     }
 
     // DTO cho cấu hình level TOEIC
     public class TOEICLevelConfig
     {
         public string Level { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty; // Mô tả khả năng
         public int MinScore { get; set; }
         public int MaxScore { get; set; }
         public int BasePointsPerCorrect { get; set; }
