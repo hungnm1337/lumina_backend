@@ -61,8 +61,8 @@ namespace ServiceLayer.Chat
                 
                 switch (questionType)
                 {
-                    case "vocabulary":
-                        return await HandleVocabularyQuestion(request);
+                    /*case "vocabulary":
+                        return await HandleVocabularyQuestion(request);*/
                     case "grammar":
                         return await HandleGrammarQuestion(request);
                     case "toeic_strategy":
@@ -150,14 +150,14 @@ Always respond with a valid JSON object in the specified format for each questio
             var lowerMessage = message.ToLower();
             
             // Vocabulary generation
-            if (lowerMessage.Contains("tạo") && (lowerMessage.Contains("từ vựng") || lowerMessage.Contains("vocabulary")))
+            if (lowerMessage.Contains("tạo")|| lowerMessage.Contains("create") && (lowerMessage.Contains("từ vựng")|| (lowerMessage.Contains("từ") || lowerMessage.Contains("vocabulary"))))
                 return "vocabulary_generation";
                 
             // Vocabulary questions
-            if (lowerMessage.Contains("từ vựng") || lowerMessage.Contains("vocabulary") || 
+           /* if (lowerMessage.Contains("từ vựng") || lowerMessage.Contains("vocabulary") || 
                 lowerMessage.Contains("nghĩa") || lowerMessage.Contains("từ"))
                 return "vocabulary";
-                
+                */
             // Grammar questions
             if (lowerMessage.Contains("ngữ pháp") || lowerMessage.Contains("grammar") ||
                 lowerMessage.Contains("thì") || lowerMessage.Contains("tense"))
