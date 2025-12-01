@@ -5,7 +5,14 @@
       "Bash(dotnet ef migrations add:*)",
       "Bash(nul)",
       "Bash(npm run build:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(dotnet test:*)",
+      "Bash(echo:*)",
+      "Bash(Select-String -Pattern \"gstreamer\" -CaseSensitive:$false)",
+      "Bash(powershell:*)",
+      "Bash(where.exe:*)",
+      "Bash(Select-String -Pattern \"(Passed|Failed|Total tests)\" -Context 0,2)",
+      "Bash(findstr:*)"
     ],
     "deny": [],
     "ask": []

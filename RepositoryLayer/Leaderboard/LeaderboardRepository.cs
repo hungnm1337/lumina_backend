@@ -13,6 +13,38 @@ namespace RepositoryLayer.Leaderboard
     {
         private readonly LuminaSystemContext _context;
 
+        // Bảng quy đổi TOEIC Listening (100 câu → 5-495 điểm)
+        private static readonly Dictionary<int, int> ListeningScoreTable = new()
+        {
+            {0, 5}, {1, 15}, {2, 20}, {3, 25}, {4, 30}, {5, 35}, {6, 40}, {7, 45}, {8, 50}, {9, 55},
+            {10, 60}, {11, 65}, {12, 70}, {13, 75}, {14, 80}, {15, 85}, {16, 90}, {17, 95}, {18, 100}, {19, 105},
+            {20, 110}, {21, 115}, {22, 120}, {23, 125}, {24, 130}, {25, 135}, {26, 140}, {27, 145}, {28, 150}, {29, 155},
+            {30, 160}, {31, 165}, {32, 170}, {33, 175}, {34, 180}, {35, 185}, {36, 190}, {37, 195}, {38, 200}, {39, 205},
+            {40, 210}, {41, 215}, {42, 220}, {43, 225}, {44, 230}, {45, 235}, {46, 240}, {47, 245}, {48, 250}, {49, 255},
+            {50, 260}, {51, 265}, {52, 270}, {53, 275}, {54, 280}, {55, 285}, {56, 290}, {57, 295}, {58, 300}, {59, 305},
+            {60, 310}, {61, 315}, {62, 320}, {63, 325}, {64, 330}, {65, 335}, {66, 340}, {67, 345}, {68, 350}, {69, 355},
+            {70, 360}, {71, 365}, {72, 370}, {73, 375}, {74, 380}, {75, 385}, {76, 395}, {77, 400}, {78, 405}, {79, 410},
+            {80, 415}, {81, 420}, {82, 425}, {83, 430}, {84, 435}, {85, 440}, {86, 445}, {87, 450}, {88, 455}, {89, 460},
+            {90, 465}, {91, 470}, {92, 475}, {93, 480}, {94, 485}, {95, 490}, {96, 495}, {97, 495}, {98, 495}, {99, 495},
+            {100, 495}
+        };
+
+        // Bảng quy đổi TOEIC Reading (100 câu → 5-495 điểm)
+        private static readonly Dictionary<int, int> ReadingScoreTable = new()
+        {
+            {0, 5}, {1, 5}, {2, 5}, {3, 10}, {4, 15}, {5, 20}, {6, 25}, {7, 30}, {8, 35}, {9, 40},
+            {10, 45}, {11, 50}, {12, 55}, {13, 60}, {14, 65}, {15, 70}, {16, 75}, {17, 80}, {18, 85}, {19, 90},
+            {20, 95}, {21, 100}, {22, 105}, {23, 110}, {24, 115}, {25, 120}, {26, 125}, {27, 130}, {28, 135}, {29, 140},
+            {30, 145}, {31, 150}, {32, 155}, {33, 160}, {34, 165}, {35, 170}, {36, 175}, {37, 180}, {38, 185}, {39, 190},
+            {40, 195}, {41, 200}, {42, 205}, {43, 210}, {44, 215}, {45, 220}, {46, 225}, {47, 230}, {48, 235}, {49, 240},
+            {50, 245}, {51, 250}, {52, 255}, {53, 260}, {54, 265}, {55, 270}, {56, 275}, {57, 280}, {58, 285}, {59, 290},
+            {60, 295}, {61, 300}, {62, 305}, {63, 310}, {64, 315}, {65, 320}, {66, 325}, {67, 330}, {68, 335}, {69, 340},
+            {70, 345}, {71, 350}, {72, 355}, {73, 360}, {74, 365}, {75, 370}, {76, 375}, {77, 380}, {78, 385}, {79, 390},
+            {80, 395}, {81, 400}, {82, 405}, {83, 410}, {84, 415}, {85, 420}, {86, 425}, {87, 430}, {88, 435}, {89, 440},
+            {90, 445}, {91, 450}, {92, 455}, {93, 460}, {94, 465}, {95, 470}, {96, 475}, {97, 480}, {98, 485}, {99, 490},
+            {100, 495}
+        };
+
         public LeaderboardRepository(LuminaSystemContext context)
         {
             _context = context;
@@ -474,48 +506,113 @@ namespace RepositoryLayer.Leaderboard
             await _context.SaveChangesAsync();
         }
 
+        // Helper methods
+        /// <summary>
+        /// Quy đổi số câu đúng từ hệ thống 61 câu sang 100 câu, sau đó tra bảng TOEIC
+        /// </summary>
+        private int ConvertTo100ScaleAndLookup(double correctAnswers, int totalQuestions, Dictionary<int, int> scoreTable)
+        {
+            if (correctAnswers <= 0) return scoreTable[0];
+            if (totalQuestions <= 0) return scoreTable[0];
+            
+            // Bước 1: Quy đổi về thang 100 câu
+            double scaledScore = (correctAnswers / totalQuestions) * 100.0;
+            
+            // Bước 2: Làm tròn (round half up)
+            int roundedScore = (int)Math.Round(scaledScore, MidpointRounding.AwayFromZero);
+            
+            // Bảo đảm trong khoảng [0, 100]
+            roundedScore = Math.Clamp(roundedScore, 0, 100);
+            
+            // Bước 3: Tra bảng TOEIC
+            return scoreTable[roundedScore];
+        }
+
         private async Task<int> CalculateEstimatedTOEICScore(int userId, int leaderboardId)
         {
             var season = await _context.Leaderboards.FirstOrDefaultAsync(x => x.LeaderboardId == leaderboardId);
             if (season == null) return 0;
 
-            var recentAttempts = await _context.ExamAttempts
+            // LẤY TẤT CẢ CÁC LẦN THI ĐÃ HOÀN THÀNH TRONG SEASON
+            var allAttempts = await _context.ExamAttempts
+                .Include(ea => ea.ExamPart) // Load ExamPart để lấy PartCode
                 .Where(ea => ea.UserID == userId 
                     && ea.Status == "Completed"
+                    && ea.ExamPartId != null
+                    && ea.ExamPart != null
                     && (!season.StartDate.HasValue || ea.EndTime >= season.StartDate)
                     && (!season.EndDate.HasValue || ea.EndTime <= season.EndDate))
-                .OrderByDescending(ea => ea.EndTime)
+                .OrderBy(ea => ea.EndTime)
+                .ToListAsync();
+
+            if (!allAttempts.Any()) return 0;
+
+            // XÁC ĐỊNH SKILL (Listening/Reading) DỰA VÀO PartCode
+            var attemptsWithSkill = allAttempts
+                .Where(ea => ea.ExamPart.PartCode.StartsWith("LISTENING") || ea.ExamPart.PartCode.StartsWith("READING"))
+                .Select(ea => new {
+                    ea.ExamID,
+                    ea.ExamPartId,
+                    ea.Score, // Score = số câu đúng
+                    ea.EndTime,
+                    Skill = ea.ExamPart.PartCode.StartsWith("LISTENING") ? "Listening" : "Reading"
+                })
+                .ToList();
+
+            if (!attemptsWithSkill.Any()) return 0;
+
+            // LẤY LẦN ĐẦU TIÊN của mỗi (ExamID, ExamPartId)
+            var firstAttempts = attemptsWithSkill
+                .GroupBy(x => new { x.ExamID, x.ExamPartId })
+                .Select(g => g.OrderBy(x => x.EndTime).First())
+                .ToList();
+
+            // NHÓM THEO ExamID + Skill VÀ CỘNG TẤT CẢ CÁC PARTS
+            var groupedByExamAndSkill = firstAttempts
+                .GroupBy(x => new { x.ExamID, x.Skill })
+                .Select(g => new {
+                    ExamID = g.Key.ExamID,
+                    Skill = g.Key.Skill,
+                    // CỘNG SỐ CÂU ĐÚNG: Score = số câu đúng
+                    TotalCorrectAnswers = g.Sum(x => (double)(x.Score ?? 0)),
+                    CompletedParts = g.Count(),
+                    FirstAttemptDate = g.Min(x => x.EndTime)
+                })
+                .OrderByDescending(x => x.FirstAttemptDate)
                 .Take(10)
-                .ToListAsync();
+                .ToList();
 
-            if (recentAttempts.Count == 0) return 0;
+            // TÁCH LISTENING VÀ READING
+            var listeningExams = groupedByExamAndSkill.Where(x => x.Skill == "Listening").ToList();
+            var readingExams = groupedByExamAndSkill.Where(x => x.Skill == "Reading").ToList();
 
-            var attemptIds = recentAttempts.Select(a => a.AttemptID).ToList();
-            var answers = await _context.UserAnswerMultipleChoices
-                .Where(ua => attemptIds.Contains(ua.AttemptID))
-                .ToListAsync();
+            // TÍNH SỐ CÂU ĐÚNG TRUNG BÌNH
+            var avgCorrectListening = listeningExams.Any()
+                ? listeningExams.Average(x => x.TotalCorrectAnswers)
+                : 0;
 
-            var totalQuestions = answers.Count;
-            var correctAnswers = answers.Count(a => a.IsCorrect);
+            var avgCorrectReading = readingExams.Any()
+                ? readingExams.Average(x => x.TotalCorrectAnswers)
+                : 0;
 
-            if (totalQuestions == 0) return 0;
+            // QUY ĐỔI SANG ĐIỂM TOEIC
+            var estimatedListening = ConvertTo100ScaleAndLookup(avgCorrectListening, 61, ListeningScoreTable);
+            var estimatedReading = ConvertTo100ScaleAndLookup(avgCorrectReading, 61, ReadingScoreTable);
 
-            var accuracyRate = (decimal)correctAnswers / totalQuestions;
-            var estimatedScore = (int)(accuracyRate * 990);
-
-            return estimatedScore;
+            return estimatedListening + estimatedReading;
         }
 
         private string GetTOEICLevel(int toeicScore)
         {
             return toeicScore switch
             {
-                >= 851 => "Proficient", 
-                >= 751 => "Advanced", 
-                >= 601 => "Upper-Intermediate",
-                >= 401 => "Intermediate", 
-                >= 201 => "Elementary", 
-                _ => "Beginner"
+                >= 905 => "Proficient", // Giao tiếp trôi chảy, tự nhiên mọi hoàn cảnh
+                >= 785 => "Advanced", // Đáp ứng hầu hết yêu cầu công việc
+                >= 605 => "Upper-Intermediate", // Giao tiếp thông thường, hạn chế công việc
+                >= 405 => "Intermediate", // Giao tiếp đơn giản theo tình huống quen thuộc
+                >= 255 => "Elementary", // Trình độ hạn chế
+                >= 10 => "Beginner", // Chỉ đáp ứng yêu cầu căn bản
+                _ => "Beginner" // Dưới 10 điểm
             };
         }
 
@@ -523,12 +620,12 @@ namespace RepositoryLayer.Leaderboard
         {
             return toeicScore switch
             {
-                >= 851 => (2, 0.10m, 0.20m),   
-                >= 751 => (3, 0.15m, 0.40m),   
-                >= 601 => (5, 0.20m, 0.60m),   
-                >= 401 => (8, 0.25m, 0.90m),   
-                >= 201 => (12, 0.28m, 1.20m),  
-                _ => (15, 0.30m, 1.50m)        
+                >= 905 => (2, 0.10m, 0.20m),   // Proficient - Giao tiếp trôi chảy
+                >= 785 => (3, 0.15m, 0.40m),   // Advanced - Đáp ứng công việc
+                >= 605 => (5, 0.20m, 0.60m),   // Upper-Intermediate - Giao tiếp thông thường
+                >= 405 => (8, 0.25m, 0.90m),   // Intermediate - Giao tiếp đơn giản
+                >= 255 => (12, 0.28m, 1.20m),  // Elementary - Trình độ hạn chế
+                _ => (15, 0.30m, 1.50m)        // Beginner - Căn bản
             };
         }
     }

@@ -105,6 +105,7 @@ namespace DataLayer.DTOs.Leaderboard
     public class TOEICLevelConfig
     {
         public string Level { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty; // Mô tả khả năng
         public int MinScore { get; set; }
         public int MaxScore { get; set; }
         public int BasePointsPerCorrect { get; set; }

@@ -38,6 +38,9 @@ namespace ServiceLayer.Leaderboard
 
         public async Task<int> CreateAsync(CreateLeaderboardDTO dto)
         {
+            if (dto == null)
+                throw new ArgumentNullException(nameof(dto));
+
             await ValidateAsync(dto.SeasonNumber, dto.StartDate, dto.EndDate, null);
             var now = DateTime.UtcNow;
             var entity = new DataLayer.Models.Leaderboard
@@ -55,6 +58,9 @@ namespace ServiceLayer.Leaderboard
 
         public async Task<bool> UpdateAsync(int leaderboardId, UpdateLeaderboardDTO dto)
         {
+            if (dto == null)
+                throw new ArgumentNullException(nameof(dto));
+
             await ValidateAsync(dto.SeasonNumber, dto.StartDate, dto.EndDate, leaderboardId);
             var entity = new DataLayer.Models.Leaderboard
             {
@@ -139,60 +145,103 @@ namespace ServiceLayer.Leaderboard
         }
 
         
+        // Bảng quy đổi TOEIC Listening (100 câu → 5-495 điểm)
+        // Nguồn: logic_quy_doi_toeic_61_markdown.md (lines 82-139)
+        private static readonly Dictionary<int, int> ListeningScoreTable = new()
+        {
+            {0, 5}, {1, 15}, {2, 20}, {3, 25}, {4, 30}, {5, 35}, {6, 40}, {7, 45}, {8, 50}, {9, 55},
+            {10, 60}, {11, 65}, {12, 70}, {13, 75}, {14, 80}, {15, 85}, {16, 90}, {17, 95}, {18, 100}, {19, 105},
+            {20, 110}, {21, 115}, {22, 120}, {23, 125}, {24, 130}, {25, 135}, {26, 140}, {27, 145}, {28, 150}, {29, 155},
+            {30, 160}, {31, 165}, {32, 170}, {33, 175}, {34, 180}, {35, 185}, {36, 190}, {37, 195}, {38, 200}, {39, 205},
+            {40, 210}, {41, 215}, {42, 220}, {43, 225}, {44, 230}, {45, 235}, {46, 240}, {47, 245}, {48, 250}, {49, 255},
+            {50, 260}, {51, 265}, {52, 270}, {53, 275}, {54, 280}, {55, 285}, {56, 290}, {57, 295}, {58, 300}, {59, 305},
+            {60, 310}, {61, 315}, {62, 320}, {63, 325}, {64, 330}, {65, 335}, {66, 340}, {67, 345}, {68, 350}, {69, 355},
+            {70, 360}, {71, 365}, {72, 370}, {73, 375}, {74, 380}, {75, 385}, {76, 395}, {77, 400}, {78, 405}, {79, 410},
+            {80, 415}, {81, 420}, {82, 425}, {83, 430}, {84, 435}, {85, 440}, {86, 445}, {87, 450}, {88, 455}, {89, 460},
+            {90, 465}, {91, 470}, {92, 475}, {93, 480}, {94, 485}, {95, 490}, {96, 495}, {97, 495}, {98, 495}, {99, 495},
+            {100, 495}
+        };
+
+        // Bảng quy đổi TOEIC Reading (100 câu → 5-495 điểm)
+        // Nguồn: logic_quy_doi_toeic_61_markdown.md (lines 143-200)
+        private static readonly Dictionary<int, int> ReadingScoreTable = new()
+        {
+            {0, 5}, {1, 5}, {2, 5}, {3, 10}, {4, 15}, {5, 20}, {6, 25}, {7, 30}, {8, 35}, {9, 40},
+            {10, 45}, {11, 50}, {12, 55}, {13, 60}, {14, 65}, {15, 70}, {16, 75}, {17, 80}, {18, 85}, {19, 90},
+            {20, 95}, {21, 100}, {22, 105}, {23, 110}, {24, 115}, {25, 120}, {26, 125}, {27, 130}, {28, 135}, {29, 140},
+            {30, 145}, {31, 150}, {32, 155}, {33, 160}, {34, 165}, {35, 170}, {36, 175}, {37, 180}, {38, 185}, {39, 190},
+            {40, 195}, {41, 200}, {42, 205}, {43, 210}, {44, 215}, {45, 220}, {46, 225}, {47, 230}, {48, 235}, {49, 240},
+            {50, 245}, {51, 250}, {52, 255}, {53, 260}, {54, 265}, {55, 270}, {56, 275}, {57, 280}, {58, 285}, {59, 290},
+            {60, 295}, {61, 300}, {62, 305}, {63, 310}, {64, 315}, {65, 320}, {66, 325}, {67, 330}, {68, 335}, {69, 340},
+            {70, 345}, {71, 350}, {72, 355}, {73, 360}, {74, 365}, {75, 370}, {76, 375}, {77, 380}, {78, 385}, {79, 390},
+            {80, 395}, {81, 400}, {82, 405}, {83, 410}, {84, 415}, {85, 420}, {86, 425}, {87, 430}, {88, 435}, {89, 440},
+            {90, 445}, {91, 450}, {92, 455}, {93, 460}, {94, 465}, {95, 470}, {96, 475}, {97, 480}, {98, 485}, {99, 490},
+            {100, 495}
+        };
+
         private static readonly List<TOEICLevelConfig> LevelConfigs = new()
         {
             new() { 
                 Level = "Beginner", 
-                MinScore = 0, 
-                MaxScore = 200, 
+                Description = "Chỉ đáp ứng yêu cầu căn bản",
+                MinScore = 10, 
+                MaxScore = 250, 
                 BasePointsPerCorrect = 15,
-                TimeBonusPercent = 0.15,
-                AccuracyBonusPercent = 0.75
+                TimeBonusPercent = 0.30,
+                AccuracyBonusPercent = 1.50
             },
             new() { 
                 Level = "Elementary", 
-                MinScore = 201, 
+                Description = "Trình độ hạn chế",
+                MinScore = 255, 
                 MaxScore = 400, 
                 BasePointsPerCorrect = 12,
-                TimeBonusPercent = 0.12,
-                AccuracyBonusPercent = 0.60
+                TimeBonusPercent = 0.28,
+                AccuracyBonusPercent = 1.20
             },
             new() { 
                 Level = "Intermediate", 
-                MinScore = 401, 
+                Description = "Giao tiếp đơn giản theo tình huống quen thuộc",
+                MinScore = 405, 
                 MaxScore = 600, 
                 BasePointsPerCorrect = 8,
-                TimeBonusPercent = 0.10,
-                AccuracyBonusPercent = 0.40
+                TimeBonusPercent = 0.25,
+                AccuracyBonusPercent = 0.90
             },
             new() { 
                 Level = "Upper-Intermediate", 
-                MinScore = 601, 
-                MaxScore = 750, 
+                Description = "Giao tiếp thông thường, hạn chế công việc",
+                MinScore = 605, 
+                MaxScore = 780, 
                 BasePointsPerCorrect = 5,
-                TimeBonusPercent = 0.07,
-                AccuracyBonusPercent = 0.25
+                TimeBonusPercent = 0.20,
+                AccuracyBonusPercent = 0.60
             },
             new() { 
                 Level = "Advanced", 
-                MinScore = 751, 
-                MaxScore = 850, 
+                Description = "Đáp ứng hầu hết yêu cầu công việc",
+                MinScore = 785, 
+                MaxScore = 900, 
                 BasePointsPerCorrect = 3,
-                TimeBonusPercent = 0.05,
-                AccuracyBonusPercent = 0.15
+                TimeBonusPercent = 0.15,
+                AccuracyBonusPercent = 0.40
             },
             new() { 
                 Level = "Proficient", 
-                MinScore = 851, 
+                Description = "Giao tiếp trôi chảy, tự nhiên mọi hoàn cảnh",
+                MinScore = 905, 
                 MaxScore = 990, 
                 BasePointsPerCorrect = 2,
-                TimeBonusPercent = 0.05,
-                AccuracyBonusPercent = 0.10
+                TimeBonusPercent = 0.10,
+                AccuracyBonusPercent = 0.20
             }
         };
 
         public async Task<CalculateScoreResponseDTO> CalculateSeasonScoreAsync(int userId, CalculateScoreRequestDTO request)
         {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+
             if (request.ExamPartId != 1 && request.ExamPartId != 2)
             {
                 throw new ArgumentException("Chỉ tính điểm cho Listening (ExamPartId=1) và Reading (ExamPartId=2)");
@@ -302,7 +351,8 @@ namespace ServiceLayer.Leaderboard
                 }
             }
             
-            var currentTOEICMessage = GetTOEICLevelMessage(levelConfig.Level, estimatedTOEIC);
+            // Tạo thông báo chúc mừng hoàn thành part (tiếng Anh)
+            var currentTOEICMessage = GetCompletionMessage(totalScore, isFirstTimeDoingThisExam);
             
             
             
@@ -354,59 +404,112 @@ namespace ServiceLayer.Leaderboard
             return new CalculateScoreResponseDTO
             {
                 SeasonScore = totalScore,
-                EstimatedTOEIC = estimatedTOEIC,
-                TOEICLevel = levelConfig.Level,
+                EstimatedTOEIC = 0, // Ẩn TOEIC info theo yêu cầu user
+                TOEICLevel = "", // Ẩn level info
                 BasePoints = basePoints,
                 TimeBonus = timeBonus,
                 AccuracyBonus = accuracyBonus,
                 IsFirstAttempt = isFirstTimeDoingThisExam, // True nếu làm đề này lần đầu
-                TOEICMessage = currentTOEICMessage,
-                TotalAccumulatedScore = totalAccumulatedScore
+                TOEICMessage = currentTOEICMessage, // Message chúc mừng bằng tiếng Anh
+                TotalAccumulatedScore = totalAccumulatedScore,
+                                
             };
+        }
+
+        /// <summary>
+        /// Quy đổi số câu đúng từ hệ thống 61 câu sang 100 câu, sau đó tra bảng TOEIC
+        /// Logic: (correctAnswers / totalQuestions) * 100 → làm tròn → tra bảng
+        /// </summary>
+        /// <param name="correctAnswers">Số câu đúng (0-61)</param>
+        /// <param name="totalQuestions">Tổng số câu (61)</param>
+        /// <param name="scoreTable">Bảng điểm TOEIC (Listening hoặc Reading)</param>
+        /// <returns>Điểm TOEIC (5-495)</returns>
+        private int ConvertTo100ScaleAndLookup(double correctAnswers, int totalQuestions, Dictionary<int, int> scoreTable)
+        {
+            if (correctAnswers <= 0) return scoreTable[0]; // 0 câu đúng → điểm tối thiểu
+            if (totalQuestions <= 0) return scoreTable[0];
+            
+            // Bước 1: Quy đổi về thang 100 câu
+            double scaledScore = (correctAnswers / totalQuestions) * 100.0;
+            
+            // Bước 2: Làm tròn (round half up)
+            int roundedScore = (int)Math.Round(scaledScore, MidpointRounding.AwayFromZero);
+            
+            // Bảo đảm trong khoảng [0, 100]
+            roundedScore = Math.Clamp(roundedScore, 0, 100);
+            
+            // Bước 3: Tra bảng TOEIC
+            return scoreTable[roundedScore];
         }
 
         private async Task<int> GetEstimatedTOEICScore(int userId)
         {
+            // LẤY TẤT CẢ CÁC LẦN THI ĐÃ HOÀN THÀNH
             var allAttempts = await _context.ExamAttempts
-                .Include(ea => ea.Exam)
-                    .ThenInclude(e => e.ExamParts)
+                .Include(ea => ea.ExamPart) // Load ExamPart để lấy PartCode
                 .Where(ea => ea.UserID == userId 
                     && ea.Status == "Completed"
                     && ea.ExamPartId != null
-                    && (ea.ExamPartId == 1 || ea.ExamPartId == 2)) // Listening & Reading
-                .OrderBy(ea => ea.EndTime) 
+                    && ea.ExamPart != null)
+                .OrderBy(ea => ea.EndTime)
                 .ToListAsync();
 
             if (!allAttempts.Any()) return 0;
 
-            var firstAttempts = allAttempts
-                .GroupBy(ea => new { ea.ExamID, ea.ExamPartId })
-                .Select(g => g.First()) // Lấy lần đầu tiên (EndTime nhỏ nhất)
-                .OrderByDescending(ea => ea.EndTime) // Sắp xếp lại theo mới nhất
-                .Take(10) // Lấy 10 đề gần nhất
+            // XÁC ĐỊNH SKILL (Listening/Reading) DỰA VÀO PartCode
+            var attemptsWithSkill = allAttempts
+                .Where(ea => ea.ExamPart.PartCode.StartsWith("LISTENING") || ea.ExamPart.PartCode.StartsWith("READING"))
+                .Select(ea => new {
+                    ea.ExamID,
+                    ea.ExamPartId,
+                    ea.Score, // Score = số câu đúng (khi ScoreWeight=1)
+                    ea.EndTime,
+                    Skill = ea.ExamPart.PartCode.StartsWith("LISTENING") ? "Listening" : "Reading"
+                })
                 .ToList();
 
-            // Tính điểm trung bình Listening
-            var listeningAttempts = firstAttempts
-                .Where(ea => ea.ExamPartId == 1)
+            if (!attemptsWithSkill.Any()) return 0;
+
+            // LẤY LẦN ĐẦU TIÊN của mỗi (ExamID, ExamPartId)
+            var firstAttempts = attemptsWithSkill
+                .GroupBy(x => new { x.ExamID, x.ExamPartId })
+                .Select(g => g.OrderBy(x => x.EndTime).First())
                 .ToList();
-            var avgListening = listeningAttempts.Any() 
-                ? listeningAttempts.Average(ea => ea.Score ?? 0) 
+
+            // NHÓM THEO ExamID + Skill VÀ CỘNG TẤT CẢ CÁC PARTS
+            var groupedByExamAndSkill = firstAttempts
+                .GroupBy(x => new { x.ExamID, x.Skill })
+                .Select(g => new {
+                    ExamID = g.Key.ExamID,
+                    Skill = g.Key.Skill,
+                    // CỘNG SỐ CÂU ĐÚNG: Score = số câu đúng (khi ScoreWeight=1)
+                    // VD: Part1(6) + Part2(3) + Part3(4) + Part4(3) = 16 câu
+                    TotalCorrectAnswers = g.Sum(x => (double)(x.Score ?? 0)),
+                    CompletedParts = g.Count(),
+                    FirstAttemptDate = g.Min(x => x.EndTime)
+                })
+                .OrderByDescending(x => x.FirstAttemptDate)
+                .Take(10) // Lấy 10 exams gần nhất
+                .ToList();
+
+            // TÁCH LISTENING VÀ READING
+            var listeningExams = groupedByExamAndSkill.Where(x => x.Skill == "Listening").ToList();
+            var readingExams = groupedByExamAndSkill.Where(x => x.Skill == "Reading").ToList();
+
+            // TÍNH SỐ CÂU ĐÚNG TRUNG BÌNH CHO MỖI SKILL
+            var avgCorrectListening = listeningExams.Any()
+                ? listeningExams.Average(x => x.TotalCorrectAnswers)
                 : 0;
 
-            // Tính điểm trung bình Reading
-            var readingAttempts = firstAttempts
-                .Where(ea => ea.ExamPartId == 2)
-                .ToList();
-            var avgReading = readingAttempts.Any() 
-                ? readingAttempts.Average(ea => ea.Score ?? 0) 
+            var avgCorrectReading = readingExams.Any()
+                ? readingExams.Average(x => x.TotalCorrectAnswers)
                 : 0;
 
-            // CHUYỂN ĐỔI: Score 0-100 → TOEIC 0-495 (mỗi phần)
-            var estimatedListening = (int)(avgListening * 4.95);
-            var estimatedReading = (int)(avgReading * 4.95);
+            // QUY ĐỔI SANG ĐIỂM TOEIC THEO BẢNG CHUẨN (61 câu → 100 câu → TOEIC score)
+            var estimatedListening = ConvertTo100ScaleAndLookup(avgCorrectListening, 61, ListeningScoreTable);
+            var estimatedReading = ConvertTo100ScaleAndLookup(avgCorrectReading, 61, ReadingScoreTable);
 
-            // Tổng TOEIC = Listening + Reading (0-990)
+            // TỔNG TOEIC = Listening + Reading (0-990)
             return estimatedListening + estimatedReading;
         }
 
@@ -478,15 +581,44 @@ namespace ServiceLayer.Leaderboard
         {
             var messages = new Dictionary<string, string>
             {
-                ["Beginner"] = $" Chúc mừng! Bạn đang ở trình độ Beginner với ước tính {score} điểm TOEIC. Hãy tiếp tục luyện tập để đạt 200+ điểm!",
-                ["Elementary"] = $" Tuyệt vời! Bạn đã đạt trình độ Elementary với ước tính {score} điểm TOEIC. Mục tiêu tiếp theo: 400+ điểm!",
-                ["Intermediate"] = $" Xuất sắc! Bạn đang ở trình độ Intermediate với ước tính {score} điểm TOEIC. Tiếp tục phấn đấu để đạt 600+ điểm!",
-                ["Upper-Intermediate"] = $" Thật ấn tượng! Bạn đã đạt Upper-Intermediate với ước tính {score} điểm TOEIC. Chỉ còn một bước nữa đến Advanced!",
-                ["Advanced"] = $" Rất xuất sắc! Bạn đang ở trình độ Advanced với ước tính {score} điểm TOEIC. Hãy hướng tới đỉnh cao 850+ điểm!",
-                ["Proficient"] = $" Đỉnh cao! Bạn đã đạt trình độ Proficient với ước tính {score} điểm TOEIC. Bạn đang ở top đầu người học!"
+                ["Beginner"] = $"🎯 Bạn đang ở mức {score} điểm - Chỉ đáp ứng yêu cầu căn bản. Hãy tiếp tục luyện tập!",
+                ["Elementary"] = $"📚 Bạn đạt {score} điểm - Trình độ hạn chế. Cố gắng lên để đạt 405+ điểm!",
+                ["Intermediate"] = $"⭐ Bạn đạt {score} điểm - Giao tiếp đơn giản theo tình huống quen thuộc. Hướng tới 605+ điểm!",
+                ["Upper-Intermediate"] = $"🎓 Bạn đạt {score} điểm - Giao tiếp thông thường, hạn chế công việc. Tiến tới 785+ điểm!",
+                ["Advanced"] = $"🏆 Xuất sắc! {score} điểm - Đáp ứng hầu hết yêu cầu công việc. Cố gắng đạt 905+!",
+                ["Proficient"] = $"💎 Đỉnh cao! {score} điểm - Giao tiếp trôi chảy, tự nhiên mọi hoàn cảnh!"
             };
 
             return messages.TryGetValue(level, out var message) ? message : $"Trình độ TOEIC ước tính của bạn: {score} điểm";
+        }
+
+        private string GetCompletionMessage(int scoreEarned, bool isFirstAttempt)
+        {
+            if (!isFirstAttempt)
+            {
+                return "🎯 Great job completing this part! Keep practicing to improve your skills.";
+            }
+
+            if (scoreEarned >= 400)
+            {
+                return "🌟 Excellent work! You've earned a fantastic score on this part!";
+            }
+            else if (scoreEarned >= 300)
+            {
+                return "✨ Well done! Great effort on completing this part!";
+            }
+            else if (scoreEarned >= 200)
+            {
+                return "👍 Good job! You're making steady progress!";
+            }
+            else if (scoreEarned >= 100)
+            {
+                return "💪 Nice try! Keep practicing and you'll improve!";
+            }
+            else
+            {
+                return "🎯 Part completed! Every practice session helps you grow!";
+            }
         }
     }
 }
