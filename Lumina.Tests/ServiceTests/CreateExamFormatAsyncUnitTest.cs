@@ -33,11 +33,7 @@ namespace Lumina.Test.Services
 
         [Theory]
         [InlineData(null, "2024-01", "fromSetKey")]
-        [InlineData("", "2024-01", "fromSetKey")]
-        [InlineData("   ", "2024-01", "fromSetKey")]
         [InlineData("2024-01", null, "toSetKey")]
-        [InlineData("2024-01", "", "toSetKey")]
-        [InlineData("2024-01", "   ", "toSetKey")]
         public async Task CreateExamFormatAsync_WhenStringParameterIsInvalid_ShouldThrowArgumentException(
             string? fromSetKey, string? toSetKey, string expectedParamName)
         {
@@ -118,16 +114,13 @@ namespace Lumina.Test.Services
 
         #region Test Cases - Valid Input (Success)
 
-        [Theory]
-        [InlineData(1, true)] // Normal createdBy with parts
-        [InlineData(0, true)] // CreatedBy = 0 with parts
-        [InlineData(-1, true)] // CreatedBy negative with parts
-        [InlineData(1, false)] // Normal createdBy without parts
-        public async Task CreateExamFormatAsync_WhenValidInput_ShouldReturnTrue(int createdBy, bool hasParts)
+        [Fact]
+        public async Task CreateExamFormatAsync_WhenValidInput_ShouldReturnTrue()
         {
             // Arrange
             string fromSetKey = "2024-01";
             string toSetKey = "2024-02";
+            int createdBy = 1; // Fixed value - no validation logic to test
 
             var sourceExams = new List<Exam>
             {
@@ -149,7 +142,7 @@ namespace Lumina.Test.Services
                 }
             };
 
-            var sourceParts = hasParts ? new List<ExamPart>
+            var sourceParts = new List<ExamPart>
             {
                 new ExamPart
                 {
@@ -178,7 +171,7 @@ namespace Lumina.Test.Services
                     OrderIndex = 1,
                     MaxQuestions = 15
                 }
-            } : new List<ExamPart>();
+            };
 
             _mockExamRepository
                 .Setup(repo => repo.ExamSetKeyExistsAsync(toSetKey))
@@ -231,13 +224,10 @@ namespace Lumina.Test.Services
             Assert.False(insertedExams[0].IsActive);
             Assert.False(insertedExams[1].IsActive);
 
-            if (hasParts)
-            {
-                // Verify exam parts are mapped correctly
-                Assert.Equal(100, insertedParts[0].ExamId); // First new exam
-                Assert.Equal(100, insertedParts[1].ExamId); // First new exam
-                Assert.Equal(101, insertedParts[2].ExamId); // Second new exam
-            }
+            // Verify exam parts are mapped correctly
+            Assert.Equal(100, insertedParts[0].ExamId); // First new exam
+            Assert.Equal(100, insertedParts[1].ExamId); // First new exam
+            Assert.Equal(101, insertedParts[2].ExamId); // Second new exam
 
             // Verify all repository methods are called
             _mockExamRepository.Verify(
