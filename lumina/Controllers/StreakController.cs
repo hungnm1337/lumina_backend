@@ -45,50 +45,50 @@ namespace lumina.Controllers
             }
         }
 
-        
-       /* [HttpPost("admin/trigger-daily-job")]
-        // [Authorize(Roles = "Admin")] //  Bỏ comment ở production
-        public IActionResult TriggerDailyJob()
-        {
-            try
-            {
-                // Enqueue job để chạy ngay lập tức
-                var jobId = BackgroundJob.Enqueue<StreakBackgroundJob>(
-                    job => job.ProcessDailyStreaksAsync()
-                );
 
-                _logger.LogInformation("Manual trigger daily streak job: {JobId}", jobId);
+        /* [HttpPost("admin/trigger-daily-job")]
+         // [Authorize(Roles = "Admin")] //  Bỏ comment ở production
+         public IActionResult TriggerDailyJob()
+         {
+             try
+             {
+                 // Enqueue job để chạy ngay lập tức
+                 var jobId = BackgroundJob.Enqueue<StreakBackgroundJob>(
+                     job => job.ProcessDailyStreaksAsync()
+                 );
 
-                return Ok(new
-                {
-                    success = true,
-                    message = "Daily streak job enqueued successfully",
-                    jobId = jobId,
-                    dashboardUrl = "/hangfire",
-                    note = "Check Hangfire Dashboard for job status"
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error triggering daily streak job");
-                return StatusCode(500, new
-                {
-                    success = false,
-                    message = "Failed to trigger job"
-                });
-            }
-        }*/
+                 _logger.LogInformation("Manual trigger daily streak job: {JobId}", jobId);
 
-        
-       /* [HttpPost("admin/test-auto-process/{userId}")]
+                 return Ok(new
+                 {
+                     success = true,
+                     message = "Daily streak job enqueued successfully",
+                     jobId = jobId,
+                     dashboardUrl = "/hangfire",
+                     note = "Check Hangfire Dashboard for job status"
+                 });
+             }
+             catch (Exception ex)
+             {
+                 _logger.LogError(ex, "Error triggering daily streak job");
+                 return StatusCode(500, new
+                 {
+                     success = false,
+                     message = "Failed to trigger job"
+                 });
+             }
+         }*/
+
+
+        [HttpPost("admin/test-auto-process/{userId}")]
         // [Authorize(Roles = "Admin")] // ⚠️ Bỏ comment ở production
         public async Task<IActionResult> TestAutoProcess(int userId)
         {
             try
             {
                 var today = _streakService.GetTodayGMT7();
-                
-                _logger.LogInformation("Testing auto-process for user {UserId} on date {Date}", 
+
+                _logger.LogInformation("Testing auto-process for user {UserId} on date {Date}",
                     userId, today);
 
                 var result = await _streakService.ApplyAutoFreezeOrResetAsync(userId, today);
@@ -112,9 +112,9 @@ namespace lumina.Controllers
                     message = "Internal server error"
                 });
             }
-        }*/
+        }
 
-        
+
         [HttpGet("admin/users-needing-process")]
         // [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetUsersNeedingProcess()
