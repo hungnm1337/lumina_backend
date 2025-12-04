@@ -47,8 +47,8 @@ namespace ServiceLayer.MockTest
 
         public async Task<List<ExamPartDTO>> GetMocktestAsync()
         {
-            int[] examPartids = new int[] {16,17,18,19,20,21,22,23,24,25,26,27,28,29,30 };
-            return await _mockTestRepository.GetMocktestAsync(examPartids);
+        
+            return await _mockTestRepository.GetMocktestAsync();
         }
 
         public async Task<MocktestFeedbackDTO> GetMocktestFeedbackAsync(int examAttemptId)
