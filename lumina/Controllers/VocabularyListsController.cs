@@ -337,6 +337,33 @@ namespace lumina.Controllers
                 return StatusCode(500, new ErrorResponse("An internal server error occurred."));
             }
         }
+
+        // DELETE api/vocabulary-lists/{id}
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteList(int id)
+        {
+            try
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+                if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var currentUserId))
+                {
+                    return Unauthorized(new ErrorResponse("Invalid token - User ID could not be determined."));
+                }
+
+                var result = await _vocabularyListService.DeleteListAsync(id, currentUserId);
+                if (!result)
+                {
+                    return NotFound(new ErrorResponse($"Vocabulary list with ID {id} not found or you don't have permission to delete it."));
+                }
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while deleting vocabulary list with ID {Id}.", id);
+                return StatusCode(500, new ErrorResponse("An internal server error occurred."));
+            }
+        }
     }
 
     public class VocabularyListReviewRequest

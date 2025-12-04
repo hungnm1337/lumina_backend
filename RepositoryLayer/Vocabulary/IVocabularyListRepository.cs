@@ -10,4 +10,5 @@ public interface IVocabularyListRepository
     Task<IEnumerable<VocabularyListDTO>> GetMyAndStaffListsAsync(int userId, string? searchTerm);
     Task<VocabularyList?> FindByIdAsync(int id);
     Task<VocabularyList?> UpdateAsync(VocabularyList list);
+    Task DeleteAsync(int id);
 }
