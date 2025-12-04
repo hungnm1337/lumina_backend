@@ -205,6 +205,12 @@ public class ArticleService : IArticleService
         _logger.LogInformation("UpdateArticleAsync - After reload, ArticleId: {ArticleId}, Status: '{Status}', IsPublished: {IsPublished}", 
             id, article?.Status, article?.IsPublished);
         
+        if (article == null)
+        {
+            _logger.LogError("UpdateArticleAsync - Article {ArticleId} not found after update", id);
+            return null;
+        }
+        
         var category = await _unitOfWork.Categories.FindByIdAsync(article.CategoryId);
         var author = await _unitOfWork.Users.GetUserByIdAsync(article.CreatedBy);
 

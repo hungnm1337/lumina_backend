@@ -75,6 +75,7 @@ public class VocabulariesController : ControllerBase
                 category = v.Category,
                 definition = v.Definition,
                 example = v.Example,
+                imageUrl = v.ImageUrl // Trả về ImageUrl cho từng vocabulary
             }));
         }
         catch (Exception ex)
@@ -92,6 +93,7 @@ public class VocabulariesController : ControllerBase
         public string Definition { get; set; } = string.Empty;
         public string? Example { get; set; }
         public bool GenerateAudio { get; set; } = true; // Thêm option để tạo audio
+        public string? ImageUrl { get; set; } // URL ảnh từ Cloudinary
     }
 
     // POST api/vocabularies
@@ -166,11 +168,18 @@ public class VocabulariesController : ControllerBase
                 Category = req.Category,
                 Definition = req.Definition,
                 Example = req.Example,
-               
+                ImageUrl = req.ImageUrl, // Lưu ImageUrl nếu có
                 IsDeleted = false
             };
+            
+            // Log để debug
+            Console.WriteLine($"📝 Creating vocabulary: Word={vocab.Word}, ImageUrl={vocab.ImageUrl ?? "NULL"}");
+            
             await _unitOfWork.Vocabularies.AddAsync(vocab);
             await _unitOfWork.CompleteAsync();
+            
+            // Log sau khi lưu để kiểm tra
+            Console.WriteLine($"✅ Vocabulary created with ID={vocab.VocabularyId}, ImageUrl={vocab.ImageUrl ?? "NULL"}");
 
             return CreatedAtAction(nameof(GetList), new { listId = req.VocabularyListId }, new { 
                 id = vocab.VocabularyId,
@@ -304,6 +313,13 @@ public class VocabulariesController : ControllerBase
             vocab.Category = req.Category;
             vocab.Definition = req.Definition;
             vocab.Example = req.Example;
+            
+            // Cập nhật ImageUrl: 
+            // - Nếu req.ImageUrl là null → giữ nguyên giá trị cũ (không gửi trong request)
+            // - Nếu req.ImageUrl là empty string → xóa ảnh (set về null)
+            // - Nếu req.ImageUrl có giá trị → cập nhật
+            // Frontend sẽ luôn gửi imageUrl trong request (có thể là undefined nếu không có)
+            vocab.ImageUrl = req.ImageUrl; // Luôn cập nhật theo giá trị từ request
 
             await _unitOfWork.Vocabularies.UpdateAsync(vocab);
             await _unitOfWork.CompleteAsync();
@@ -513,6 +529,7 @@ public class VocabulariesController : ControllerBase
         public string? Category { get; set; }
         public string Definition { get; set; } = string.Empty;
         public string? Example { get; set; }
+        public string? ImageUrl { get; set; } // URL ảnh từ Cloudinary
     }
 }
 

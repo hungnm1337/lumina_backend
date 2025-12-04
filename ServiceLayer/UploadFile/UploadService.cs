@@ -32,36 +32,43 @@ namespace ServiceLayer.UploadFile
 
             UploadResult uploadResult;
 
-            if (file.ContentType.StartsWith("audio/"))
+            // Đọc file vào memory stream để tránh stream bị đóng
+            using (var memoryStream = new MemoryStream())
             {
-                var audioParams = new VideoUploadParams()
-                {
-                    File = new FileDescription(file.FileName, file.OpenReadStream()),
-                    PublicId = $"lumina/audio/{Path.GetFileNameWithoutExtension(file.FileName)}_{Guid.NewGuid()}",
-                };
+                await file.CopyToAsync(memoryStream);
+                memoryStream.Position = 0; // Reset stream position
 
-                uploadResult = await _cloudinary.UploadAsync(audioParams);
-            }
-            else // Mặc định xử lý cho file ảnh
-            {
-                var imageParams = new ImageUploadParams
+                if (file.ContentType.StartsWith("audio/"))
                 {
-                    File = new FileDescription(file.FileName, file.OpenReadStream()),
-                    PublicId = $"music_app/images/{Path.GetFileNameWithoutExtension(file.FileName)}_{Guid.NewGuid()}",
-                    // Không đặt Transformation để giữ nguyên kích thước gốc ảnh
-                };
+                    var audioParams = new VideoUploadParams()
+                    {
+                        File = new FileDescription(file.FileName, memoryStream),
+                        PublicId = $"lumina/audio/{Path.GetFileNameWithoutExtension(file.FileName)}_{Guid.NewGuid()}",
+                    };
 
-                var imageUploadResult = await _cloudinary.UploadAsync(imageParams);
-                if (imageUploadResult.Error != null)
-                {
-                    throw new Exception(imageUploadResult.Error.Message);
+                    uploadResult = await _cloudinary.UploadAsync(audioParams);
                 }
-                return new DataLayer.DTOs.UploadResultDTO { Url = imageUploadResult.SecureUrl.ToString(), PublicId = imageUploadResult.PublicId };
+                else // Mặc định xử lý cho file ảnh
+                {
+                    var imageParams = new ImageUploadParams
+                    {
+                        File = new FileDescription(file.FileName, memoryStream),
+                        PublicId = $"music_app/images/{Path.GetFileNameWithoutExtension(file.FileName)}_{Guid.NewGuid()}",
+                        // Không đặt Transformation để giữ nguyên kích thước gốc ảnh
+                    };
+
+                    var imageUploadResult = await _cloudinary.UploadAsync(imageParams);
+                    if (imageUploadResult.Error != null)
+                    {
+                        throw new Exception($"Cloudinary upload error: {imageUploadResult.Error.Message}");
+                    }
+                    return new DataLayer.DTOs.UploadResultDTO { Url = imageUploadResult.SecureUrl.ToString(), PublicId = imageUploadResult.PublicId };
+                }
             }
 
             if (uploadResult.Error != null)
             {
-                throw new Exception(uploadResult.Error.Message);
+                throw new Exception($"Cloudinary upload error: {uploadResult.Error.Message}");
             }
 
             return new UploadResultDTO { Url = uploadResult.SecureUrl.ToString(), PublicId = uploadResult.PublicId };
