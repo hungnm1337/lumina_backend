@@ -1,7 +1,6 @@
 using Xunit;
 using Moq;
 using Moq.Protected;
-using ServiceLayer.PictureCaptioning;
 using System;
 using System.Net;
 using System.Net.Http;
@@ -46,7 +45,7 @@ namespace Lumina.Test.Services
             // Verify HttpClient is never called
             _mockHttpMessageHandler.Protected().Verify(
                 "SendAsync",
-                Times.Never,
+                Times.Never(),
                 ItExpr.IsAny<HttpRequestMessage>(),
                 ItExpr.IsAny<CancellationToken>()
             );
@@ -69,7 +68,7 @@ namespace Lumina.Test.Services
             // Verify HttpClient is never called
             _mockHttpMessageHandler.Protected().Verify(
                 "SendAsync",
-                Times.Never,
+                Times.Never(),
                 ItExpr.IsAny<HttpRequestMessage>(),
                 ItExpr.IsAny<CancellationToken>()
             );
@@ -92,7 +91,7 @@ namespace Lumina.Test.Services
             // Verify HttpClient is never called
             _mockHttpMessageHandler.Protected().Verify(
                 "SendAsync",
-                Times.Never,
+                Times.Never(),
                 ItExpr.IsAny<HttpRequestMessage>(),
                 ItExpr.IsAny<CancellationToken>()
             );
@@ -137,7 +136,7 @@ namespace Lumina.Test.Services
             // Verify HttpClient is called exactly once
             _mockHttpMessageHandler.Protected().Verify(
                 "SendAsync",
-                Times.Once,
+                Times.Once(),
                 ItExpr.Is<HttpRequestMessage>(req =>
                     req.Method == HttpMethod.Post &&
                     req.RequestUri != null &&
@@ -176,7 +175,7 @@ namespace Lumina.Test.Services
             // Verify HttpClient is called exactly once
             _mockHttpMessageHandler.Protected().Verify(
                 "SendAsync",
-                Times.Once,
+                Times.Once(),
                 ItExpr.IsAny<HttpRequestMessage>(),
                 ItExpr.IsAny<CancellationToken>()
             );

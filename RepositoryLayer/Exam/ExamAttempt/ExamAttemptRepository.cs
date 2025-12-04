@@ -25,20 +25,20 @@ namespace RepositoryLayer.Exam.ExamAttempt
 
         public async Task<ExamAttemptRequestDTO> EndAnExam(ExamAttemptRequestDTO model)
         {
-            
+
             var attempt = await _context.ExamAttempts.FindAsync(model.AttemptID);
 
             if (attempt == null)
             {
                 throw new KeyNotFoundException($"Exam attempt with ID {model.AttemptID} not found.");
             }
-            
+
             attempt.EndTime = model.EndTime;
             attempt.Score = model.Score;
             attempt.Status = ExamAttemptStatus.Completed;
 
             await _context.SaveChangesAsync();
-            
+
             return new ExamAttemptRequestDTO()
             {
                 AttemptID = attempt.AttemptID,
@@ -60,9 +60,9 @@ namespace RepositoryLayer.Exam.ExamAttempt
                 .Select(attempt => new ExamAttemptResponseDTO()
                 {
                     AttemptID = attempt.AttemptID,
-                    UserName = attempt.User != null ? attempt.User.FullName : null,
-                    ExamName = attempt.Exam != null ? attempt.Exam.Name : null,
-                    ExamPartName = attempt.ExamPart != null ? attempt.ExamPart.PartCode : null,
+                    UserName = attempt.User != null ? attempt.User.FullName : string.Empty,
+                    ExamName = attempt.Exam != null ? attempt.Exam.Name : string.Empty,
+                    ExamPartName = attempt.ExamPart != null ? attempt.ExamPart.PartCode : string.Empty,
                     StartTime = attempt.StartTime,
                     EndTime = attempt.EndTime,
                     Score = attempt.Score,
@@ -81,9 +81,9 @@ namespace RepositoryLayer.Exam.ExamAttempt
                 .Select(attempt => new ExamAttemptResponseDTO()
                 {
                     AttemptID = attempt.AttemptID,
-                    UserName = attempt.User != null ? attempt.User.FullName : null,
-                    ExamName = attempt.Exam != null ? attempt.Exam.Name : null,
-                    ExamPartName = attempt.ExamPart != null ? attempt.ExamPart.PartCode : null,
+                    UserName = attempt.User != null ? attempt.User.FullName : string.Empty,
+                    ExamName = attempt.Exam != null ? attempt.Exam.Name : string.Empty,
+                    ExamPartName = attempt.ExamPart != null ? attempt.ExamPart.PartCode : string.Empty,
                     StartTime = attempt.StartTime,
                     EndTime = attempt.EndTime,
                     Score = attempt.Score,
@@ -93,7 +93,7 @@ namespace RepositoryLayer.Exam.ExamAttempt
 
             if (attemptsInfo == null)
             {
-                return null;
+                return null!;
             }
 
             var writingAnswers = await this.GetWritingAnswerByAttemptId(attemptId);
@@ -103,7 +103,7 @@ namespace RepositoryLayer.Exam.ExamAttempt
 
             ExamAttemptDetailResponseDTO data = new ExamAttemptDetailResponseDTO()
             {
-                ExamAttemptInfo = attemptsInfo,
+                ExamAttemptInfo = attemptsInfo!,
                 WritingAnswers = writingAnswers,
                 ReadingAnswers = readingAnswers,
                 ListeningAnswers = listeningAnswers,
@@ -123,9 +123,9 @@ namespace RepositoryLayer.Exam.ExamAttempt
                     AttemptID = answer.AttemptID,
                     Question = new DataLayer.DTOs.Exam.QuestionDTO()
                     {
-                        Options = null,
+                        Options = null!,
                         PromptId = answer.Question.PromptId,
-                        PartCode = answer.Question.Part.PartCode,
+                        PartCode = answer.Question.Part != null ? answer.Question.Part.PartCode : string.Empty,
                         QuestionId = answer.Question.QuestionId,
                         Prompt = answer.Question.Prompt != null ? new DataLayer.DTOs.Exam.PromptDTO()
                         {
@@ -135,7 +135,7 @@ namespace RepositoryLayer.Exam.ExamAttempt
                             Title = answer.Question.Prompt.Title,
                             ReferenceAudioUrl = answer.Question.Prompt.ReferenceAudioUrl,
                             ReferenceImageUrl = answer.Question.Prompt.ReferenceImageUrl
-                        } : null,
+                        } : null!,
                         PartId = answer.Question.PartId,
                         QuestionExplain = answer.Question.QuestionExplain,
                         QuestionType = answer.Question.QuestionType,
@@ -161,19 +161,19 @@ namespace RepositoryLayer.Exam.ExamAttempt
                     AttemptID = answer.AttemptID,
                     Question = new DataLayer.DTOs.Exam.QuestionDTO()
                     {
-                       
+
                         Options = answer.Question.Options
                             .Select(option => new DataLayer.DTOs.Exam.OptionDTO()
                             {
                                 OptionId = option.OptionId,
-                                Content = option.Content,
+                                Content = option.Content ?? string.Empty,
                                 IsCorrect = option.IsCorrect,
                                 QuestionId = option.QuestionId
                             })
-                            .ToList(), 
+                            .ToList(),
                         PromptId = answer.Question.PromptId,
                         QuestionId = answer.Question.QuestionId,
-                        PartCode = answer.Question.Part.PartCode,
+                        PartCode = answer.Question.Part != null ? answer.Question.Part.PartCode : string.Empty,
                         Prompt = answer.Question.Prompt != null ? new DataLayer.DTOs.Exam.PromptDTO()
                         {
                             PromptId = answer.Question.Prompt.PromptId,
@@ -182,7 +182,7 @@ namespace RepositoryLayer.Exam.ExamAttempt
                             Title = answer.Question.Prompt.Title,
                             ReferenceAudioUrl = answer.Question.Prompt.ReferenceAudioUrl,
                             ReferenceImageUrl = answer.Question.Prompt.ReferenceImageUrl
-                        } : null,
+                        } : null!,
 
                         PartId = answer.Question.PartId,
                         QuestionExplain = answer.Question.QuestionExplain,
@@ -197,10 +197,10 @@ namespace RepositoryLayer.Exam.ExamAttempt
                     SelectedOption = answer.SelectedOption != null ? new DataLayer.DTOs.Exam.OptionDTO()
                     {
                         OptionId = answer.SelectedOption.OptionId,
-                        Content = answer.SelectedOption.Content,
+                        Content = answer.SelectedOption.Content ?? string.Empty,
                         IsCorrect = answer.SelectedOption.IsCorrect,
                         QuestionId = answer.SelectedOption.QuestionId
-                    } : null
+                    } : null!
                 })
                 .ToListAsync();
 
@@ -211,18 +211,18 @@ namespace RepositoryLayer.Exam.ExamAttempt
         {
             var listeningAnswers = await _context.UserAnswerMultipleChoices
                 .AsNoTracking()
-                .Where(answer => answer.AttemptID == attemptId 
-                    && (answer.Question.QuestionType == "Listening" || 
-                        answer.Question.PartId >= 1 && answer.Question.PartId <= 4)) 
+                .Where(answer => answer.AttemptID == attemptId
+                    && (answer.Question.QuestionType == "Listening" ||
+                        answer.Question.PartId >= 1 && answer.Question.PartId <= 4))
                 .Select(answer => new ListeningAnswerResponseDTO()
                 {
                     AttemptID = answer.AttemptID,
                     Question = new DataLayer.DTOs.Exam.QuestionDTO()
                     {
-                        Options = null,
+                        Options = null!,
                         PromptId = answer.Question.PromptId,
                         QuestionId = answer.Question.QuestionId,
-                        PartCode = answer.Question.Part.PartCode,
+                        PartCode = answer.Question.Part != null ? answer.Question.Part.PartCode : string.Empty,
 
                         Prompt = answer.Question.Prompt != null ? new DataLayer.DTOs.Exam.PromptDTO()
                         {
@@ -232,7 +232,7 @@ namespace RepositoryLayer.Exam.ExamAttempt
                             Title = answer.Question.Prompt.Title,
                             ReferenceAudioUrl = answer.Question.Prompt.ReferenceAudioUrl,
                             ReferenceImageUrl = answer.Question.Prompt.ReferenceImageUrl
-                        } : null,
+                        } : null!,
                         PartId = answer.Question.PartId,
                         QuestionExplain = answer.Question.QuestionExplain,
                         QuestionType = answer.Question.QuestionType,
@@ -246,10 +246,10 @@ namespace RepositoryLayer.Exam.ExamAttempt
                     SelectedOption = answer.SelectedOption != null ? new DataLayer.DTOs.Exam.OptionDTO()
                     {
                         OptionId = answer.SelectedOption.OptionId,
-                        Content = answer.SelectedOption.Content,
+                        Content = answer.SelectedOption.Content ?? string.Empty,
                         IsCorrect = answer.SelectedOption.IsCorrect,
                         QuestionId = answer.SelectedOption.QuestionId
-                    } : null
+                    } : null!
                 })
                 .ToListAsync();
             return listeningAnswers;
@@ -266,10 +266,10 @@ namespace RepositoryLayer.Exam.ExamAttempt
                     AttemptID = answer.AttemptID,
                     Question = new DataLayer.DTOs.Exam.QuestionDTO()
                     {
-                        Options = null,
+                        Options = null!,
                         PromptId = answer.Question.PromptId,
                         QuestionId = answer.Question.QuestionId,
-                        PartCode = answer.Question.Part.PartCode,
+                        PartCode = answer.Question.Part != null ? answer.Question.Part.PartCode : string.Empty,
 
                         Prompt = answer.Question.Prompt != null ? new DataLayer.DTOs.Exam.PromptDTO()
                         {
@@ -279,7 +279,7 @@ namespace RepositoryLayer.Exam.ExamAttempt
                             Title = answer.Question.Prompt.Title,
                             ReferenceAudioUrl = answer.Question.Prompt.ReferenceAudioUrl,
                             ReferenceImageUrl = answer.Question.Prompt.ReferenceImageUrl
-                        } : null,
+                        } : null!,
                         PartId = answer.Question.PartId,
                         QuestionExplain = answer.Question.QuestionExplain,
                         QuestionType = answer.Question.QuestionType,
@@ -297,17 +297,15 @@ namespace RepositoryLayer.Exam.ExamAttempt
                     GrammarScore = answer.GrammarScore,
                     VocabularyScore = answer.VocabularyScore,
                     ContentScore = answer.ContentScore,
-                    OverallScore = (answer.PronunciationScore + answer.AccuracyScore + answer.FluencyScore + 
-                                   answer.CompletenessScore + answer.GrammarScore + answer.VocabularyScore + 
-                                   answer.ContentScore) / 7
+                    OverallScore = answer.OverallScore
                 })
                 .ToListAsync();
-            
+
             foreach (var answer in speakingAnswers)
             {
                 Console.WriteLine($"  - Question {answer.Question.QuestionNumber}: P={answer.PronunciationScore}, A={answer.AccuracyScore}, F={answer.FluencyScore}, C={answer.CompletenessScore}, G={answer.GrammarScore}, V={answer.VocabularyScore}, Ct={answer.ContentScore}, Overall={answer.OverallScore}");
             }
-            
+
             return speakingAnswers;
         }
 
@@ -319,21 +317,21 @@ namespace RepositoryLayer.Exam.ExamAttempt
                 ExamID = model.ExamID,
                 ExamPartId = model.ExamPartId,
                 StartTime = model.StartTime,
-                Status = ExamAttemptStatus.Doing 
+                Status = ExamAttemptStatus.Doing
             };
 
             await _context.ExamAttempts.AddAsync(attempt);
 
-            await _context.SaveChangesAsync();        
+            await _context.SaveChangesAsync();
             return new ExamAttemptRequestDTO()
             {
-                AttemptID = attempt.AttemptID, 
+                AttemptID = attempt.AttemptID,
                 UserID = attempt.UserID,
                 ExamID = attempt.ExamID,
                 ExamPartId = attempt.ExamPartId,
                 StartTime = attempt.StartTime,
-                EndTime = attempt.EndTime, 
-                Score = attempt.Score,    
+                EndTime = attempt.EndTime,
+                Score = attempt.Score,
                 Status = attempt.Status
             };
         }
@@ -343,24 +341,24 @@ namespace RepositoryLayer.Exam.ExamAttempt
             try
             {
                 var option = await _context.Options
-                    .Include(o => o.Question) 
+                    .Include(o => o.Question)
                     .FirstOrDefaultAsync(o => o.OptionId == model.SelectedOptionId);
-                if (option == null || model.ExamAttemptId<=0 || model.QuestionId<=0||option.QuestionId != model.QuestionId)
+                if (option == null || model.ExamAttemptId <= 0 || model.QuestionId <= 0 || option.QuestionId != model.QuestionId)
                 {
-                    throw new KeyNotFoundException($"Modle invalid");
+                    throw new KeyNotFoundException($"Model invalid");
                 }
                 var answer = new DataLayer.Models.UserAnswerMultipleChoice()
                 {
                     AttemptID = model.ExamAttemptId,
                     QuestionId = model.QuestionId,
                     SelectedOptionId = model.SelectedOptionId,
-                    IsCorrect = option.IsCorrect.Value,
-                    Score = option.IsCorrect.Value ? option.Question.ScoreWeight : 0
+                    IsCorrect = option.IsCorrect ?? false,
+                    Score = (option.IsCorrect ?? false) ? (option.Question?.ScoreWeight ?? 0) : 0
                 };
                 await _context.UserAnswerMultipleChoices.AddAsync(answer);
                 return await _context.SaveChangesAsync() > 0;
             }
-            catch (Exception ex)
+            catch
             {
                 return false;
             }
@@ -377,10 +375,10 @@ namespace RepositoryLayer.Exam.ExamAttempt
                     UserAnswerContent = model.UserAnswerContent,
                     FeedbackFromAI = model.FeedbackFromAI
                 };
-                _context.UserAnswerWritings.AddAsync(answer);
+                await _context.UserAnswerWritings.AddAsync(answer);
                 return await _context.SaveChangesAsync() > 0;
             }
-            catch (Exception ex)
+            catch
             {
                 return false;
             }
