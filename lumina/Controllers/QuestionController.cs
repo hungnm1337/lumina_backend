@@ -56,16 +56,20 @@ namespace lumina.Controllers
         public async Task<IActionResult> UploadExcel(IFormFile file, [FromQuery] int partId)
         {
             if (file == null || file.Length == 0)
-                return BadRequest("Chưa chọn file.");
+                return BadRequest(new { message = "Chưa chọn file." });
 
             try
             {
+                Console.WriteLine($"[UploadExcel] Starting import for partId={partId}, file={file.FileName}");
                 await _importService.ImportQuestionsFromExcelAsync(file, partId);
-                return Ok("Import câu hỏi thành công!");
+                Console.WriteLine($"[UploadExcel] Import completed successfully");
+                return Ok(new { message = "Import câu hỏi thành công!" });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Lỗi import câu hỏi: {ex.Message}");
+                Console.WriteLine($"[UploadExcel] Error: {ex.Message}");
+                Console.WriteLine($"[UploadExcel] StackTrace: {ex.StackTrace}");
+                return StatusCode(500, new { message = $"Lỗi import câu hỏi: {ex.Message}" });
             }
         }
 

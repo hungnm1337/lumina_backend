@@ -79,6 +79,8 @@ namespace ServiceLayer.ExamGenerationAI
             var textJson = CleanAIResponse(responseStr);
             var parseResult = JsonConvert.DeserializeObject<ParseResultDTO>(textJson);
 
+            Console.WriteLine($"📋 Parsed Result: Part={parseResult.PartNumber}, Quantity={parseResult.Quantity}, Topic={parseResult.Topic}");
+
             return (parseResult.PartNumber, parseResult.Quantity, parseResult.Topic);
         }
 
@@ -516,7 +518,7 @@ Now answer the user's question (PLAIN TEXT, NO JSON):";
         public string GeneratePollinationsImageUrl(string description)
         {
             if (string.IsNullOrWhiteSpace(description))
-                return string.Empty; 
+                return string.Empty;
 
             string encodedPrompt = Uri.EscapeDataString(description.Trim());
 
@@ -524,6 +526,22 @@ Now answer the user's question (PLAIN TEXT, NO JSON):";
 
             return imageUrl;
         }
+
+        /* public string GeneratePollinationsImageUrl(string description)
+         {
+             if (string.IsNullOrWhiteSpace(description))
+                 return string.Empty;
+
+             string enhancePrompt =
+                 "ultra sharp, high clarity, detailed texture, crisp edges, photorealistic, high-detail lighting, noise-free";
+
+             string finalPrompt = $"{description}, {enhancePrompt}";
+             string encodedPrompt = Uri.EscapeDataString(finalPrompt);
+
+             return $"https://image.pollinations.ai/prompt/{encodedPrompt}?model=flux&width=512&height=512&seed=random&nologo=true&enhance=true&safe=true";
+         }*/
+
+
 
         private static string GetSkillFromPart(int partNumber)
         {

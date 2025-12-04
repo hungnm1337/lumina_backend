@@ -34,9 +34,9 @@ namespace ServiceLayer.Import
             
             // SPEAKING
             { "SPEAKING_PART_1", (2, 1) },
-            { "SPEAKING_PART_2", (1, 1) },
-            { "SPEAKING_PART_3", (3, 3) },
-            { "SPEAKING_PART_4", (4, 4) },
+            { "SPEAKING_PART_2", (2, 1) },
+            { "SPEAKING_PART_3", (1, 3) },
+            { "SPEAKING_PART_4", (1, 3) },
             { "SPEAKING_PART_5", (1, 1) },
             
             // WRITING
