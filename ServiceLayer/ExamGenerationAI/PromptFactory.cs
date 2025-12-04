@@ -23,11 +23,11 @@ namespace ServiceLayer.AI.Prompt
             { 7, new PartConfiguration { QuestionsPerPrompt = 3, DefaultPromptCount = 5 } },
             
             // SPEAKING
-            { 8, new PartConfiguration { QuestionsPerPrompt = 1, DefaultPromptCount = 2 } },
-            { 9, new PartConfiguration { QuestionsPerPrompt = 1, DefaultPromptCount = 2 } },
-            { 10, new PartConfiguration { QuestionsPerPrompt = 3, DefaultPromptCount = 1 } },
-            { 11, new PartConfiguration { QuestionsPerPrompt = 3, DefaultPromptCount = 1 } },
-            { 12, new PartConfiguration { QuestionsPerPrompt = 1, DefaultPromptCount = 1 } },
+            { 8, new PartConfiguration { QuestionsPerPrompt = 1, DefaultPromptCount = 2 } },  // Part 1: Q1-2, 2 prompts
+            { 9, new PartConfiguration { QuestionsPerPrompt = 1, DefaultPromptCount = 1 } },  // Part 2: Q3, 1 prompt
+            { 10, new PartConfiguration { QuestionsPerPrompt = 3, DefaultPromptCount = 1 } }, // Part 3: Q4-6, 1 prompt với 3 câu
+            { 11, new PartConfiguration { QuestionsPerPrompt = 3, DefaultPromptCount = 1 } }, // Part 4: Q7-9, 1 prompt với 3 câu
+            { 12, new PartConfiguration { QuestionsPerPrompt = 2, DefaultPromptCount = 1 } }, // Part 5: Q10-11, 1 prompt với 2 câu
             
             // WRITING
             { 13, new PartConfiguration { QuestionsPerPrompt = 1, DefaultPromptCount = 5 } },
@@ -65,11 +65,11 @@ namespace ServiceLayer.AI.Prompt
             { 5, 30 },  // Reading Part 5: 30 prompts (câu hỏi)
             { 6, 4 },   // Reading Part 6: 4 prompts (đoạn văn)
             { 7, 5 },  // Reading Part 7: Tổng cộng ~15 cụm (10 single, 2 double, 3 triple)
-            { 8, 2 },   // Speaking Q1-2: 2 prompts (đoạn văn đọc)
-            { 9, 2 },   // Speaking Q3-4: 1 prompt (ảnh)
-            { 10, 1 },  // Speaking Q5-7: 1 prompt (tình huống)
-            { 11, 1 },  // Speaking Q8-10: 1 prompt (thông tin)
-            { 12, 1 },   // Speaking Q11: 1 prompt (ý kiến)
+            { 8, 2 },   // Speaking Part 1 (Q1-2): 2 prompts (đoạn văn đọc)
+            { 9, 2 },   // Speaking Part 2 (Q3): 2 prompt (ảnh miêu tả)
+            { 10, 1 },  // Speaking Part 3 (Q4-6): 1 prompt (3 câu hỏi)
+            { 11, 1 },  // Speaking Part 4 (Q7-9): 1 prompt (3 câu hỏi + info)
+            { 12, 1 },  // Speaking Part 5 (Q10-11): 1 prompt (express opinion)
             { 13, 5 },  // Writing Q1-5: 5 prompts (ảnh + từ)
             { 14, 2 },  // Writing Q6-7: 2 prompts (email)
             { 15, 1 }   // Writing Q8: 1 prompt (đề luận)
@@ -88,23 +88,53 @@ namespace ServiceLayer.AI.Prompt
                     * Listening Part 2 -> 2
                     * Listening Part 3 -> 3
                     * Listening Part 4 -> 4
+                    
+                    **LƯU Ý QUAN TRỌNG VỀ LISTENING:**
+                    - "Listening Part 1" hoặc "miêu tả ảnh/tranh" → partNumber = 1
+                    - "Listening Part 2" hoặc "hỏi đáp ngắn" → partNumber = 2
+                    - "Listening Part 3" hoặc "hội thoại" → partNumber = 3
+                    - "Listening Part 4" hoặc "monologue/độc thoại" → partNumber = 4
+                    
                     * Reading Part 5 -> 5
                     * Reading Part 6 -> 6
                     * Reading Part 7 -> 7
-                    * Speaking Part1 (Read Aloud) -> 8
-                    * Speaking Part2 (Describe Picture) -> 9
-                    * Speaking Part3 (Respond Questions Scenario) -> 10
-                    * Speaking Part4 (Respond Questions Info) -> 11
-                    * Speaking Part5 (Express Opinion) -> 12
+                    
+                    **LƯU Ý QUAN TRỌNG VỀ READING:**
+                    - "Reading Part 5" hoặc "incomplete sentences/hoàn thành câu" → partNumber = 5
+                    - "Reading Part 6" hoặc "text completion/hoàn thành đoạn văn" → partNumber = 6
+                    - "Reading Part 7" hoặc "reading comprehension/đọc hiểu/single/double/triple passage" → partNumber = 7
+                    
+                    * Speaking Part 1 (Questions 1-2: Read Aloud) -> 8
+                    * Speaking Part 2 (Question 3: Describe Picture) -> 9
+                    * Speaking Part 3 (Questions 4-6: Respond to Questions) -> 10
+                    * Speaking Part 4 (Questions 7-9: Respond Using Information) -> 11
+                    * Speaking Part 5 (Questions 10-11: Express Opinion) -> 12
+                    
+                    **LƯU Ý QUAN TRỌNG VỀ SPEAKING:**
+                    - "Speaking Part 1" → partNumber = 8 (KHÔNG PHẢI 1!)
+                    - "Speaking Part 2" → partNumber = 9 (KHÔNG PHẢI 2!)
+                    - "Speaking Part 3" → partNumber = 10 (KHÔNG PHẢI 3!)
+                    - "Speaking Part 4" → partNumber = 11 (KHÔNG PHẢI 4!)
+                    - "Speaking Part 5" → partNumber = 12 (KHÔNG PHẢI 5!)
+                    - "Speaking question 5" hoặc "Speaking Q5" → thuộc Part 3 → partNumber = 10
+                    
                     * Writing Part1 (Sentence from Picture) -> 13
                     * Writing Part2 (Respond Email) -> 14
                     * Writing Part3 (Opinion Essay) -> 15
+                    
+                    **LƯU Ý QUAN TRỌNG VỀ WRITING:**
+                    - "Writing Part 1" hoặc "Writing Q1-5" → partNumber = 13, quantity = 5 (từ bảng mặc định)
+                    - "Writing Part 2" hoặc "Writing Q6-7" → partNumber = 14, quantity = 2 (từ bảng mặc định)
+                    - "Writing Part 3" hoặc "Writing Q8" → partNumber = 15, quantity = 1 (từ bảng mặc định)
+                    
                 * Nếu không thể xác định `partNumber`, trả về 0.
 
             2.  **`quantity` (Integer):** Số lượng **cụm đề bài (prompts)** hoặc **câu hỏi đơn lẻ** cần tạo.
-                * **Ưu tiên:** Nếu người dùng chỉ định rõ số lượng (ví dụ: "tạo 5 câu", "cho tôi 2 bài nói", "10 câu part 5"), hãy lấy chính xác con số đó.
-                * **Mặc định:** Nếu người dùng KHÔNG chỉ định số lượng mà chỉ nói "tạo đề Part X" hoặc "cho tôi bài Part Y", hãy sử dụng số lượng mặc định chuẩn của phần thi đó dựa trên bảng dưới đây.
-                * **Bảng số lượng mặc định (`defaultQuantities`):**
+                * **QUAN TRỌNG - ƯU TIÊN CAO NHẤT:** 
+                    - Nếu user KHÔNG nói rõ số lượng (ví dụ: chỉ nói "tạo đề Part X", "cho tôi bài Part Y"), bạn BẮT BUỘC phải lấy giá trị từ bảng `defaultQuantities` bên dưới.
+                    - KHÔNG TỰ Ý đoán hoặc để quantity = 1 nếu không có trong input!
+                * **Chỉ khi nào:** User chỉ định RÕ RÀNG số lượng (ví dụ: "tạo 5 câu", "cho tôi 2 bài", "10 câu part 5"), bạn mới lấy con số đó.
+                * **Bảng số lượng mặc định (`defaultQuantities`) - PHẢI TUÂN THỦ:**
                     ```json
                     {{{defaultQuantitiesJson}}}
                     ```
@@ -124,14 +154,25 @@ namespace ServiceLayer.AI.Prompt
                     Output: `{{ "partNumber": 1, "quantity": 6, "topic": null }}` (Lấy quantity=6 từ bảng mặc định)
                 * Input: `"Tạo 1 đoạn hội thoại Listening Part 3 chủ đề đặt phòng khách sạn"`
                     Output: `{{ "partNumber": 3, "quantity": 1, "topic": "đặt phòng khách sạn" }}`
+                * Input: `"tạo đề Listening Part 2"` (Không có số lượng)
+                    Output: `{{ "partNumber": 2, "quantity": 25, "topic": null }}` (Lấy quantity=25 từ bảng)
+                * Input: `"Reading Part 6 chủ đề môi trường"` (Không có số lượng)
+                    Output: `{{ "partNumber": 6, "quantity": 4, "topic": "môi trường" }}` (Lấy quantity=4 từ bảng)
                 * Input: `"Reading Part 7 double passage về review sản phẩm"`
-                    Output: `{{ "partNumber": 7, "quantity": 2, "topic": "double passage review sản phẩm" }}` (Lấy quantity=2 từ bảng, topic bao gồm cả loại passage)
-                * Input: `"Cho tôi đề Speaking task 11"` (Không có số lượng)
-                    Output: `{{ "partNumber": 13, "quantity": 1, "topic": null }}` (Lấy quantity=1 từ bảng)
-                * Input: `"tạo đề writing question 8 chủ đề công việc từ xa"`
-                    Output: `{{ "partNumber": 21, "quantity": 1, "topic": "công việc từ xa" }}` (Lấy quantity=1 từ bảng)
+                    Output: `{{ "partNumber": 7, "quantity": 5, "topic": "double passage review sản phẩm" }}` (Lấy quantity=5 từ bảng mặc định)
+                * Input: `"Cho tôi đề Speaking Part 3"` (Không có số lượng)
+                    Output: `{{ "partNumber": 10, "quantity": 1, "topic": null }}` (Speaking Part 3 → partNumber=10, lấy quantity=1)
+                * Input: `"tạo đề Speaking Part 5 chủ đề công việc từ xa"`
+                    Output: `{{ "partNumber": 12, "quantity": 1, "topic": "công việc từ xa" }}` (Speaking Part 5 → partNumber=12)
                 * Input: `"làm giúp bài part 4 listening"` (Không có số lượng)
-                    Output: `{{ "partNumber": 4, "quantity": 10, "topic": null }}` (Lấy quantity=10 từ bảng)
+                    Output: `{{ "partNumber": 4, "quantity": 5, "topic": null }}` (Lấy quantity=5 từ bảng mặc định)
+                * Input: `"tạo đề Writing Part 2"` (Không có số lượng)
+                    Output: `{{ "partNumber": 14, "quantity": 2, "topic": null }}` (Writing Part 2 → partNumber=14, lấy quantity=2)
+                * Input: `"cho tôi Writing Part 1"` (Không có số lượng)
+                    Output: `{{ "partNumber": 13, "quantity": 5, "topic": null }}` (Writing Part 1 → partNumber=13, lấy quantity=5)
+                    Output: `{{ "partNumber": 14, "quantity": 2, "topic": null }}` (Part 2 = Q6-7, lấy quantity=2 từ bảng)
+                * Input: `"cho tôi Writing Part 1"` (Không có số lượng)
+                    Output: `{{ "partNumber": 13, "quantity": 5, "topic": null }}` (Part 1 = Q1-5, lấy quantity=5 từ bảng)
                 * Input: `"tạo đề thi"` (Không rõ part)
                     Output: `{{ "partNumber": 0, "quantity": 1, "topic": null }}`
 
@@ -139,8 +180,7 @@ namespace ServiceLayer.AI.Prompt
             """;
         }
 
-        // --- GetGenerationPrompt (Dispatcher) ---
-        // (Giữ nguyên logic)
+
         public static string GetGenerationPrompt(int partNumber, int quantity, string? topic)
         {
             string safeTopic = topic ?? "chủ đề kinh doanh và công sở tổng quát"; // Chủ đề mặc định
@@ -208,8 +248,8 @@ namespace ServiceLayer.AI.Prompt
                         Time = 60,
                         Options = new List<AIGeneratedOptionDTO>
                         {
-                            new AIGeneratedOptionDTO { Label = "A", Content = "The woman is pointing at the screen.", IsCorrect = true },
-                            new AIGeneratedOptionDTO { Label = "B", Content = "The man is talking on the phone.", IsCorrect = false },
+                            new AIGeneratedOptionDTO { Label = "A", Content = "The man is talking on the phone.", IsCorrect = false },
+                            new AIGeneratedOptionDTO { Label = "B", Content = "The woman is pointing at the screen.", IsCorrect = true },
                             new AIGeneratedOptionDTO { Label = "C", Content = "The people are standing near the window.", IsCorrect = false },
                             new AIGeneratedOptionDTO { Label = "D", Content = "The woman is typing on the keyboard.", IsCorrect = false }
                         }
@@ -251,7 +291,7 @@ namespace ServiceLayer.AI.Prompt
 
             4. **Các trường bắt buộc khác:**  
                - `ExamExamTitle`, `Skill`, `PartLabel`, `PartId`, `QuestionType`, `ScoreWeight`, `Time`.
-
+           
             ---
 
             ### 🧠 Ví dụ cấu trúc JSON (1 ảnh mẫu):
@@ -979,8 +1019,7 @@ namespace ServiceLayer.AI.Prompt
                         QuestionType = "SPEAKING",
                         StemText = "How often do you read books?",
                         ScoreWeight = 3,
-                        Time = 15,
-                        // ✅ THÊM: Câu trả lời mẫu
+                        Time = 60,
                         SampleAnswer = "I usually read books about two or three times a week, mostly in the evenings after work. On weekends, I try to spend more time reading, perhaps for an hour or two each day."
                     },
                     new AIGeneratedQuestionDTO {
@@ -988,7 +1027,7 @@ namespace ServiceLayer.AI.Prompt
                         QuestionType = "SPEAKING",
                         StemText = "What kind of books do you enjoy reading the most?",
                         ScoreWeight = 3,
-                        Time = 15,
+                        Time = 60,
                         SampleAnswer = "I particularly enjoy reading mystery novels and business books. Mystery novels help me relax and escape from daily stress, while business books provide valuable insights for my career development."
                     },
                     new AIGeneratedQuestionDTO {
@@ -996,7 +1035,7 @@ namespace ServiceLayer.AI.Prompt
                         QuestionType = "SPEAKING",
                         StemText = "Describe your favorite place to read.",
                         ScoreWeight = 3,
-                        Time = 30,
+                        Time = 60,
                         SampleAnswer = "My favorite place to read is a cozy corner in my living room. I have a comfortable armchair next to a large window that provides natural light during the day. There's a small side table where I can place my coffee and a reading lamp for evening reading. The quiet atmosphere and comfortable setting make it the perfect spot for me to concentrate on my books."
                     }
                 }
@@ -1016,8 +1055,8 @@ namespace ServiceLayer.AI.Prompt
         - Một đoạn văn ngắn giới thiệu tình huống (đặt trong `Description` của `AIGeneratedPromptDTO`).
         - **Ba (3)** câu hỏi nói (`Questions` là `AIGeneratedQuestionDTO`), `StemText` là nội dung câu hỏi.
         - **✅ Mỗi câu hỏi phải có `SampleAnswer`**:
-            - Câu 1-2: Câu trả lời ngắn (30-50 từ)
-            - Câu 3: Câu trả lời dài hơn (60-80 từ)
+            - Câu 1-2: Câu trả lời ngắn (30-40 từ)
+            - Câu 3: Câu trả lời dài hơn (40-60 từ)
         - Điền các thông tin khác như `ExamExamTitle`, `Skill`, `PartLabel`, `PartId`, `QuestionType`, `Time`... như trong ví dụ.
     - **Quan trọng:** Trả về kết quả dưới dạng một đối tượng JSON **AIGeneratedExamDTO** duy nhất, không có markdown hay giải thích bên ngoài, theo đúng cấu trúc ví dụ dưới đây.
 
@@ -1054,7 +1093,6 @@ namespace ServiceLayer.AI.Prompt
                         StemText = "What time does the conference begin?",
                         ScoreWeight = 3,
                         Time = 30,
-                        // ✅ THÊM
                         SampleAnswer = "According to the schedule, the conference begins at 9:00 AM with the opening remarks."
                     },
                     new AIGeneratedQuestionDTO {

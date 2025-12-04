@@ -20,10 +20,14 @@ namespace RepositoryLayer.MockTest
         }
 
         
-        public async Task<List<ExamPartDTO>> GetMocktestAsync(int[] examPartIds)
+        public async Task<List<ExamPartDTO>> GetMocktestAsync()
         {
+            var examId = await _context.Exams
+                .Where(e => e.ExamSetKey == "10-2025")
+                .Select(e => e.ExamId)
+                .ToListAsync();
             var examParts = await _context.ExamParts
-                .Where(ep => examPartIds.Contains(ep.PartId))
+                .Where(ep => examId.Contains(ep.ExamId))
                 .Include(ep => ep.Exam) 
                 .Include(ep => ep.Questions) 
                     .ThenInclude(q => q.Options) 

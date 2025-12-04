@@ -21,3 +21,14 @@ public class ArticleCompletionRateDTO
 
 
 
+
+
+
+
+
+
+
+
+
+
+

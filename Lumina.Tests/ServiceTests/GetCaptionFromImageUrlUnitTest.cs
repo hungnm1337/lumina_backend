@@ -1,7 +1,6 @@
 using Xunit;
 using Moq;
 using Moq.Protected;
-using ServiceLayer.PictureCaptioning;
 using System;
 using System.Net;
 using System.Net.Http;

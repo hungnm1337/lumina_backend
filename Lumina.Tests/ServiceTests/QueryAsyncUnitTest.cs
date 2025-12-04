@@ -95,6 +95,123 @@ namespace Lumina.Test.Services
             Assert.Empty(result.Items);
             Assert.Equal(0, result.Total);
         }
+
+        [Fact]
+        public async Task QueryAsync_WhenCategoryIsNull_ShouldReturnDTOWithUnknownCategory()
+        {
+            // Arrange
+            var query = new ArticleQueryParams
+            {
+                Page = 1,
+                PageSize = 10
+            };
+
+            var articles = new List<Article>
+            {
+                new Article
+                {
+                    ArticleId = 1,
+                    Title = "Article 1",
+                    Status = "Published",
+                    IsPublished = true,
+                    CreatedBy = 1,
+                    CategoryId = 1,
+                    CreatedByNavigation = new User { FullName = "Author" },
+                    Category = null, // Category is null
+                    ArticleSections = new List<ArticleSection>()
+                }
+            };
+
+            _mockArticleRepository
+                .Setup(repo => repo.QueryAsync(1, 10, null, null, null, null, "createdAt", "desc", null))
+                .ReturnsAsync((articles, 1));
+
+            // Act
+            var result = await _service.QueryAsync(query);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Single(result.Items);
+            Assert.Equal("Unknown", result.Items[0].CategoryName);
+        }
+
+        [Fact]
+        public async Task QueryAsync_WhenAuthorIsNull_ShouldReturnDTOWithUnknownAuthor()
+        {
+            // Arrange
+            var query = new ArticleQueryParams
+            {
+                Page = 1,
+                PageSize = 10
+            };
+
+            var articles = new List<Article>
+            {
+                new Article
+                {
+                    ArticleId = 1,
+                    Title = "Article 1",
+                    Status = "Published",
+                    IsPublished = true,
+                    CreatedBy = 1,
+                    CategoryId = 1,
+                    CreatedByNavigation = null, // Author is null
+                    Category = new ArticleCategory { CategoryName = "Category" },
+                    ArticleSections = new List<ArticleSection>()
+                }
+            };
+
+            _mockArticleRepository
+                .Setup(repo => repo.QueryAsync(1, 10, null, null, null, null, "createdAt", "desc", null))
+                .ReturnsAsync((articles, 1));
+
+            // Act
+            var result = await _service.QueryAsync(query);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Single(result.Items);
+            Assert.Equal("Unknown", result.Items[0].AuthorName);
+        }
+
+        [Fact]
+        public async Task QueryAsync_WhenArticleSectionsIsNull_ShouldReturnEmptySections()
+        {
+            // Arrange
+            var query = new ArticleQueryParams
+            {
+                Page = 1,
+                PageSize = 10
+            };
+
+            var articles = new List<Article>
+            {
+                new Article
+                {
+                    ArticleId = 1,
+                    Title = "Article 1",
+                    Status = "Published",
+                    IsPublished = true,
+                    CreatedBy = 1,
+                    CategoryId = 1,
+                    CreatedByNavigation = new User { FullName = "Author" },
+                    Category = new ArticleCategory { CategoryName = "Category" },
+                    ArticleSections = null // ArticleSections is null
+                }
+            };
+
+            _mockArticleRepository
+                .Setup(repo => repo.QueryAsync(1, 10, null, null, null, null, "createdAt", "desc", null))
+                .ReturnsAsync((articles, 1));
+
+            // Act
+            var result = await _service.QueryAsync(query);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Single(result.Items);
+            Assert.Empty(result.Items[0].Sections);
+        }
     }
 }
 

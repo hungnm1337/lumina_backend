@@ -233,6 +233,53 @@ namespace Lumina.Test.Services
 
             _mockTransaction.Verify(t => t.RollbackAsync(It.IsAny<System.Threading.CancellationToken>()), Times.Once);
         }
+
+        [Fact]
+        public async Task CreateArticleAsync_WhenSectionsIsEmpty_ShouldNotAddSections()
+        {
+            // Arrange
+            var request = new ArticleCreateDTO
+            {
+                Title = "Test Article",
+                Summary = "Test Summary",
+                CategoryId = 1,
+                PublishNow = false,
+                Sections = new List<ArticleSectionCreateDTO>() // Empty list
+            };
+
+            var category = new ArticleCategory { CategoryId = 1, CategoryName = "Test" };
+            var creator = new User { UserId = 1, FullName = "Test User" };
+
+            _mockCategoryRepository
+                .Setup(repo => repo.FindByIdAsync(1))
+                .ReturnsAsync(category);
+
+            _mockUserRepository
+                .Setup(repo => repo.GetUserByIdAsync(1))
+                .ReturnsAsync(creator);
+
+            Article? capturedArticle = null;
+            _mockArticleRepository
+                .Setup(repo => repo.AddAsync(It.IsAny<Article>()))
+                .Callback<Article>(a => capturedArticle = a)
+                .Returns(Task.CompletedTask);
+
+            _mockUnitOfWork
+                .Setup(u => u.CompleteAsync())
+                .ReturnsAsync(1);
+
+            _mockTransaction
+                .Setup(t => t.CommitAsync(It.IsAny<System.Threading.CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            // Act
+            var result = await _service.CreateArticleAsync(request, 1);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Empty(result.Sections);
+            _mockArticleRepository.Verify(repo => repo.AddSectionsRangeAsync(It.IsAny<IEnumerable<ArticleSection>>()), Times.Never);
+        }
     }
 }
 
