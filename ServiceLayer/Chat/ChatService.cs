@@ -345,8 +345,8 @@ CRITICAL REQUIREMENTS:
                 response.HasSaveOption = true;
                 response.SaveAction = "CREATE_VOCABULARY_LIST";
                 
-                // Generate image URL cho TỪNG vocabulary từ imageDescription của nó
-                // Upload ngay lên Cloudinary giống như exam generation
+                // Generate Pollinations URL cho TỪNG vocabulary từ imageDescription của nó
+                // KHÔNG upload lên Cloudinary ngay - chỉ upload khi user click save button
                 foreach (var vocab in response.Vocabularies)
                 {
                     // Nếu không có imageDescription, tạo một mô tả đơn giản từ word
@@ -357,23 +357,9 @@ CRITICAL REQUIREMENTS:
                     }
                     
                     // Generate Pollinations AI URL từ imageDescription
+                    // Lưu Pollinations URL tạm thời, sẽ upload lên Cloudinary khi user click save
                     var pollinationsUrl = GeneratePollinationsImageUrl(vocab.ImageDescription);
-                    
-                    // Upload ngay lên Cloudinary (giống như exam generation)
-                    if (!string.IsNullOrWhiteSpace(pollinationsUrl))
-                    {
-                        try
-                        {
-                            var uploadResult = await _uploadService.UploadFromUrlAsync(pollinationsUrl);
-                            vocab.ImageUrl = uploadResult.Url; // Lưu Cloudinary URL thay vì Pollinations URL
-                        }
-                        catch (Exception ex)
-                        {
-                            // Nếu upload fail, fallback về Pollinations URL
-                            Console.WriteLine($"Warning: Failed to upload image to Cloudinary for vocabulary '{vocab.Word}': {ex.Message}");
-                            vocab.ImageUrl = pollinationsUrl; // Fallback về Pollinations URL
-                        }
-                    }
+                    vocab.ImageUrl = pollinationsUrl; // Lưu Pollinations URL tạm thời
                 }
             }
             
@@ -668,10 +654,31 @@ Do not include any text outside the JSON object. Start your response with {{ and
                 _context.VocabularyLists.Add(vocabularyList);
                 await _context.SaveChangesAsync();
                 
-                // 2. Tạo các Vocabulary
+                // 2. Tạo các Vocabulary và upload ảnh lên Cloudinary khi user click save
                 var vocabularies = new List<DataLayer.Models.Vocabulary>();
                 foreach (var vocab in request.Vocabularies)
                 {
+                    // Upload ảnh lên Cloudinary từ Pollinations URL (nếu có)
+                    string? finalImageUrl = vocab.ImageUrl; // Mặc định giữ nguyên URL
+                    
+                    // Kiểm tra nếu ImageUrl là Pollinations URL (chứa "pollinations.ai")
+                    if (!string.IsNullOrWhiteSpace(vocab.ImageUrl) && vocab.ImageUrl.Contains("pollinations.ai"))
+                    {
+                        try
+                        {
+                            // Upload từ Pollinations URL lên Cloudinary
+                            var uploadResult = await _uploadService.UploadFromUrlAsync(vocab.ImageUrl);
+                            finalImageUrl = uploadResult.Url; // Lưu Cloudinary URL
+                        }
+                        catch (Exception ex)
+                        {
+                            // Nếu upload fail, fallback về Pollinations URL hoặc null
+                            Console.WriteLine($"Warning: Failed to upload image to Cloudinary for vocabulary '{vocab.Word}': {ex.Message}");
+                            // Giữ nguyên Pollinations URL nếu upload thất bại
+                            finalImageUrl = vocab.ImageUrl;
+                        }
+                    }
+                    
                     var vocabulary = new DataLayer.Models.Vocabulary
                     {
                         VocabularyListId = vocabularyList.VocabularyListId,
@@ -681,7 +688,7 @@ Do not include any text outside the JSON object. Start your response with {{ and
                         TypeOfWord = vocab.TypeOfWord,
                         Category = vocab.Category,
                         IsDeleted = false,
-                        ImageUrl = vocab.ImageUrl // Lưu Cloudinary URL cho từng vocabulary
+                        ImageUrl = finalImageUrl // Lưu Cloudinary URL hoặc Pollinations URL (nếu upload fail)
                     };
                     vocabularies.Add(vocabulary);
                 }

@@ -70,3 +70,12 @@ public interface IManagerAnalyticsRepository
 
 
 
+
+
+
+
+
+
+
+
+

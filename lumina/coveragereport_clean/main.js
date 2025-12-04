@@ -218,35 +218,35 @@ var assemblies = [
       { "name": "ServiceLayer.Analytics.AnalyticsService", "rp": "ServiceLayer_AnalyticsService.html", "cl": 0, "ucl": 330, "cal": 330, "tl": 407, "cb": 0, "tb": 36, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "ServiceLayer.Article.ArticleService", "rp": "ServiceLayer_ArticleService.html", "cl": 310, "ucl": 38, "cal": 348, "tl": 445, "cb": 86, "tb": 112, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "ServiceLayer.Auth.AuthService", "rp": "ServiceLayer_AuthService.html", "cl": 434, "ucl": 65, "cal": 499, "tl": 748, "cb": 87, "tb": 120, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.Auth.GoogleAuthService", "rp": "ServiceLayer_GoogleAuthService.html", "cl": 0, "ucl": 45, "cal": 45, "tl": 103, "cb": 0, "tb": 6, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.Auth.JwtTokenService", "rp": "ServiceLayer_JwtTokenService.html", "cl": 0, "ucl": 44, "cal": 44, "tl": 87, "cb": 0, "tb": 8, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.Auth.GoogleAuthService", "rp": "ServiceLayer_GoogleAuthService.html", "cl": 26, "ucl": 19, "cal": 45, "tl": 103, "cb": 4, "tb": 6, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.Auth.JwtTokenService", "rp": "ServiceLayer_JwtTokenService.html", "cl": 42, "ucl": 2, "cal": 44, "tl": 87, "cb": 4, "tb": 8, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "ServiceLayer.Auth.PasswordResetService", "rp": "ServiceLayer_PasswordResetService.html", "cl": 113, "ucl": 4, "cal": 117, "tl": 207, "cb": 28, "tb": 32, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.Chat.ChatService", "rp": "ServiceLayer_ChatService.html", "cl": 486, "ucl": 75, "cal": 561, "tl": 763, "cb": 145, "tb": 202, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.Event.EventService", "rp": "ServiceLayer_EventService.html", "cl": 0, "ucl": 41, "cal": 41, "tl": 71, "cb": 0, "tb": 2, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.Chat.ChatService", "rp": "ServiceLayer_ChatService.html", "cl": 486, "ucl": 75, "cal": 561, "tl": 763, "cb": 145, "tb": 206, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.Event.EventService", "rp": "ServiceLayer_EventService.html", "cl": 53, "ucl": 0, "cal": 53, "tl": 89, "cb": 14, "tb": 14, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "ServiceLayer.Exam.ExamAttempt.ExamAttemptService", "rp": "ServiceLayer_ExamAttemptService.html", "cl": 175, "ucl": 29, "cal": 204, "tl": 291, "cb": 57, "tb": 80, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "ServiceLayer.Exam.ExamService", "rp": "ServiceLayer_ExamService.html", "cl": 62, "ucl": 71, "cal": 133, "tl": 196, "cb": 12, "tb": 26, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "ServiceLayer.Exam.Listening.ListeningService", "rp": "ServiceLayer_ListeningService.html", "cl": 72, "ucl": 0, "cal": 72, "tl": 103, "cb": 12, "tb": 12, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "ServiceLayer.Exam.Reading.ReadingService", "rp": "ServiceLayer_ReadingService.html", "cl": 80, "ucl": 0, "cal": 80, "tl": 118, "cb": 20, "tb": 20, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "ServiceLayer.Exam.Speaking.ScoringWeightService", "rp": "ServiceLayer_ScoringWeightService.html", "cl": 0, "ucl": 115, "cal": 115, "tl": 145, "cb": 0, "tb": 18, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "ServiceLayer.Exam.Speaking.SpeakingScoringService", "rp": "ServiceLayer_SpeakingScoringService.html", "cl": 175, "ucl": 55, "cal": 230, "tl": 324, "cb": 26, "tb": 44, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.Exam.Writting.GenerativeAIService", "rp": "ServiceLayer_GenerativeAIService.html", "cl": 0, "ucl": 10, "cal": 10, "tl": 26, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.Exam.Writting.WritingService", "rp": "ServiceLayer_WritingService.html", "cl": 21, "ucl": 129, "cal": 150, "tl": 227, "cb": 9, "tb": 22, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.Exam.Writting.GenerativeAIService", "rp": "ServiceLayer_GenerativeAIService.html", "cl": 17, "ucl": 7, "cal": 24, "tl": 52, "cb": 7, "tb": 12, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.Exam.Writting.WritingService", "rp": "ServiceLayer_WritingService.html", "cl": 145, "ucl": 0, "cal": 145, "tl": 217, "cb": 21, "tb": 22, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "ServiceLayer.ExamGenerationAI.ExamGenerationAIService", "rp": "ServiceLayer_ExamGenerationAIService.html", "cl": 281, "ucl": 114, "cal": 395, "tl": 540, "cb": 48, "tb": 128, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "ServiceLayer.Import.ImportService", "rp": "ServiceLayer_ImportService.html", "cl": 0, "ucl": 179, "cal": 179, "tl": 237, "cb": 0, "tb": 90, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.Leaderboard.LeaderboardService", "rp": "ServiceLayer_LeaderboardService.html", "cl": 0, "ucl": 355, "cal": 355, "tl": 492, "cb": 0, "tb": 84, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.Leaderboard.LeaderboardService", "rp": "ServiceLayer_LeaderboardService.html", "cl": 381, "ucl": 60, "cal": 441, "tl": 624, "cb": 90, "tb": 110, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "ServiceLayer.ManagerAnalytics.ManagerAnalyticsService", "rp": "ServiceLayer_ManagerAnalyticsService.html", "cl": 0, "ucl": 107, "cal": 107, "tl": 162, "cb": 0, "tb": 18, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "ServiceLayer.MockTest.MockTestService", "rp": "ServiceLayer_MockTestService.html", "cl": 105, "ucl": 76, "cal": 181, "tl": 266, "cb": 41, "tb": 120, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.Notification.NotificationService", "rp": "ServiceLayer_NotificationService.html", "cl": 0, "ucl": 309, "cal": 309, "tl": 439, "cb": 0, "tb": 72, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.Notification.UserNotificationService", "rp": "ServiceLayer_UserNotificationService.html", "cl": 0, "ucl": 20, "cal": 20, "tl": 44, "cb": 0, "tb": 4, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.Notification.NotificationService", "rp": "ServiceLayer_NotificationService.html", "cl": 269, "ucl": 40, "cal": 309, "tl": 439, "cb": 66, "tb": 72, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.Notification.UserNotificationService", "rp": "ServiceLayer_UserNotificationService.html", "cl": 20, "ucl": 0, "cal": 20, "tl": 44, "cb": 4, "tb": 4, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "ServiceLayer.Packages.PackageService", "rp": "ServiceLayer_PackageService.html", "cl": 11, "ucl": 0, "cal": 11, "tl": 29, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.Payment.PayOSService", "rp": "ServiceLayer_PayOSService.html", "cl": 99, "ucl": 68, "cal": 167, "tl": 251, "cb": 31, "tb": 60, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.Questions.QuestionService", "rp": "ServiceLayer_QuestionService.html", "cl": 160, "ucl": 0, "cal": 160, "tl": 238, "cb": 36, "tb": 38, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.Payment.PayOSService", "rp": "ServiceLayer_PayOSService.html", "cl": 154, "ucl": 13, "cal": 167, "tl": 251, "cb": 39, "tb": 60, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.Questions.QuestionService", "rp": "ServiceLayer_QuestionService.html", "cl": 160, "ucl": 0, "cal": 160, "tl": 238, "cb": 38, "tb": 38, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "ServiceLayer.Quota.QuotaService", "rp": "ServiceLayer_QuotaService.html", "cl": 84, "ucl": 0, "cal": 84, "tl": 119, "cb": 12, "tb": 12, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.Report.ReportService", "rp": "ServiceLayer_ReportService.html", "cl": 0, "ucl": 77, "cal": 77, "tl": 132, "cb": 0, "tb": 6, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.Role.RoleService", "rp": "ServiceLayer_RoleService.html", "cl": 12, "ucl": 0, "cal": 12, "tl": 28, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.Slide.SlideService", "rp": "ServiceLayer_SlideService.html", "cl": 0, "ucl": 13, "cal": 13, "tl": 39, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.Report.ReportService", "rp": "ServiceLayer_ReportService.html", "cl": 77, "ucl": 0, "cal": 77, "tl": 132, "cb": 6, "tb": 6, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.Role.RoleService", "rp": "ServiceLayer_RoleService.html", "cl": 12, "ucl": 0, "cal": 12, "tl": 30, "cb": 0, "tb": 0, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.Slide.SlideService", "rp": "ServiceLayer_SlideService.html", "cl": 41, "ucl": 0, "cal": 41, "tl": 75, "cb": 16, "tb": 16, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "ServiceLayer.Speech.AzureSpeechService", "rp": "ServiceLayer_AzureSpeechService.html", "cl": 193, "ucl": 62, "cal": 255, "tl": 354, "cb": 42, "tb": 56, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
-      { "name": "ServiceLayer.Statistic.StatisticService", "rp": "ServiceLayer_StatisticService.html", "cl": 0, "ucl": 65, "cal": 65, "tl": 103, "cb": 0, "tb": 8, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
+      { "name": "ServiceLayer.Statistic.StatisticService", "rp": "ServiceLayer_StatisticService.html", "cl": 65, "ucl": 0, "cal": 65, "tl": 103, "cb": 6, "tb": 8, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "ServiceLayer.Streak.StreakService", "rp": "ServiceLayer_StreakService.html", "cl": 280, "ucl": 46, "cal": 326, "tl": 503, "cb": 64, "tb": 82, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "ServiceLayer.Subscription.SubscriptionService", "rp": "ServiceLayer_SubscriptionService.html", "cl": 40, "ucl": 4, "cal": 44, "tl": 79, "cb": 2, "tb": 2, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
       { "name": "ServiceLayer.TextToSpeech.TextToSpeechService", "rp": "ServiceLayer_TextToSpeechService.html", "cl": 49, "ucl": 15, "cal": 64, "tl": 114, "cb": 9, "tb": 12, "cm": 0, "fcm": 0, "tm": 0, "lch": [], "bch": [], "mch": [], "mfch": [], "hc": [], "metrics": { } },
@@ -276,12 +276,6 @@ var riskHotspots = [
       { "value": 90, "exceeded": true },
     ]},
   {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Leaderboard.LeaderboardService", "reportPath": "ServiceLayer_LeaderboardService.html", "methodName": "CalculateSeasonScoreAsync()", "methodShortName": "CalculateSeasonScoreAsync()", "fileIndex": 0, "line": 195,
-    "metrics": [
-      { "value": 1640, "exceeded": true },
-      { "value": 40, "exceeded": true },
-    ]},
-  {
     "assembly": "ServiceLayer", "class": "ServiceLayer.ExamGenerationAI.ExamGenerationAIService", "reportPath": "ServiceLayer_ExamGenerationAIService.html", "methodName": "CleanChatResponseSimple(System.String)", "methodShortName": "CleanChatResponseSimple(...)", "fileIndex": 0, "line": 216,
     "metrics": [
       { "value": 1022, "exceeded": true },
@@ -294,22 +288,10 @@ var riskHotspots = [
       { "value": 114, "exceeded": true },
     ]},
   {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Notification.NotificationService", "reportPath": "ServiceLayer_NotificationService.html", "methodName": "CreateAsync()", "methodShortName": "CreateAsync()", "fileIndex": 0, "line": 76,
-    "metrics": [
-      { "value": 506, "exceeded": true },
-      { "value": 22, "exceeded": true },
-    ]},
-  {
     "assembly": "ServiceLayer", "class": "ServiceLayer.MockTest.MockTestService", "reportPath": "ServiceLayer_MockTestService.html", "methodName": "BuildAnalysisPrompt(DataLayer.DTOs.UserAnswer.ExamAttemptDetailResponseDTO,System.Collections.Generic.List`1<System.String>)", "methodShortName": "BuildAnalysisPrompt(...)", "fileIndex": 0, "line": 82,
     "metrics": [
       { "value": 466, "exceeded": true },
       { "value": 90, "exceeded": true },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Notification.NotificationService", "reportPath": "ServiceLayer_NotificationService.html", "methodName": "GetEncouragementMessage(System.Double,System.Int32,System.Int32,System.Int32)", "methodShortName": "GetEncouragementMessage(...)", "fileIndex": 0, "line": 393,
-    "metrics": [
-      { "value": 420, "exceeded": true },
-      { "value": 20, "exceeded": true },
     ]},
   {
     "assembly": "ServiceLayer", "class": "ServiceLayer.Exam.ExamAttempt.ExamAttemptService", "reportPath": "ServiceLayer_ExamAttemptService.html", "methodName": "CalculateSpeakingOverallScore(DataLayer.Models.UserAnswerSpeaking)", "methodShortName": "CalculateSpeakingOverallScore(...)", "fileIndex": 0, "line": 230,
@@ -336,18 +318,6 @@ var riskHotspots = [
       { "value": 14, "exceeded": false },
     ]},
   {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Leaderboard.LeaderboardService", "reportPath": "ServiceLayer_LeaderboardService.html", "methodName": "ValidateAsync()", "methodShortName": "ValidateAsync()", "fileIndex": 0, "line": 79,
-    "metrics": [
-      { "value": 210, "exceeded": true },
-      { "value": 14, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Notification.NotificationService", "reportPath": "ServiceLayer_NotificationService.html", "methodName": "SendPointsNotificationAsync()", "methodShortName": "SendPointsNotificationAsync()", "fileIndex": 0, "line": 190,
-    "metrics": [
-      { "value": 210, "exceeded": true },
-      { "value": 14, "exceeded": false },
-    ]},
-  {
     "assembly": "ServiceLayer", "class": "ServiceLayer.Streak.StreakService", "reportPath": "ServiceLayer_StreakService.html", "methodName": "AwardMilestoneRewardsAsync()", "methodShortName": "AwardMilestoneRewardsAsync()", "fileIndex": 0, "line": 446,
     "metrics": [
       { "value": 186, "exceeded": true },
@@ -358,30 +328,6 @@ var riskHotspots = [
     "metrics": [
       { "value": 156, "exceeded": true },
       { "value": 12, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Payment.PayOSService", "reportPath": "ServiceLayer_PayOSService.html", "methodName": "VerifyWebhookAsync()", "methodShortName": "VerifyWebhookAsync()", "fileIndex": 0, "line": 135,
-    "metrics": [
-      { "value": 110, "exceeded": true },
-      { "value": 10, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Auth.JwtTokenService", "reportPath": "ServiceLayer_JwtTokenService.html", "methodName": ".ctor(Microsoft.Extensions.Configuration.IConfiguration)", "methodShortName": ".ctor(...)", "fileIndex": 0, "line": 26,
-    "metrics": [
-      { "value": 72, "exceeded": true },
-      { "value": 8, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Notification.NotificationService", "reportPath": "ServiceLayer_NotificationService.html", "methodName": "UpdateAsync()", "methodShortName": "UpdateAsync()", "fileIndex": 0, "line": 161,
-    "metrics": [
-      { "value": 72, "exceeded": true },
-      { "value": 8, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Statistic.StatisticService", "reportPath": "ServiceLayer_StatisticService.html", "methodName": "GetDashboardStatsAsync()", "methodShortName": "GetDashboardStatsAsync()", "fileIndex": 0, "line": 19,
-    "metrics": [
-      { "value": 72, "exceeded": true },
-      { "value": 8, "exceeded": false },
     ]},
   {
     "assembly": "ServiceLayer", "class": "ServiceLayer.UserNoteAI.AIChatService", "reportPath": "ServiceLayer_AIChatService.html", "methodName": "ExtractSuggestedQuestions(System.String)", "methodShortName": "ExtractSuggestedQuestions(...)", "fileIndex": 0, "line": 399,
@@ -396,19 +342,13 @@ var riskHotspots = [
       { "value": 8, "exceeded": false },
     ]},
   {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Auth.GoogleAuthService", "reportPath": "ServiceLayer_GoogleAuthService.html", "methodName": "ValidateGoogleTokenAsync()", "methodShortName": "ValidateGoogleTokenAsync()", "fileIndex": 0, "line": 30,
+    "assembly": "ServiceLayer", "class": "ServiceLayer.Leaderboard.LeaderboardService", "reportPath": "ServiceLayer_LeaderboardService.html", "methodName": "CalculateSeasonScoreAsync()", "methodShortName": "CalculateSeasonScoreAsync()", "fileIndex": 0, "line": 241,
     "metrics": [
+      { "value": 47, "exceeded": true },
       { "value": 42, "exceeded": true },
-      { "value": 6, "exceeded": false },
     ]},
   {
     "assembly": "ServiceLayer", "class": "ServiceLayer.Exam.ExamService", "reportPath": "ServiceLayer_ExamService.html", "methodName": "GetPartCompletionStatusAsync()", "methodShortName": "GetPartCompletionStatusAsync()", "fileIndex": 0, "line": 163,
-    "metrics": [
-      { "value": 42, "exceeded": true },
-      { "value": 6, "exceeded": false },
-    ]},
-  {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Leaderboard.LeaderboardService", "reportPath": "ServiceLayer_LeaderboardService.html", "methodName": "GetEstimatedTOEICScore()", "methodShortName": "GetEstimatedTOEICScore()", "fileIndex": 0, "line": 369,
     "metrics": [
       { "value": 42, "exceeded": true },
       { "value": 6, "exceeded": false },
@@ -426,16 +366,16 @@ var riskHotspots = [
       { "value": 40, "exceeded": true },
     ]},
   {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Chat.ChatService", "reportPath": "ServiceLayer_ChatService.html", "methodName": "DetermineQuestionType(System.String)", "methodShortName": "DetermineQuestionType(...)", "fileIndex": 0, "line": 149,
+    "assembly": "ServiceLayer", "class": "ServiceLayer.Exam.ExamAttempt.ExamAttemptService", "reportPath": "ServiceLayer_ExamAttemptService.html", "methodName": "FinalizeAttemptAsync()", "methodShortName": "FinalizeAttemptAsync()", "fileIndex": 0, "line": 87,
     "metrics": [
       { "value": 38, "exceeded": true },
       { "value": 38, "exceeded": true },
     ]},
   {
-    "assembly": "ServiceLayer", "class": "ServiceLayer.Exam.ExamAttempt.ExamAttemptService", "reportPath": "ServiceLayer_ExamAttemptService.html", "methodName": "FinalizeAttemptAsync()", "methodShortName": "FinalizeAttemptAsync()", "fileIndex": 0, "line": 87,
+    "assembly": "ServiceLayer", "class": "ServiceLayer.Chat.ChatService", "reportPath": "ServiceLayer_ChatService.html", "methodName": "DetermineQuestionType(System.String)", "methodShortName": "DetermineQuestionType(...)", "fileIndex": 0, "line": 149,
     "metrics": [
-      { "value": 38, "exceeded": true },
-      { "value": 38, "exceeded": true },
+      { "value": 34, "exceeded": true },
+      { "value": 34, "exceeded": true },
     ]},
   {
     "assembly": "ServiceLayer", "class": "ServiceLayer.Article.ArticleService", "reportPath": "ServiceLayer_ArticleService.html", "methodName": "UpdateArticleAsync()", "methodShortName": "UpdateArticleAsync()", "fileIndex": 0, "line": 144,
@@ -450,6 +390,12 @@ var riskHotspots = [
       { "value": 24, "exceeded": true },
     ]},
   {
+    "assembly": "ServiceLayer", "class": "ServiceLayer.Notification.NotificationService", "reportPath": "ServiceLayer_NotificationService.html", "methodName": "CreateAsync()", "methodShortName": "CreateAsync()", "fileIndex": 0, "line": 76,
+    "metrics": [
+      { "value": 22, "exceeded": false },
+      { "value": 22, "exceeded": true },
+    ]},
+  {
     "assembly": "ServiceLayer", "class": "ServiceLayer.Vocabulary.SpacedRepetitionService", "reportPath": "ServiceLayer_SpacedRepetitionService.html", "methodName": "ReviewVocabularyAsync()", "methodShortName": "ReviewVocabularyAsync()", "fileIndex": 0, "line": 79,
     "metrics": [
       { "value": 22, "exceeded": false },
@@ -457,6 +403,12 @@ var riskHotspots = [
     ]},
   {
     "assembly": "ServiceLayer", "class": "ServiceLayer.Exam.Reading.ReadingService", "reportPath": "ServiceLayer_ReadingService.html", "methodName": "SubmitAnswerAsync()", "methodShortName": "SubmitAnswerAsync()", "fileIndex": 0, "line": 22,
+    "metrics": [
+      { "value": 20, "exceeded": false },
+      { "value": 20, "exceeded": true },
+    ]},
+  {
+    "assembly": "ServiceLayer", "class": "ServiceLayer.Notification.NotificationService", "reportPath": "ServiceLayer_NotificationService.html", "methodName": "GetEncouragementMessage(System.Double,System.Int32,System.Int32,System.Int32)", "methodShortName": "GetEncouragementMessage(...)", "fileIndex": 0, "line": 393,
     "metrics": [
       { "value": 20, "exceeded": false },
       { "value": 20, "exceeded": true },

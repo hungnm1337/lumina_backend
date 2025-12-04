@@ -31,3 +31,12 @@ public interface IManagerAnalyticsService
 
 
 
+
+
+
+
+
+
+
+
+

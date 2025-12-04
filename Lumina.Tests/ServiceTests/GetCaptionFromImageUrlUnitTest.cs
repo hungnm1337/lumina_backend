@@ -1,7 +1,6 @@
 using Xunit;
 using Moq;
 using Moq.Protected;
-using ServiceLayer;
 using System;
 using System.Net;
 using System.Net.Http;

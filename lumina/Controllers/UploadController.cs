@@ -22,11 +22,12 @@ namespace lumina.Controllers
         }
 
         [HttpPost]
+        [Consumes("multipart/form-data")]
         public async Task<IActionResult> UploadFile(IFormFile file)
         {
             if (file == null || file.Length == 0)
             {
-                return BadRequest("Không có file nào được chọn.");
+                return BadRequest(new { message = "Không có file nào được chọn." });
             }
 
             try
@@ -34,9 +35,20 @@ namespace lumina.Controllers
                 var uploadResult = await _uploadService.UploadFileAsync(file);
                 return Ok(uploadResult);
             }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Lỗi server nội bộ: {ex.Message}");
+                // Log chi tiết lỗi để debug
+                Console.WriteLine($"Error uploading file: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                }
+                return StatusCode(500, new { message = $"Lỗi server nội bộ: {ex.Message}", details = ex.StackTrace });
             }
         }
 
