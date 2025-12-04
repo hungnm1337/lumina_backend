@@ -9,7 +9,7 @@ namespace RepositoryLayer.MockTest
 {
     public interface IMockTestRepository
     {
-        Task<List<ExamPartDTO>> GetMocktestAsync(int[] examPartIds);
+        Task<List<ExamPartDTO>> GetMocktestAsync();
        
     }
 }

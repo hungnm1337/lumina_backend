@@ -30,3 +30,5 @@ public class ArticleCompletionRateDTO
 
 
 
+
+
