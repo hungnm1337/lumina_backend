@@ -66,7 +66,7 @@ namespace ServiceLayer.AI.Prompt
             { 6, 4 },   // Reading Part 6: 4 prompts (đoạn văn)
             { 7, 5 },  // Reading Part 7: Tổng cộng ~15 cụm (10 single, 2 double, 3 triple)
             { 8, 2 },   // Speaking Part 1 (Q1-2): 2 prompts (đoạn văn đọc)
-            { 9, 1 },   // Speaking Part 2 (Q3): 1 prompt (ảnh miêu tả)
+            { 9, 2 },   // Speaking Part 2 (Q3): 2 prompt (ảnh miêu tả)
             { 10, 1 },  // Speaking Part 3 (Q4-6): 1 prompt (3 câu hỏi)
             { 11, 1 },  // Speaking Part 4 (Q7-9): 1 prompt (3 câu hỏi + info)
             { 12, 1 },  // Speaking Part 5 (Q10-11): 1 prompt (express opinion)
@@ -248,8 +248,8 @@ namespace ServiceLayer.AI.Prompt
                         Time = 60,
                         Options = new List<AIGeneratedOptionDTO>
                         {
-                            new AIGeneratedOptionDTO { Label = "A", Content = "The woman is pointing at the screen.", IsCorrect = true },
-                            new AIGeneratedOptionDTO { Label = "B", Content = "The man is talking on the phone.", IsCorrect = false },
+                            new AIGeneratedOptionDTO { Label = "A", Content = "The man is talking on the phone.", IsCorrect = false },
+                            new AIGeneratedOptionDTO { Label = "B", Content = "The woman is pointing at the screen.", IsCorrect = true },
                             new AIGeneratedOptionDTO { Label = "C", Content = "The people are standing near the window.", IsCorrect = false },
                             new AIGeneratedOptionDTO { Label = "D", Content = "The woman is typing on the keyboard.", IsCorrect = false }
                         }
@@ -291,7 +291,7 @@ namespace ServiceLayer.AI.Prompt
 
             4. **Các trường bắt buộc khác:**  
                - `ExamExamTitle`, `Skill`, `PartLabel`, `PartId`, `QuestionType`, `ScoreWeight`, `Time`.
-
+           
             ---
 
             ### 🧠 Ví dụ cấu trúc JSON (1 ảnh mẫu):
