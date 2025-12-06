@@ -142,4 +142,14 @@ public class VocabularyListRepository : IVocabularyListRepository
             })
             .ToListAsync();
     }
+
+    public async Task DeleteAsync(int id)
+    {
+        var vocabularyList = await _context.VocabularyLists.FindAsync(id);
+        if (vocabularyList != null)
+        {
+            vocabularyList.IsDeleted = true; // Soft delete
+            await _context.SaveChangesAsync();
+        }
+    }
 }

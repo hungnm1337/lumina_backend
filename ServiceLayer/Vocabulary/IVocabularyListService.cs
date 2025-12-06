@@ -11,5 +11,6 @@ namespace ServiceLayer.Vocabulary
         Task<IEnumerable<VocabularyListDTO>> GetMyAndStaffListsAsync(int userId, string? searchTerm);
         Task<bool> RequestApprovalAsync(int listId, int staffUserId);
         Task<bool> ReviewListAsync(int listId, bool isApproved, string? comment, int managerUserId);
+        Task<bool> DeleteListAsync(int listId, int userId);
     }
 }

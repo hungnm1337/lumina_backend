@@ -116,5 +116,24 @@ namespace ServiceLayer.Vocabulary
             await _unitOfWork.CompleteAsync();
             return true;
         }
+
+        public async Task<bool> DeleteListAsync(int listId, int userId)
+        {
+            var vocabularyList = await _unitOfWork.VocabularyLists.FindByIdAsync(listId);
+            if (vocabularyList == null || vocabularyList.IsDeleted == true)
+            {
+                return false;
+            }
+
+            // Kiểm tra quyền: User chỉ có thể xóa folder của chính họ
+            if (vocabularyList.MakeBy != userId)
+            {
+                return false;
+            }
+
+            await _unitOfWork.VocabularyLists.DeleteAsync(listId);
+            await _unitOfWork.CompleteAsync();
+            return true;
+        }
     }
 }

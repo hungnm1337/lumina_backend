@@ -72,7 +72,7 @@ public class ArticleRepository : IArticleRepository
         if (!string.IsNullOrWhiteSpace(search))
         {
             var s = search.Trim().ToLower();
-            query = query.Where(a => a.Title.ToLower().Contains(s) || a.Summary.ToLower().Contains(s) || a.ArticleSections.Any(sec => sec.SectionContent.ToLower().Contains(s)));
+            query = query.Where(a => a.Title.ToLower().Contains(s));
         }
 
         if (categoryId.HasValue)
