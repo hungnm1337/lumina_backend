@@ -167,6 +167,63 @@ namespace RepositoryLayer.User
             await _context.SaveChangesAsync();
             return true;
         }
+
+        // Auth-related methods
+        public async Task<DataLayer.Models.User?> GetByEmailAsync(string email, bool asTracking = true)
+        {
+            var normalizedEmail = email.Trim().ToLowerInvariant();
+            var query = _context.Users.AsQueryable();
+            if (!asTracking)
+            {
+                query = query.AsNoTracking();
+            }
+            return await query.FirstOrDefaultAsync(u => u.Email == normalizedEmail);
+        }
+
+        public async Task<DataLayer.Models.User?> GetByEmailWithAccountsAsync(string email)
+        {
+            var normalizedEmail = email.Trim().ToLowerInvariant();
+            return await _context.Users
+                .Include(u => u.Accounts)
+                .FirstOrDefaultAsync(u => u.Email == normalizedEmail);
+        }
+
+        public async Task<DataLayer.Models.User?> GetByEmailWithAccountsAndRoleAsync(string email)
+        {
+            var normalizedEmail = email.Trim().ToLowerInvariant();
+            return await _context.Users
+                .Include(u => u.Accounts)
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.Email == normalizedEmail);
+        }
+
+        public async Task<DataLayer.Models.User?> GetInactiveByEmailWithTokensAsync(string email)
+        {
+            var normalizedEmail = email.Trim().ToLowerInvariant();
+            return await _context.Users
+                .Include(u => u.PasswordResetTokens)
+                .FirstOrDefaultAsync(u => u.Email == normalizedEmail && u.IsActive == false);
+        }
+
+        public async Task<bool> EmailExistsAsync(string email, bool activeOnly = true)
+        {
+            var normalizedEmail = email.Trim().ToLowerInvariant();
+            if (activeOnly)
+            {
+                return await _context.Users.AnyAsync(u => u.Email == normalizedEmail && u.IsActive == true);
+            }
+            return await _context.Users.AnyAsync(u => u.Email == normalizedEmail);
+        }
+
+        public async Task AddAsync(DataLayer.Models.User user)
+        {
+            await _context.Users.AddAsync(user);
+        }
+
+        public void Remove(DataLayer.Models.User user)
+        {
+            _context.Users.Remove(user);
+        }
     }
 
 

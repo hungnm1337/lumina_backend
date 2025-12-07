@@ -1,36 +1,28 @@
 ﻿// Controllers/SpeakingController.cs
 
-using DataLayer.DTOs; // <-- Thêm using cho DTOs
-using DataLayer.Models;
+using DataLayer.DTOs.Exam.Speaking;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using RepositoryLayer.UnitOfWork;
-using System.Security.Claims;
-using ServiceLayer.Speech;
-using DataLayer.DTOs.Exam.Speaking;
-using ServiceLayer.Exam.Speaking;
 using Microsoft.Extensions.Logging;
+using ServiceLayer.Exam.Speaking;
+using System;
+using System.Security.Claims;
+using System.Threading;
+using System.Threading.Tasks;
 
 [Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class SpeakingController : ControllerBase
 {
-    private readonly ISpeakingScoringService _speakingScoringService;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IAzureSpeechService _azureSpeechService;
+    private readonly ISpeakingService _speakingService;
     private readonly ILogger<SpeakingController> _logger;
 
     public SpeakingController(
-        ISpeakingScoringService speakingScoringService,
-        IUnitOfWork unitOfWork,
-        IAzureSpeechService azureSpeechService,
+        ISpeakingService speakingService,
         ILogger<SpeakingController> logger)
     {
-        _speakingScoringService = speakingScoringService;
-        _unitOfWork = unitOfWork;
-        _azureSpeechService = azureSpeechService;
+        _speakingService = speakingService;
         _logger = logger;
     }
 
@@ -39,110 +31,62 @@ public class SpeakingController : ControllerBase
     {
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(90));
 
+        // Validate audio file
         if (request.Audio == null || request.Audio.Length == 0)
         {
             return BadRequest(new { message = "Audio file is required." });
         }
 
+        // Get userId from token
+        var userId = GetUserIdFromToken();
+        if (userId == null)
+        {
+            return Unauthorized(new { message = "User ID not found in token." });
+        }
+
         try
         {
-            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out int userId))
-            {
-                return Unauthorized(new { message = "User ID not found in token." });
-            }
-
-            int attemptId;
+            SpeakingSubmitResultDTO submitResult;
 
             if (request.AttemptId > 0)
             {
-                var existingAttempt = await _unitOfWork.ExamAttemptsGeneric
-                    .GetAsync(
-                        a => a.AttemptID == request.AttemptId,
-                        includeProperties: "User" 
-                    );
+                // Validate attempt ownership
+                var validationResult = await _speakingService.ValidateAttemptAsync(request.AttemptId, userId.Value);
 
-                if (existingAttempt == null)
+                if (!validationResult.IsValid)
                 {
-                    return NotFound(new { message = $"ExamAttempt {request.AttemptId} not found." });
+                    return HandleValidationError(validationResult);
                 }
 
-                if (existingAttempt.UserID != userId)
-                {
-                    return Forbid();
-                }
-
-                attemptId = request.AttemptId;
+                // Submit with existing attemptId
+                submitResult = await _speakingService.SubmitAnswerAsync(
+                    request.Audio,
+                    request.QuestionId,
+                    request.AttemptId,
+                    userId.Value
+                );
             }
             else
             {
-                var question = await _unitOfWork.Questions.Get()
-                                    .Include(q => q.Part)
-                                    .FirstOrDefaultAsync(q => q.QuestionId == request.QuestionId);
-
-                if (question == null)
-                {
-                    return NotFound(new { message = "Question not found." });
-                }
-                var examId = question.Part.ExamId;
-
-                var examAttempt = await _unitOfWork.ExamAttemptsGeneric.GetAllAsync(e => e.UserID == userId && e.ExamID == examId && e.Status == "In Progress")
-                                    .ContinueWith(t => t.Result.FirstOrDefault());
-
-                if (examAttempt == null)
-                {
-                    examAttempt = new ExamAttempt
-                    {
-                        UserID = userId,
-                        ExamID = examId,
-                        StartTime = DateTime.UtcNow,
-                        Status = "In Progress"
-                    };
-                    await _unitOfWork.ExamAttemptsGeneric.AddAsync(examAttempt);
-                    await _unitOfWork.CompleteAsync();
-                }
-
-                attemptId = examAttempt.AttemptID;
-                _logger.LogInformation("[Speaking] Created/Found attemptId: {AttemptId}", attemptId);
-            }
-
-            var existing = await _unitOfWork.UserAnswersSpeaking.GetAsync(
-                a => a.AttemptID == attemptId && a.QuestionId == request.QuestionId,
-                includeProperties: null
-            );
-
-            if (existing != null)
-            {
-                _logger.LogWarning(
-                    "[Speaking] Duplicate submission detected - returning existing result: QuestionId={QuestionId}, AttemptId={AttemptId}",
+                // Auto-create attempt
+                submitResult = await _speakingService.SubmitAnswerWithAutoAttemptAsync(
+                    request.Audio,
                     request.QuestionId,
-                    attemptId
+                    userId.Value
                 );
-
-                return Ok(new SpeakingScoringResultDTO
-                {
-                    QuestionId = existing.QuestionId,
-                    Transcript = existing.Transcript ?? "",
-                    AudioUrl = existing.AudioUrl ?? "",
-                    PronunciationScore = (double)(existing.PronunciationScore ?? 0),
-                    AccuracyScore = (double)(existing.AccuracyScore ?? 0),
-                    FluencyScore = (double)(existing.FluencyScore ?? 0),
-                    CompletenessScore = (double)(existing.CompletenessScore ?? 0),
-                    GrammarScore = (double)(existing.GrammarScore ?? 0),
-                    VocabularyScore = (double)(existing.VocabularyScore ?? 0),
-                    ContentScore = (double)(existing.ContentScore ?? 0),
-                    OverallScore = (double)(existing.OverallScore ?? 0),
-                    SubmittedAt = DateTime.UtcNow
-                });
             }
 
-            var result = await _speakingScoringService.ProcessAndScoreAnswerAsync(
-                request.Audio,
-                request.QuestionId,
-                attemptId
-            );
+            // Handle result
+            if (!submitResult.Success)
+            {
+                if (submitResult.ErrorMessage == "Question not found.")
+                {
+                    return NotFound(new { message = submitResult.ErrorMessage });
+                }
+                return StatusCode(500, new { message = submitResult.ErrorMessage });
+            }
 
-            return Ok(result);
+            return Ok(submitResult.Result);
         }
         catch (OperationCanceledException)
         {
@@ -161,7 +105,6 @@ public class SpeakingController : ControllerBase
                 request.QuestionId,
                 request.AttemptId
             );
-
             return StatusCode(500, new { message = "Internal server error", details = ex.Message });
         }
     }
@@ -170,10 +113,37 @@ public class SpeakingController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> AsrFromUrl([FromQuery] string audioUrl, [FromQuery] string language = "en-US")
     {
-        if (string.IsNullOrWhiteSpace(audioUrl)) return BadRequest("audioUrl is required");
-        var text = await _azureSpeechService.RecognizeFromUrlAsync(audioUrl, language);
-        return Ok(new { language, transcript = text });
+        if (string.IsNullOrWhiteSpace(audioUrl))
+        {
+            return BadRequest(new { message = "audioUrl is required" });
+        }
+
+        var transcript = await _speakingService.RecognizeSpeechFromUrlAsync(audioUrl, language);
+        return Ok(new { language, transcript });
     }
 
-   
+    #region Private Helper Methods
+
+    private int? GetUserIdFromToken()
+    {
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out int userId))
+        {
+            return null;
+        }
+        return userId;
+    }
+
+    private IActionResult HandleValidationError(AttemptValidationResult validationResult)
+    {
+        return validationResult.ErrorType switch
+        {
+            AttemptErrorType.NotFound => NotFound(new { message = validationResult.ErrorMessage }),
+            AttemptErrorType.Forbidden => Forbid(),
+            AttemptErrorType.InvalidUser => Unauthorized(new { message = validationResult.ErrorMessage }),
+            _ => BadRequest(new { message = validationResult.ErrorMessage })
+        };
+    }
+
+    #endregion
 }
