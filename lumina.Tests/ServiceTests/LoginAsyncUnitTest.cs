@@ -6,12 +6,14 @@ using ServiceLayer.Email;
 using DataLayer.DTOs.Auth;
 using DataLayer.Models;
 using Lumina.Tests.Helpers;
+using RepositoryLayer.UnitOfWork;
 
 namespace Lumina.Tests.ServiceTests
 {
     public class LoginAsyncUnitTest
     {
         private readonly LuminaSystemContext _context;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly Mock<IJwtTokenService> _mockJwtTokenService;
         private readonly Mock<IGoogleAuthService> _mockGoogleAuthService;
         private readonly Mock<IEmailSender> _mockEmailSender;
@@ -20,14 +22,14 @@ namespace Lumina.Tests.ServiceTests
 
         public LoginAsyncUnitTest()
         {
-            _context = InMemoryDbContextHelper.CreateContext();
+            (_unitOfWork, _context) = InMemoryDbContextHelper.CreateUnitOfWork();
             _mockJwtTokenService = new Mock<IJwtTokenService>();
             _mockGoogleAuthService = new Mock<IGoogleAuthService>();
             _mockEmailSender = new Mock<IEmailSender>();
             _mockLogger = new Mock<ILogger<AuthService>>();
 
             _authService = new AuthService(
-                _context,
+                _unitOfWork,
                 _mockJwtTokenService.Object,
                 _mockGoogleAuthService.Object,
                 _mockEmailSender.Object,
@@ -42,7 +44,7 @@ namespace Lumina.Tests.ServiceTests
             const string username = "testuser";
             const string email = "test@example.com";
             const string password = "password123";
-            
+
             var role = new Role { RoleId = 4, RoleName = "User" };
             var user = new User
             {

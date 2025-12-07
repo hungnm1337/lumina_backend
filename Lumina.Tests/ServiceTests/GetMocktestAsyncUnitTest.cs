@@ -81,11 +81,7 @@ namespace Lumina.Test.Services
             };
 
             _mockMockTestRepository
-                .Setup(repo => repo.GetMocktestAsync(It.Is<int[]>(arr => 
-                    arr != null && 
-                    arr.Length == 15 && 
-                    arr[0] == 16 && 
-                    arr[14] == 30)))
+                .Setup(repo => repo.GetMocktestAsync())
                 .ReturnsAsync(expectedResult);
 
             // Act
@@ -100,13 +96,9 @@ namespace Lumina.Test.Services
             Assert.Equal(expectedResult[1].PartId, result[1].PartId);
             Assert.Equal(expectedResult[2].PartId, result[2].PartId);
 
-            // Verify repository is called exactly once with correct examPartIds array
+            // Verify repository is called exactly once
             _mockMockTestRepository.Verify(
-                repo => repo.GetMocktestAsync(It.Is<int[]>(arr => 
-                    arr != null && 
-                    arr.Length == 15 && 
-                    arr[0] == 16 && 
-                    arr[14] == 30)),
+                repo => repo.GetMocktestAsync(),
                 Times.Once
             );
         }
@@ -130,7 +122,7 @@ namespace Lumina.Test.Services
             };
 
             _mockMockTestRepository
-                .Setup(repo => repo.GetMocktestAsync(It.IsAny<int[]>()))
+                .Setup(repo => repo.GetMocktestAsync())
                 .ReturnsAsync(expectedResult);
 
             // Act
@@ -144,7 +136,7 @@ namespace Lumina.Test.Services
 
             // Verify repository is called exactly once
             _mockMockTestRepository.Verify(
-                repo => repo.GetMocktestAsync(It.Is<int[]>(arr => arr != null && arr.Length == 15)),
+                repo => repo.GetMocktestAsync(),
                 Times.Once
             );
         }
@@ -180,7 +172,7 @@ namespace Lumina.Test.Services
             };
 
             _mockMockTestRepository
-                .Setup(repo => repo.GetMocktestAsync(It.IsAny<int[]>()))
+                .Setup(repo => repo.GetMocktestAsync())
                 .ReturnsAsync(expectedResult);
 
             // Act
@@ -195,7 +187,7 @@ namespace Lumina.Test.Services
 
             // Verify repository is called exactly once
             _mockMockTestRepository.Verify(
-                repo => repo.GetMocktestAsync(It.Is<int[]>(arr => arr != null && arr.Length == 15)),
+                repo => repo.GetMocktestAsync(),
                 Times.Once
             );
         }
@@ -212,7 +204,7 @@ namespace Lumina.Test.Services
             var expectedResult = new List<ExamPartDTO>();
 
             _mockMockTestRepository
-                .Setup(repo => repo.GetMocktestAsync(It.IsAny<int[]>()))
+                .Setup(repo => repo.GetMocktestAsync())
                 .ReturnsAsync(expectedResult);
 
             // Act
@@ -222,13 +214,9 @@ namespace Lumina.Test.Services
             Assert.NotNull(result);
             Assert.Empty(result);
 
-            // Verify repository is called exactly once with correct examPartIds array
+            // Verify repository is called exactly once
             _mockMockTestRepository.Verify(
-                repo => repo.GetMocktestAsync(It.Is<int[]>(arr => 
-                    arr != null && 
-                    arr.Length == 15 && 
-                    arr[0] == 16 && 
-                    arr[14] == 30)),
+                repo => repo.GetMocktestAsync(),
                 Times.Once
             );
         }
@@ -245,7 +233,7 @@ namespace Lumina.Test.Services
             var exceptionMessage = "Database connection error";
 
             _mockMockTestRepository
-                .Setup(repo => repo.GetMocktestAsync(It.IsAny<int[]>()))
+                .Setup(repo => repo.GetMocktestAsync())
                 .ThrowsAsync(new Exception(exceptionMessage));
 
             // Act & Assert
@@ -257,7 +245,7 @@ namespace Lumina.Test.Services
 
             // Verify repository is called exactly once
             _mockMockTestRepository.Verify(
-                repo => repo.GetMocktestAsync(It.Is<int[]>(arr => arr != null && arr.Length == 15)),
+                repo => repo.GetMocktestAsync(),
                 Times.Once
             );
         }

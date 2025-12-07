@@ -3,6 +3,7 @@ using DataLayer.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using RepositoryLayer.UnitOfWork;
 using ServiceLayer.Email;
 using System.Security.Cryptography;
 
@@ -11,46 +12,44 @@ namespace ServiceLayer.Auth;
 
 public interface IPasswordResetService
 {
-    
+
     Task<ForgotPasswordResponse> SendPasswordResetCodeAsync(ForgotPasswordRequest request);
 
-    
+
     Task<VerifyResetCodeResponse> VerifyResetCodeAsync(VerifyResetCodeRequest request);
 
-    
+
     Task<ResetPasswordResponse> ResetPasswordAsync(ResetPasswordRequest request);
 }
 
 
 public sealed class PasswordResetService : IPasswordResetService
 {
-    private readonly LuminaSystemContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IEmailSender _emailSender;
     private readonly ILogger<PasswordResetService> _logger;
     private readonly int _passwordResetCodeLength;
     private readonly int _passwordResetExpiryMinutes;
 
     public PasswordResetService(
-        LuminaSystemContext context,
+        IUnitOfWork unitOfWork,
         IEmailSender emailSender,
         ILogger<PasswordResetService> logger,
         IConfiguration configuration)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _emailSender = emailSender;
         _logger = logger;
         _passwordResetCodeLength = Math.Clamp(configuration.GetValue("PasswordReset:CodeLength", 6), 4, 12);
         _passwordResetExpiryMinutes = Math.Clamp(configuration.GetValue("PasswordReset:CodeExpiryMinutes", 10), 1, 60);
     }
 
-    
+
     public async Task<ForgotPasswordResponse> SendPasswordResetCodeAsync(ForgotPasswordRequest request)
     {
         var normalizedEmail = NormalizeEmail(request.Email);
 
-        var user = await _context.Users
-            .Include(u => u.Accounts)
-            .FirstOrDefaultAsync(u => u.Email == normalizedEmail);
+        var user = await _unitOfWork.Users.GetByEmailWithAccountsAsync(normalizedEmail);
 
         if (user == null)
         {
@@ -68,13 +67,11 @@ public sealed class PasswordResetService : IPasswordResetService
         var now = DateTime.UtcNow;
         var expiresAt = now.AddMinutes(_passwordResetExpiryMinutes);
 
-        var existingTokens = await _context.PasswordResetTokens
-            .Where(token => token.UserId == user.UserId && token.UsedAt == null)
-            .ToListAsync();
+        var existingTokens = await _unitOfWork.PasswordResetTokens.GetUnusedTokensByUserIdAsync(user.UserId);
 
         if (existingTokens.Count > 0)
         {
-            _context.PasswordResetTokens.RemoveRange(existingTokens);
+            _unitOfWork.PasswordResetTokens.RemoveRange(existingTokens);
         }
 
         var resetToken = new PasswordResetToken
@@ -85,8 +82,8 @@ public sealed class PasswordResetService : IPasswordResetService
             ExpiresAt = expiresAt
         };
 
-        await _context.PasswordResetTokens.AddAsync(resetToken);
-        await _context.SaveChangesAsync();
+        await _unitOfWork.PasswordResetTokens.AddAsync(resetToken);
+        await _unitOfWork.CompleteAsync();
 
         try
         {
@@ -96,7 +93,7 @@ public sealed class PasswordResetService : IPasswordResetService
         {
             _logger.LogError(ex, "Failed to send password reset OTP to {Email}", user.Email);
             resetToken.UsedAt = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
+            await _unitOfWork.CompleteAsync();
             throw AuthServiceException.ServerError("Failed to send OTP email");
         }
 
@@ -105,21 +102,19 @@ public sealed class PasswordResetService : IPasswordResetService
         return new ForgotPasswordResponse { Message = "An OTP has been sent to your email" };
     }
 
-   
+
     public async Task<VerifyResetCodeResponse> VerifyResetCodeAsync(VerifyResetCodeRequest request)
     {
         var normalizedEmail = NormalizeEmail(request.Email);
 
-        var user = await _context.Users
-            .AsNoTracking()
-            .FirstOrDefaultAsync(u => u.Email == normalizedEmail);
+        var user = await _unitOfWork.Users.GetByEmailAsync(normalizedEmail, asTracking: false);
 
         if (user == null)
         {
             throw AuthServiceException.NotFound("Email not found");
         }
 
-        var resetToken = await GetActiveResetTokenAsync(user.UserId, asTracking: false);
+        var resetToken = await _unitOfWork.PasswordResetTokens.GetActiveTokenByUserIdAsync(user.UserId, asTracking: false);
 
         if (resetToken == null || !BCrypt.Net.BCrypt.Verify(request.OtpCode, resetToken.CodeHash))
         {
@@ -129,14 +124,12 @@ public sealed class PasswordResetService : IPasswordResetService
         return new VerifyResetCodeResponse { Message = "OTP verified successfully" };
     }
 
-    
+
     public async Task<ResetPasswordResponse> ResetPasswordAsync(ResetPasswordRequest request)
     {
         var normalizedEmail = NormalizeEmail(request.Email);
 
-        var user = await _context.Users
-            .Include(u => u.Accounts)
-            .FirstOrDefaultAsync(u => u.Email == normalizedEmail);
+        var user = await _unitOfWork.Users.GetByEmailWithAccountsAsync(normalizedEmail);
 
         if (user == null)
         {
@@ -149,7 +142,7 @@ public sealed class PasswordResetService : IPasswordResetService
             throw AuthServiceException.BadRequest("This account does not support password login");
         }
 
-        var resetToken = await GetActiveResetTokenAsync(user.UserId, asTracking: true);
+        var resetToken = await _unitOfWork.PasswordResetTokens.GetActiveTokenByUserIdAsync(user.UserId, asTracking: true);
 
         if (resetToken == null || !BCrypt.Net.BCrypt.Verify(request.OtpCode, resetToken.CodeHash))
         {
@@ -165,29 +158,14 @@ public sealed class PasswordResetService : IPasswordResetService
         account.UpdateAt = DateTime.UtcNow;
         resetToken.UsedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync();
+        await _unitOfWork.CompleteAsync();
 
         _logger.LogInformation("Password reset successfully for user {UserId}", user.UserId);
 
         return new ResetPasswordResponse { Message = "Password has been reset successfully" };
     }
 
-   
-    private async Task<PasswordResetToken?> GetActiveResetTokenAsync(int userId, bool asTracking)
-    {
-        IQueryable<PasswordResetToken> query = _context.PasswordResetTokens
-            .Where(token => token.UserId == userId && token.UsedAt == null && token.ExpiresAt > DateTime.UtcNow)
-            .OrderByDescending(token => token.CreatedAt);
 
-        if (!asTracking)
-        {
-            query = query.AsNoTracking();
-        }
-
-        return await query.FirstOrDefaultAsync();
-    }
-
-    
     private string GenerateOtpCode()
     {
         Span<char> buffer = _passwordResetCodeLength <= 128
@@ -202,6 +180,6 @@ public sealed class PasswordResetService : IPasswordResetService
         return new string(buffer);
     }
 
-    
+
     private static string NormalizeEmail(string email) => email.Trim().ToLowerInvariant();
 }

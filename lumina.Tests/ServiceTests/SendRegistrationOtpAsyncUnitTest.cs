@@ -8,12 +8,14 @@ using DataLayer.Models;
 using Lumina.Tests.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
+using RepositoryLayer.UnitOfWork;
 
 namespace Lumina.Tests.ServiceTests
 {
     public class SendRegistrationOtpAsyncUnitTest
     {
         private readonly LuminaSystemContext _context;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly Mock<IJwtTokenService> _mockJwtTokenService;
         private readonly Mock<IGoogleAuthService> _mockGoogleAuthService;
         private readonly Mock<IEmailSender> _mockEmailSender;
@@ -22,14 +24,14 @@ namespace Lumina.Tests.ServiceTests
 
         public SendRegistrationOtpAsyncUnitTest()
         {
-            _context = InMemoryDbContextHelper.CreateContext();
+            (_unitOfWork, _context) = InMemoryDbContextHelper.CreateUnitOfWork();
             _mockJwtTokenService = new Mock<IJwtTokenService>();
             _mockGoogleAuthService = new Mock<IGoogleAuthService>();
             _mockEmailSender = new Mock<IEmailSender>();
             _mockLogger = new Mock<ILogger<AuthService>>();
 
             _authService = new AuthService(
-                _context,
+                _unitOfWork,
                 _mockJwtTokenService.Object,
                 _mockGoogleAuthService.Object,
                 _mockEmailSender.Object,
@@ -129,7 +131,7 @@ namespace Lumina.Tests.ServiceTests
             // Assert
             await act.Should().ThrowAsync<AuthServiceException>()
                 .Where(e => e.StatusCode == 409)
-                .WithMessage("Email ?� ???c ??ng k�");
+                .WithMessage("Email đã được đăng ký");
 
             // Verify no temp user was created
             var tempUser = await _context.Users
@@ -186,7 +188,7 @@ namespace Lumina.Tests.ServiceTests
             // Assert
             await act.Should().ThrowAsync<AuthServiceException>()
                 .Where(e => e.StatusCode == 409)
-                .WithMessage("T�n ??ng nh?p ?� t?n t?i");
+                .WithMessage("Tên đăng nhập đã tồn tại");
 
             // Verify no temp user was created
             var tempUser = await _context.Users
@@ -296,7 +298,7 @@ namespace Lumina.Tests.ServiceTests
             // Assert
             await act.Should().ThrowAsync<AuthServiceException>()
                 .Where(e => e.StatusCode == 500)
-                .WithMessage("Kh�ng th? g?i m� OTP. Vui l�ng th? l?i sau.");
+                .WithMessage("Không thể gửi mã OTP. Vui lòng thử lại sau.");
 
             // Verify temp user and token were rolled back
             var tempUser = await _context.Users
