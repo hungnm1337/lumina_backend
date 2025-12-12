@@ -78,7 +78,7 @@ public class VocabulariesController : ControllerBase
                 imageUrl = v.ImageUrl // Trả về ImageUrl cho từng vocabulary
             }));
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return StatusCode(500, new ErrorResponse("An internal server error occurred."));
         }
@@ -187,7 +187,7 @@ public class VocabulariesController : ControllerBase
                 statusChanged = isStaff && wasPublished // Thông báo cho frontend biết status đã thay đổi
             });
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return StatusCode(500, new ErrorResponse("An internal server error occurred."));
         }
@@ -329,7 +329,7 @@ public class VocabulariesController : ControllerBase
                 statusChanged = isStaff && wasPublished // Thông báo cho frontend biết status đã thay đổi
             });
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return StatusCode(500, new ErrorResponse("An internal server error occurred."));
         }
@@ -359,7 +359,7 @@ public class VocabulariesController : ControllerBase
 
             return Ok(new { message = "Vocabulary deleted successfully" });
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return StatusCode(500, new ErrorResponse("An internal server error occurred."));
         }
@@ -485,7 +485,7 @@ public class VocabulariesController : ControllerBase
                 imageUrl = v.ImageUrl // Trả về ImageUrl cho từng vocabulary
             }));
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return StatusCode(500, new ErrorResponse("An internal server error occurred."));
         }
@@ -516,7 +516,7 @@ public class VocabulariesController : ControllerBase
                 imageUrl = v.ImageUrl // Trả về ImageUrl cho từng vocabulary
             }));
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return StatusCode(500, new ErrorResponse("An internal server error occurred."));
         }
