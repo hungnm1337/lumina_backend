@@ -1,5 +1,6 @@
 using DataLayer.Models;
 using Microsoft.EntityFrameworkCore;
+using RepositoryLayer.UnitOfWork;
 
 namespace Lumina.Tests.Helpers
 {
@@ -13,6 +14,16 @@ namespace Lumina.Tests.Helpers
                 .Options;
 
             return new LuminaSystemContext(options);
+        }
+
+        /// <summary>
+        /// Creates a UnitOfWork with an in-memory database context for testing
+        /// </summary>
+        public static (IUnitOfWork unitOfWork, LuminaSystemContext context) CreateUnitOfWork(string? databaseName = null)
+        {
+            var context = CreateContext(databaseName);
+            var unitOfWork = new UnitOfWork(context);
+            return (unitOfWork, context);
         }
 
         public static async Task SeedVocabularyDataAsync(LuminaSystemContext context)

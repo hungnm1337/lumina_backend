@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore.Storage;
+using RepositoryLayer.Auth;
 using RepositoryLayer.Exam;
 using RepositoryLayer.Questions;
 using RepositoryLayer.Speaking;
@@ -29,6 +30,12 @@ public interface IUnitOfWork : IDisposable
     IRepository<ExamAttempt> ExamAttemptsGeneric { get; }
     IRepository<Question> QuestionsGeneric { get; }
     IRepository<Option> Options { get; }
+    IRepository<Role> Roles { get; }
+
+    // Auth repositories
+    IAccountRepository Accounts { get; }
+    IRefreshTokenRepository RefreshTokens { get; }
+    IPasswordResetTokenRepository PasswordResetTokens { get; }
 
     Task<int> CompleteAsync();
     Task<IDbContextTransaction> BeginTransactionAsync();

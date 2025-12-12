@@ -7,12 +7,14 @@ using DataLayer.DTOs.Auth;
 using DataLayer.Models;
 using Lumina.Tests.Helpers;
 using Microsoft.EntityFrameworkCore;
+using RepositoryLayer.UnitOfWork;
 
 namespace Lumina.Tests.ServiceTests
 {
     public class VerifyRegistrationAsyncUnitTest
     {
         private readonly LuminaSystemContext _context;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly Mock<IJwtTokenService> _mockJwtTokenService;
         private readonly Mock<IGoogleAuthService> _mockGoogleAuthService;
         private readonly Mock<IEmailSender> _mockEmailSender;
@@ -21,14 +23,14 @@ namespace Lumina.Tests.ServiceTests
 
         public VerifyRegistrationAsyncUnitTest()
         {
-            _context = InMemoryDbContextHelper.CreateContext();
+            (_unitOfWork, _context) = InMemoryDbContextHelper.CreateUnitOfWork();
             _mockJwtTokenService = new Mock<IJwtTokenService>();
             _mockGoogleAuthService = new Mock<IGoogleAuthService>();
             _mockEmailSender = new Mock<IEmailSender>();
             _mockLogger = new Mock<ILogger<AuthService>>();
 
             _authService = new AuthService(
-                _context,
+                _unitOfWork,
                 _mockJwtTokenService.Object,
                 _mockGoogleAuthService.Object,
                 _mockEmailSender.Object,
@@ -156,7 +158,7 @@ namespace Lumina.Tests.ServiceTests
             // Assert
             await act.Should().ThrowAsync<AuthServiceException>()
                 .Where(e => e.StatusCode == 400)
-                .WithMessage("T�n kh�ng ???c ?? tr?ng");
+                .WithMessage("Tên không được để trống");
         }
 
         [Fact]
@@ -178,7 +180,7 @@ namespace Lumina.Tests.ServiceTests
             // Assert
             await act.Should().ThrowAsync<AuthServiceException>()
                 .Where(e => e.StatusCode == 404)
-                .WithMessage("Kh�ng t�m th?y th�ng tin ??ng k�. Vui l�ng y�u c?u m� OTP m?i.");
+                .WithMessage("Không tìm thấy thông tin đăng ký. Vui lòng yêu cầu mã OTP mới.");
         }
 
         [Fact]
@@ -233,7 +235,7 @@ namespace Lumina.Tests.ServiceTests
             // Assert
             await act.Should().ThrowAsync<AuthServiceException>()
                 .Where(e => e.StatusCode == 400)
-                .WithMessage("OTP kh�ng h?p l? ho?c ?� h?t h?n");
+                .WithMessage("OTP không hợp lệ hoặc đã hết hạn");
         }
 
         [Fact]
@@ -289,7 +291,7 @@ namespace Lumina.Tests.ServiceTests
             // Assert
             await act.Should().ThrowAsync<AuthServiceException>()
                 .Where(e => e.StatusCode == 400)
-                .WithMessage("M� OTP kh�ng ?�ng");
+                .WithMessage("Mã OTP không đúng");
         }
 
         [Fact]
@@ -300,7 +302,7 @@ namespace Lumina.Tests.ServiceTests
             const string otpCode = "123456";
 
             var role = new Role { RoleId = 4, RoleName = "User" };
-            
+
             // Existing active user with same email
             var activeUser = new User
             {
@@ -359,7 +361,7 @@ namespace Lumina.Tests.ServiceTests
             // Assert
             await act.Should().ThrowAsync<AuthServiceException>()
                 .Where(e => e.StatusCode == 409)
-                .WithMessage("Email ?� ???c ??ng k�");
+                .WithMessage("Email đã được đăng ký");
         }
 
         [Fact]
@@ -371,7 +373,7 @@ namespace Lumina.Tests.ServiceTests
             const string otpCode = "123456";
 
             var role = new Role { RoleId = 4, RoleName = "User" };
-            
+
             // Existing user with taken username
             var existingUser = new User
             {
@@ -440,7 +442,7 @@ namespace Lumina.Tests.ServiceTests
             // Assert
             await act.Should().ThrowAsync<AuthServiceException>()
                 .Where(e => e.StatusCode == 409)
-                .WithMessage("T�n ??ng nh?p ?� t?n t?i");
+                .WithMessage("Tên đăng nhập đã tồn tại");
         }
 
         [Fact]
@@ -560,7 +562,7 @@ namespace Lumina.Tests.ServiceTests
             // Assert
             await act.Should().ThrowAsync<AuthServiceException>()
                 .Where(e => e.StatusCode == 400)
-                .WithMessage("OTP kh�ng h?p l? ho?c ?� h?t h?n");
+                .WithMessage("OTP không hợp lệ hoặc đã hết hạn");
         }
 
         [Fact]
@@ -615,7 +617,7 @@ namespace Lumina.Tests.ServiceTests
             // Assert
             await act.Should().ThrowAsync<AuthServiceException>()
                 .Where(e => e.StatusCode == 400)
-                .WithMessage("OTP kh�ng h?p l? ho?c ?� h?t h?n");
+                .WithMessage("OTP không hợp lệ hoặc đã hết hạn");
         }
     }
 }

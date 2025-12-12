@@ -6,12 +6,15 @@ using DataLayer.DTOs.Auth;
 using DataLayer.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Lumina.Tests.Helpers;
+using RepositoryLayer.UnitOfWork;
 
 namespace Lumina.Test.Services
 {
     public class RefreshTokenAsyncUnitTest : IDisposable
     {
         private readonly LuminaSystemContext _context;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly Mock<IJwtTokenService> _mockJwtTokenService;
         private readonly Mock<IGoogleAuthService> _mockGoogleAuthService;
         private readonly Mock<IEmailSender> _mockEmailSender;
@@ -20,18 +23,14 @@ namespace Lumina.Test.Services
 
         public RefreshTokenAsyncUnitTest()
         {
-            var options = new DbContextOptionsBuilder<LuminaSystemContext>()
-                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-                .Options;
-
-            _context = new LuminaSystemContext(options);
+            (_unitOfWork, _context) = InMemoryDbContextHelper.CreateUnitOfWork();
             _mockJwtTokenService = new Mock<IJwtTokenService>();
             _mockGoogleAuthService = new Mock<IGoogleAuthService>();
             _mockEmailSender = new Mock<IEmailSender>();
             _mockLogger = new Mock<ILogger<AuthService>>();
 
             _service = new AuthService(
-                _context,
+                _unitOfWork,
                 _mockJwtTokenService.Object,
                 _mockGoogleAuthService.Object,
                 _mockEmailSender.Object,
