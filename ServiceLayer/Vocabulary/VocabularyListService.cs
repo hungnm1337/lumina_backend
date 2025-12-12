@@ -1,6 +1,7 @@
 ﻿using DataLayer.DTOs.Vocabulary;
 using DataLayer.Models;
 using RepositoryLayer.UnitOfWork;
+using System.Linq;
 
 namespace ServiceLayer.Vocabulary
 {
@@ -74,6 +75,15 @@ namespace ServiceLayer.Vocabulary
             if (vocabularyList == null || (vocabularyList.Status != "Draft" && vocabularyList.Status != "Rejected"))
             {
                 // Chỉ cho phép gửi duyệt vocabulary list đang là Draft hoặc đã bị từ chối
+                return false;
+            }
+
+            // Kiểm tra số lượng từ vựng trong folder - phải có ít nhất 1 từ mới được gửi duyệt
+            var vocabularies = await _unitOfWork.Vocabularies.GetByListAsync(listId, null);
+            var vocabularyCount = vocabularies.Count(v => v.IsDeleted != true);
+            if (vocabularyCount == 0)
+            {
+                // Không cho phép gửi duyệt folder chưa có từ vựng nào
                 return false;
             }
 

@@ -40,7 +40,7 @@ namespace lumina.Controllers
             var endOfMonth = firstOfMonth.AddMonths(1);
 
             var allPayments = await _systemContext.Payments
-                .Where(p => p.Status == "Success" && p.PackageId != null)
+                .Where(p => p.Status == "Success")
                 .Include(p => p.Package)
                 .ToListAsync();
 
