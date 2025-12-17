@@ -60,6 +60,18 @@ namespace lumina.Controllers
                 });
             }
 
+            if (!ModelState.IsValid) 
+                return BadRequest(ModelState);
+                
+            if (request.AttemptID <= 0) 
+                return BadRequest(new { Message = "Invalid AttemptID." });
+                
+            if (request.QuestionId <= 0) 
+                return BadRequest(new { Message = "Invalid QuestionId." });
+                
+            if (string.IsNullOrWhiteSpace(request.UserAnswerContent)) 
+                return BadRequest(new { Message = "UserAnswerContent cannot be empty." });
+
             // Validate attempt ownership
             var validationResult = await _writingService.ValidateAttemptAsync(request.AttemptID, userId.Value);
             if (!validationResult.IsValid)
@@ -69,13 +81,6 @@ namespace lumina.Controllers
 
             try
             {
-                if (request == null) return BadRequest(new { Message = "Request cannot be null." });
-                if (!ModelState.IsValid) return BadRequest(ModelState);
-                if (request.AttemptID <= 0) return BadRequest(new { Message = "Invalid AttemptID." });
-                if (request.QuestionId <= 0) return BadRequest(new { Message = "Invalid QuestionId." });
-                if (string.IsNullOrWhiteSpace(request.UserAnswerContent)) 
-                    return BadRequest(new { Message = "UserAnswerContent cannot be empty." });
-
                 var result = await _writingService.SaveWritingAnswer(request);
 
                 return result 
