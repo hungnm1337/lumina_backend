@@ -1,4 +1,5 @@
 ﻿using DataLayer.DTOs.Exam;
+using DataLayer.DTOs.Exam.Speaking;
 using DataLayer.DTOs.Exam.Writting;
 using DataLayer.DTOs.UserAnswer;
 using System;
@@ -11,6 +12,8 @@ namespace ServiceLayer.Exam.Writting
 {
     public interface IWritingService
     {
+        Task<AttemptValidationResult> ValidateAttemptAsync(int attemptId, int userId);
+        
         Task<bool> SaveWritingAnswer(WritingAnswerRequestDTO writingAnswerRequestDTO);
 
         public Task<WritingResponseDTO> GetFeedbackP1FromAI(WritingRequestP1DTO request);

@@ -7,12 +7,14 @@ using DataLayer.DTOs.Auth;
 using DataLayer.Models;
 using Lumina.Tests.Helpers;
 using Microsoft.EntityFrameworkCore;
+using RepositoryLayer.UnitOfWork;
 
 namespace Lumina.Tests.ServiceTests
 {
     public class GoogleLoginAsyncUnitTest
     {
         private readonly LuminaSystemContext _context;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly Mock<IJwtTokenService> _mockJwtTokenService;
         private readonly Mock<IGoogleAuthService> _mockGoogleAuthService;
         private readonly Mock<IEmailSender> _mockEmailSender;
@@ -21,14 +23,14 @@ namespace Lumina.Tests.ServiceTests
 
         public GoogleLoginAsyncUnitTest()
         {
-            _context = InMemoryDbContextHelper.CreateContext();
+            (_unitOfWork, _context) = InMemoryDbContextHelper.CreateUnitOfWork();
             _mockJwtTokenService = new Mock<IJwtTokenService>();
             _mockGoogleAuthService = new Mock<IGoogleAuthService>();
             _mockEmailSender = new Mock<IEmailSender>();
             _mockLogger = new Mock<ILogger<AuthService>>();
 
             _authService = new AuthService(
-                _context,
+                _unitOfWork,
                 _mockJwtTokenService.Object,
                 _mockGoogleAuthService.Object,
                 _mockEmailSender.Object,

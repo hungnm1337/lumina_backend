@@ -1,43 +1,86 @@
+using DataLayer.DTOs.Exam.Speaking;
 using DataLayer.DTOs.Exam.Writting;
 using DataLayer.DTOs.UserAnswer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using ServiceLayer.Exam.Writting;
+using ServiceLayer.Quota;
 using System;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace lumina.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class WritingController : ControllerBase
     {
         private readonly IWritingService _writingService;
         private readonly ILogger<WritingController> _logger;
+        private readonly IQuotaService _quotaService;
 
-        public WritingController(IWritingService writingService, ILogger<WritingController> logger)
+        public WritingController(IWritingService writingService, ILogger<WritingController> logger, IQuotaService quotaService)
         {
             _writingService = writingService;
             _logger = logger;
+            _quotaService = quotaService;
         }
 
         
         [HttpPost("save-answer")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> SaveWritingAnswer([FromBody] WritingAnswerRequestDTO request)
         {
+            // Get userId from token
+            var userId = GetUserIdFromToken();
+            if (userId == null)
+            {
+                return Unauthorized(new { message = "User ID not found in token." });
+            }
+
+            var quotaCheck = await _quotaService.CheckQuotaAsync(userId.Value, "writing");
+            
+            if (!quotaCheck.CanAccess)
+            {
+                _logger.LogWarning(
+                    "[Writing] Unauthorized access attempt - UserId: {UserId}, SubscriptionType: {SubType}, RequiresUpgrade: {RequiresUpgrade}",
+                    userId.Value,
+                    quotaCheck.SubscriptionType,
+                    quotaCheck.RequiresUpgrade
+                );
+                
+                return StatusCode(402, new  // 402 Payment Required
+                { 
+                    message = "Writing test requires Premium subscription.",
+                    requiresUpgrade = quotaCheck.RequiresUpgrade,
+                    subscriptionType = quotaCheck.SubscriptionType,
+                    canAccess = quotaCheck.CanAccess
+                });
+            }
+
+            if (!ModelState.IsValid) 
+                return BadRequest(ModelState);
+                
+            if (request.AttemptID <= 0) 
+                return BadRequest(new { Message = "Invalid AttemptID." });
+                
+            if (request.QuestionId <= 0) 
+                return BadRequest(new { Message = "Invalid QuestionId." });
+                
+            if (string.IsNullOrWhiteSpace(request.UserAnswerContent)) 
+                return BadRequest(new { Message = "UserAnswerContent cannot be empty." });
+
+            // Validate attempt ownership
+            var validationResult = await _writingService.ValidateAttemptAsync(request.AttemptID, userId.Value);
+            if (!validationResult.IsValid)
+            {
+                return HandleValidationError(validationResult);
+            }
+
             try
             {
-                if (request == null) return BadRequest(new { Message = "Request cannot be null." });
-                if (!ModelState.IsValid) return BadRequest(ModelState);
-                if (request.AttemptID <= 0) return BadRequest(new { Message = "Invalid AttemptID." });
-                if (request.QuestionId <= 0) return BadRequest(new { Message = "Invalid QuestionId." });
-                if (string.IsNullOrWhiteSpace(request.UserAnswerContent)) 
-                    return BadRequest(new { Message = "UserAnswerContent cannot be empty." });
-
                 var result = await _writingService.SaveWritingAnswer(request);
 
                 return result 
@@ -56,11 +99,26 @@ namespace lumina.Controllers
 
         
         [HttpPost("p1-get-feedback")]
-        [ProducesResponseType(typeof(WritingResponseDTO), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetFeedbackP1FromAI([FromBody] WritingRequestP1DTO request)
         {
+            // Get userId from token
+            var userId = GetUserIdFromToken();
+            if (userId == null)
+            {
+                return Unauthorized(new { message = "User ID not found in token." });
+            }
+
+            // Premium check for AI feedback
+            var quotaCheck = await _quotaService.CheckQuotaAsync(userId.Value, "writing");
+            if (!quotaCheck.CanAccess)
+            {
+                return StatusCode(402, new 
+                { 
+                    message = "Writing AI feedback requires Premium subscription.",
+                    requiresUpgrade = quotaCheck.RequiresUpgrade
+                });
+            }
+
             try
             {
                 if (!ModelState.IsValid)
@@ -91,11 +149,26 @@ namespace lumina.Controllers
         }
 
         [HttpPost("p23-get-feedback")]
-        [ProducesResponseType(typeof(WritingResponseDTO), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetFeedbackP23FromAI([FromBody] WritingRequestP23DTO request)
         {
+            // Get userId from token
+            var userId = GetUserIdFromToken();
+            if (userId == null)
+            {
+                return Unauthorized(new { message = "User ID not found in token." });
+            }
+
+            // Premium check for AI feedback
+            var quotaCheck = await _quotaService.CheckQuotaAsync(userId.Value, "writing");
+            if (!quotaCheck.CanAccess)
+            {
+                return StatusCode(402, new 
+                { 
+                    message = "Writing AI feedback requires Premium subscription.",
+                    requiresUpgrade = quotaCheck.RequiresUpgrade
+                });
+            }
+
             try
             {
                 if (!ModelState.IsValid)
@@ -124,6 +197,29 @@ namespace lumina.Controllers
                     new { Message = "An unexpected error occurred while getting AI feedback." });
             }
         }
+
+
+        private int? GetUserIdFromToken()
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out int userId))
+            {
+                return null;
+            }
+            return userId;
+        }
+
+        private IActionResult HandleValidationError(AttemptValidationResult validationResult)
+        {
+            return validationResult.ErrorType switch
+            {
+                AttemptErrorType.NotFound => NotFound(new { message = validationResult.ErrorMessage }),
+                AttemptErrorType.Forbidden => Forbid(),
+                AttemptErrorType.InvalidUser => Unauthorized(new { message = validationResult.ErrorMessage }),
+                _ => BadRequest(new { message = validationResult.ErrorMessage })
+            };
+        }
+
 
     }
 

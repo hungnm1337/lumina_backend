@@ -1,5 +1,6 @@
 ﻿using DataLayer.Models;
 using Microsoft.EntityFrameworkCore.Storage;
+using RepositoryLayer.Auth;
 using RepositoryLayer.Exam;
 using RepositoryLayer.Questions;
 using RepositoryLayer.Speaking;
@@ -32,6 +33,12 @@ public class UnitOfWork : IUnitOfWork
     public IRepository<ExamAttempt> ExamAttemptsGeneric { get; private set; }
     public IRepository<Question> QuestionsGeneric { get; private set; }
     public IRepository<Option> Options { get; private set; }
+    public IRepository<Role> Roles { get; private set; }
+
+    // Auth repositories
+    public IAccountRepository Accounts { get; private set; }
+    public IRefreshTokenRepository RefreshTokens { get; private set; }
+    public IPasswordResetTokenRepository PasswordResetTokens { get; private set; }
 
     public UnitOfWork(LuminaSystemContext context)
     {
@@ -53,6 +60,12 @@ public class UnitOfWork : IUnitOfWork
         ExamAttemptsGeneric = new Repository<ExamAttempt>(_context);
         QuestionsGeneric = new Repository<Question>(_context);
         Options = new Repository<Option>(_context);
+        Roles = new Repository<Role>(_context);
+
+        // Auth repositories
+        Accounts = new AccountRepository(_context);
+        RefreshTokens = new RefreshTokenRepository(_context);
+        PasswordResetTokens = new PasswordResetTokenRepository(_context);
     }
 
     public async Task<int> CompleteAsync()

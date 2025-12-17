@@ -21,6 +21,15 @@ namespace RepositoryLayer.User
         Task<bool> ChangePasswordAsync(int userId, string currentPassword, string newPassword);
 
         Task<bool> UpdateUserRoleAsync(int userId, int roleId);
+
+        // Auth-related methods
+        Task<DataLayer.Models.User?> GetByEmailAsync(string email, bool asTracking = true);
+        Task<DataLayer.Models.User?> GetByEmailWithAccountsAsync(string email);
+        Task<DataLayer.Models.User?> GetByEmailWithAccountsAndRoleAsync(string email);
+        Task<DataLayer.Models.User?> GetInactiveByEmailWithTokensAsync(string email);
+        Task<bool> EmailExistsAsync(string email, bool activeOnly = true);
+        Task AddAsync(DataLayer.Models.User user);
+        void Remove(DataLayer.Models.User user);
     }
 }
 

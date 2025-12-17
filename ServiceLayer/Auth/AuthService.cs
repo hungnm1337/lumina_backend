@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using RepositoryLayer.UnitOfWork;
 using ServiceLayer.Email;
 
 namespace ServiceLayer.Auth;
@@ -21,7 +22,7 @@ public sealed class AuthService : IAuthService
 
 
 
-    private readonly LuminaSystemContext _context;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IJwtTokenService _jwtTokenService;
     private readonly IGoogleAuthService _googleAuthService;
     private readonly IEmailSender _emailSender;
@@ -34,14 +35,14 @@ public sealed class AuthService : IAuthService
 
 
     public AuthService(
-        LuminaSystemContext context,
+        IUnitOfWork unitOfWork,
         IJwtTokenService jwtTokenService,
         IGoogleAuthService googleAuthService,
         IEmailSender emailSender,
         ILogger<AuthService> logger
         )
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
         _jwtTokenService = jwtTokenService;
         _googleAuthService = googleAuthService;
         _emailSender = emailSender;
@@ -52,7 +53,7 @@ public sealed class AuthService : IAuthService
     public async Task<LoginResponse> LoginAsync(LoginRequestDTO request)
     {
         var identifier = request.Username.Trim();
-        var account = await FindAccountByIdentifierAsync(identifier);
+        var account = await _unitOfWork.Accounts.FindByIdentifierAsync(identifier);
 
         if (account?.User == null || string.IsNullOrEmpty(account.PasswordHash))
         {
@@ -94,7 +95,7 @@ public sealed class AuthService : IAuthService
 
         if (account.User.Role == null)
         {
-            account.User.Role = await _context.Roles.FindAsync(account.User.RoleId)
+            account.User.Role = await _unitOfWork.Roles.GetAsync(r => r.RoleId == account.User.RoleId)
                 ?? throw new InvalidOperationException($"Role {account.User.RoleId} not found");
         }
 
@@ -113,40 +114,32 @@ public sealed class AuthService : IAuthService
         var normalizedEmail = NormalizeEmail(request.Email);
         var normalizedUsername = NormalizeUsername(request.Username);
 
-        var conflicts = await _context.Accounts
-            .Include(a => a.User)
-            .Where(a => a.Username == normalizedUsername || (a.User.Email == normalizedEmail && a.User.IsActive == true))
-            .Select(a => new { a.Username, a.User.Email, a.User.IsActive })
-            .ToListAsync();
-
-        var emailExists = conflicts.Any(c => c.Email == normalizedEmail && c.IsActive == true);
+        var emailExists = await _unitOfWork.Users.EmailExistsAsync(normalizedEmail, activeOnly: true);
         if (emailExists)
         {
             _logger.LogWarning("Registration OTP request failed - Email already registered: {Email}", normalizedEmail);
             throw AuthServiceException.Conflict("Email đã được đăng ký");
         }
 
-        var usernameExists = conflicts.Any(c => c.Username == normalizedUsername);
+        var usernameExists = await _unitOfWork.Accounts.UsernameExistsAsync(normalizedUsername);
         if (usernameExists)
         {
             _logger.LogWarning("Registration OTP request failed - Username already exists: {Username}", normalizedUsername);
             throw AuthServiceException.Conflict("Tên đăng nhập đã tồn tại");
         }
 
-        var tempUserOld = await _context.Users
-            .Include(u => u.PasswordResetTokens)
-            .FirstOrDefaultAsync(u => u.Email == normalizedEmail && u.IsActive == false);
-            
+        var tempUserOld = await _unitOfWork.Users.GetInactiveByEmailWithTokensAsync(normalizedEmail);
+
         if (tempUserOld != null)
         {
             if (tempUserOld.PasswordResetTokens != null && tempUserOld.PasswordResetTokens.Count > 0)
             {
-                _context.PasswordResetTokens.RemoveRange(tempUserOld.PasswordResetTokens);
+                _unitOfWork.PasswordResetTokens.RemoveRange(tempUserOld.PasswordResetTokens);
             }
-            
-            _context.Users.Remove(tempUserOld);
-            await _context.SaveChangesAsync();
-            
+
+            _unitOfWork.Users.Remove(tempUserOld);
+            await _unitOfWork.CompleteAsync();
+
             _logger.LogInformation("Cleaned up old temp user for {Email}", normalizedEmail);
         }
 
@@ -154,18 +147,18 @@ public sealed class AuthService : IAuthService
         var otpHash = BCrypt.Net.BCrypt.HashPassword(otpCode);
 
         var now = DateTime.UtcNow;
-        
+
         var tempUser = new DataLayer.Models.User
         {
             Email = normalizedEmail,
-            FullName = "Pending", 
+            FullName = "Pending",
             RoleId = _defaultRoleId,
             IsActive = false,
             CurrentStreak = 0
         };
-        
-        await _context.Users.AddAsync(tempUser);
-        await _context.SaveChangesAsync();
+
+        await _unitOfWork.Users.AddAsync(tempUser);
+        await _unitOfWork.CompleteAsync();
 
         var registrationToken = new PasswordResetToken
         {
@@ -175,8 +168,8 @@ public sealed class AuthService : IAuthService
             ExpiresAt = now.AddMinutes(_registrationOtpExpiryMinutes)
         };
 
-        await _context.PasswordResetTokens.AddAsync(registrationToken);
-        await _context.SaveChangesAsync();
+        await _unitOfWork.PasswordResetTokens.AddAsync(registrationToken);
+        await _unitOfWork.CompleteAsync();
 
         try
         {
@@ -185,11 +178,11 @@ public sealed class AuthService : IAuthService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to send registration OTP to {Email}", normalizedEmail);
-            
-            _context.PasswordResetTokens.Remove(registrationToken);
-            _context.Users.Remove(tempUser);
-            await _context.SaveChangesAsync();
-            
+
+            _unitOfWork.PasswordResetTokens.Remove(registrationToken);
+            _unitOfWork.Users.Remove(tempUser);
+            await _unitOfWork.CompleteAsync();
+
             throw AuthServiceException.ServerError("Không thể gửi mã OTP. Vui lòng thử lại sau.");
         }
 
@@ -222,21 +215,21 @@ public sealed class AuthService : IAuthService
             normalizedUsername = normalizedUsername[..UsernameMaxLength];
         }
 
-        var tempUser = await _context.Users
-            .Include(u => u.Accounts)
-            .Include(u => u.Role)
-            .FirstOrDefaultAsync(u => u.Email == normalizedEmail && u.IsActive == false);
+        // First check if email is already registered with an active user
+        var activeUserExists = await _unitOfWork.Users.EmailExistsAsync(normalizedEmail, activeOnly: true);
+        if (activeUserExists)
+        {
+            throw AuthServiceException.Conflict("Email đã được đăng ký");
+        }
+
+        var tempUser = await _unitOfWork.Users.GetInactiveByEmailWithTokensAsync(normalizedEmail);
 
         if (tempUser == null)
         {
             throw AuthServiceException.NotFound("Không tìm thấy thông tin đăng ký. Vui lòng yêu cầu mã OTP mới.");
         }
 
-        var registrationToken = await _context.PasswordResetTokens
-            .FirstOrDefaultAsync(t => 
-                t.UserId == tempUser.UserId && 
-                t.UsedAt == null && 
-                t.ExpiresAt > DateTime.UtcNow);
+        var registrationToken = await _unitOfWork.PasswordResetTokens.GetActiveTokenByUserIdAsync(tempUser.UserId, asTracking: true);
 
         if (registrationToken == null)
         {
@@ -248,23 +241,14 @@ public sealed class AuthService : IAuthService
             throw AuthServiceException.BadRequest("Mã OTP không đúng");
         }
 
-        var existingActiveUser = await _context.Users
-            .AnyAsync(u => u.Email == normalizedEmail && u.IsActive == true);
-            
-        if (existingActiveUser)
-        {
-            throw AuthServiceException.Conflict("Email đã được đăng ký");
-        }
+        var usernameExists = await _unitOfWork.Accounts.UsernameExistsAsync(normalizedUsername);
 
-        var usernameExists = await _context.Accounts
-            .AnyAsync(a => a.Username == normalizedUsername);
-            
         if (usernameExists)
         {
             throw AuthServiceException.Conflict("Tên đăng nhập đã tồn tại");
         }
 
-        await using var transaction = await _context.Database.BeginTransactionAsync();
+        await using var transaction = await _unitOfWork.BeginTransactionAsync();
         try
         {
             tempUser.FullName = trimmedName;
@@ -279,19 +263,19 @@ public sealed class AuthService : IAuthService
                 CreateAt = DateTime.UtcNow
             };
 
-            await _context.Accounts.AddAsync(newAccount);
+            await _unitOfWork.Accounts.AddAsync(newAccount);
 
             registrationToken.UsedAt = DateTime.UtcNow;
 
-            await _context.SaveChangesAsync();
+            await _unitOfWork.CompleteAsync();
             await transaction.CommitAsync();
 
-            _logger.LogInformation("User registration completed successfully: {Username} ({Email})", 
+            _logger.LogInformation("User registration completed successfully: {Username} ({Email})",
                 normalizedUsername, normalizedEmail);
 
             var tokenResult = _jwtTokenService.GenerateToken(tempUser);
             var refreshToken = _jwtTokenService.GenerateRefreshToken();
-            
+
             var refreshTokenEntity = new RefreshToken
             {
                 UserId = tempUser.UserId,
@@ -299,9 +283,9 @@ public sealed class AuthService : IAuthService
                 CreatedAt = DateTime.UtcNow,
                 ExpiresAt = DateTime.UtcNow.AddDays(_refreshTokenExpirationDays)
             };
-            
-            await _context.RefreshTokens.AddAsync(refreshTokenEntity);
-            await _context.SaveChangesAsync();
+
+            await _unitOfWork.RefreshTokens.AddAsync(refreshTokenEntity);
+            await _unitOfWork.CompleteAsync();
 
             return new VerifyRegistrationResponse
             {
@@ -331,21 +315,18 @@ public sealed class AuthService : IAuthService
     {
         var normalizedEmail = NormalizeEmail(request.Email);
 
-        var user = await _context.Users
-            .FirstOrDefaultAsync(u => u.Email == normalizedEmail && u.IsActive == false);
+        var user = await _unitOfWork.Users.GetByEmailAsync(normalizedEmail);
 
-        if (user == null)
+        if (user == null || user.IsActive == true)
         {
             throw AuthServiceException.NotFound("Không tìm thấy thông tin đăng ký");
         }
 
-        var existingTokens = await _context.PasswordResetTokens
-            .Where(t => t.UserId == user.UserId && t.UsedAt == null)
-            .ToListAsync();
+        var existingTokens = await _unitOfWork.PasswordResetTokens.GetUnusedTokensByUserIdAsync(user.UserId);
 
         if (existingTokens.Count > 0)
         {
-            _context.PasswordResetTokens.RemoveRange(existingTokens);
+            _unitOfWork.PasswordResetTokens.RemoveRange(existingTokens);
         }
 
         var otpCode = GenerateOtpCode();
@@ -362,8 +343,8 @@ public sealed class AuthService : IAuthService
             ExpiresAt = expiresAt
         };
 
-        await _context.PasswordResetTokens.AddAsync(newToken);
-        await _context.SaveChangesAsync();
+        await _unitOfWork.PasswordResetTokens.AddAsync(newToken);
+        await _unitOfWork.CompleteAsync();
 
         try
         {
@@ -372,10 +353,10 @@ public sealed class AuthService : IAuthService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to resend registration OTP to {Email}", user.Email);
-            
-            _context.PasswordResetTokens.Remove(newToken);
-            await _context.SaveChangesAsync();
-            
+
+            _unitOfWork.PasswordResetTokens.Remove(newToken);
+            await _unitOfWork.CompleteAsync();
+
             throw AuthServiceException.ServerError("Không thể gửi mã OTP. Vui lòng thử lại sau.");
         }
 
@@ -394,41 +375,12 @@ public sealed class AuthService : IAuthService
         return code.PadLeft(_registrationOtpLength, '0');
     }
 
-    private async Task<Account?> FindAccountByIdentifierAsync(string identifier)
-    {
-        var accountsQuery = _context.Accounts
-            .Where(a => a.AuthProvider == null || a.AuthProvider == string.Empty)
-            .Include(a => a.User)
-                .ThenInclude(u => u.Role);
-
-        if (LooksLikeEmail(identifier))
-        {
-            var normalizedEmail = NormalizeEmail(identifier);
-            var account = await accountsQuery
-                .FirstOrDefaultAsync(a => a.User.Email == normalizedEmail);
-
-            if (account != null)
-            {
-                return account;
-            }
-        }
-
-        var normalizedUsername = NormalizeUsername(identifier);
-        return await accountsQuery
-            .FirstOrDefaultAsync(a => a.Username == normalizedUsername);
-    }
-
     private async Task<Account> FindOrCreateGoogleAccountAsync(
         GoogleUserInfo googleUserInfo,
         string normalizedEmail,
         string accessToken)
     {
-        var existingAccount = await _context.Accounts
-            .Include(a => a.User)
-                .ThenInclude(u => u.Role)
-            .FirstOrDefaultAsync(a =>
-                a.AuthProvider == GoogleProvider &&
-                a.ProviderUserId == googleUserInfo.Subject);
+        var existingAccount = await _unitOfWork.Accounts.GetByGoogleIdWithUserAndRoleAsync(googleUserInfo.Subject);
 
         if (existingAccount != null)
         {
@@ -439,10 +391,10 @@ public sealed class AuthService : IAuthService
             if (string.IsNullOrWhiteSpace(existingAccount.Username))
             {
                 var baseUsername = CreateUsernameCandidateFromEmail(normalizedEmail);
-                existingAccount.Username = await GenerateUniqueUsernameAsync(baseUsername);
+                existingAccount.Username = await _unitOfWork.Accounts.GenerateUniqueUsernameAsync(baseUsername, UsernameMaxLength);
             }
 
-            await _context.SaveChangesAsync();
+            await _unitOfWork.CompleteAsync();
 
             _logger.LogInformation("Updated existing Google account for user: {Email}", normalizedEmail);
             return existingAccount;
@@ -456,12 +408,10 @@ public sealed class AuthService : IAuthService
         string normalizedEmail,
         string accessToken)
     {
-        await using var transaction = await _context.Database.BeginTransactionAsync();
+        await using var transaction = await _unitOfWork.BeginTransactionAsync();
         try
         {
-            var user = await _context.Users
-                .Include(u => u.Role)
-                .FirstOrDefaultAsync(u => u.Email == normalizedEmail);
+            var user = await _unitOfWork.Users.GetByEmailWithAccountsAndRoleAsync(normalizedEmail);
 
             if (user == null)
             {
@@ -474,14 +424,14 @@ public sealed class AuthService : IAuthService
                     CurrentStreak = 0
                 };
 
-                await _context.Users.AddAsync(user);
-                await _context.SaveChangesAsync();
+                await _unitOfWork.Users.AddAsync(user);
+                await _unitOfWork.CompleteAsync();
 
                 _logger.LogInformation("Created new user for Google login: {Email}", normalizedEmail);
             }
 
             var baseUsername = CreateUsernameCandidateFromEmail(normalizedEmail);
-            var uniqueUsername = await GenerateUniqueUsernameAsync(baseUsername);
+            var uniqueUsername = await _unitOfWork.Accounts.GenerateUniqueUsernameAsync(baseUsername, UsernameMaxLength);
 
             var account = new DataLayer.Models.Account
             {
@@ -500,8 +450,8 @@ public sealed class AuthService : IAuthService
                 account.User.Role = user.Role;
             }
 
-            await _context.Accounts.AddAsync(account);
-            await _context.SaveChangesAsync();
+            await _unitOfWork.Accounts.AddAsync(account);
+            await _unitOfWork.CompleteAsync();
 
             await transaction.CommitAsync();
 
@@ -536,37 +486,6 @@ public sealed class AuthService : IAuthService
         };
     }
 
-
-    private async Task<string> GenerateUniqueUsernameAsync(string baseUsername)
-    {
-        var normalizedBase = NormalizeUsername(baseUsername);
-
-        if (normalizedBase.Length > UsernameMaxLength - 3)
-        {
-            normalizedBase = normalizedBase[..(UsernameMaxLength - 3)];
-        }
-
-        var candidate = normalizedBase;
-        var suffix = 0;
-
-        while (await _context.Accounts.AnyAsync(a => a.Username == candidate))
-        {
-            suffix++;
-            var suffixStr = suffix.ToString(CultureInfo.InvariantCulture);
-            var maxBaseLength = UsernameMaxLength - suffixStr.Length - 1; // -1 cho dấu '-'
-
-            if (normalizedBase.Length > maxBaseLength)
-            {
-                candidate = $"{normalizedBase[..maxBaseLength]}-{suffixStr}";
-            }
-            else
-            {
-                candidate = $"{normalizedBase}-{suffixStr}";
-            }
-        }
-
-        return candidate;
-    }
 
     private static string CreateUsernameCandidateFromEmail(string normalizedEmail)
     {
@@ -630,21 +549,10 @@ public sealed class AuthService : IAuthService
     {
         var tokenResult = _jwtTokenService.GenerateToken(user);
         var refreshToken = _jwtTokenService.GenerateRefreshToken();
-        
-        var now = DateTime.UtcNow;
-        var existingTokens = await _context.RefreshTokens
-            .Where(rt => rt.UserId == user.UserId 
-                      && !rt.IsRevoked 
-                      && rt.ExpiresAt > now)
-            .ToListAsync();
-        
-        foreach (var token in existingTokens)
-        {
-            token.IsRevoked = true;
-            token.RevokedAt = DateTime.UtcNow;
-            token.RevokedReason = "Replaced by new token";
-        }
-        
+
+        // Revoke all existing active refresh tokens
+        await _unitOfWork.RefreshTokens.RevokeAllActiveByUserIdAsync(user.UserId, "Replaced by new token");
+
         var refreshTokenEntity = new RefreshToken
         {
             UserId = user.UserId,
@@ -652,10 +560,10 @@ public sealed class AuthService : IAuthService
             CreatedAt = DateTime.UtcNow,
             ExpiresAt = DateTime.UtcNow.AddDays(_refreshTokenExpirationDays)
         };
-        
-        await _context.RefreshTokens.AddAsync(refreshTokenEntity);
-        await _context.SaveChangesAsync();
-        
+
+        await _unitOfWork.RefreshTokens.AddAsync(refreshTokenEntity);
+        await _unitOfWork.CompleteAsync();
+
         return new LoginResponse
         {
             Token = tokenResult.Token,
@@ -671,50 +579,47 @@ public sealed class AuthService : IAuthService
             }
         };
     }
-    
+
     public async Task<LoginResponse> RefreshTokenAsync(RefreshTokenRequest request)
     {
         var now = DateTime.UtcNow;
-        var refreshTokenEntity = await _context.RefreshTokens
-            .Include(rt => rt.User)
-                .ThenInclude(u => u.Role)
-            .Include(rt => rt.User.Accounts)
-            .FirstOrDefaultAsync(rt => rt.Token == request.RefreshToken);
-        
+        var refreshTokenEntity = await _unitOfWork.RefreshTokens.GetByTokenWithUserAndAccountsAsync(request.RefreshToken);
+
         if (refreshTokenEntity == null)
         {
             _logger.LogWarning("Refresh token not found");
             throw AuthServiceException.Unauthorized("Invalid refresh token");
         }
-        
+
         if (refreshTokenEntity.IsRevoked)
         {
             _logger.LogWarning("Refresh token is revoked. UserId: {UserId}", refreshTokenEntity.UserId);
             throw AuthServiceException.Unauthorized("Refresh token has been revoked");
         }
-        
+
         if (refreshTokenEntity.ExpiresAt <= now)
         {
             _logger.LogWarning("Refresh token is expired. UserId: {UserId}, ExpiresAt: {ExpiresAt}",
                 refreshTokenEntity.UserId, refreshTokenEntity.ExpiresAt);
             throw AuthServiceException.Unauthorized("Refresh token has expired");
         }
-        
+
         if (refreshTokenEntity.User.IsActive is false)
         {
             _logger.LogWarning("Refresh token attempt for inactive user: {UserId}", refreshTokenEntity.UserId);
             throw AuthServiceException.Unauthorized("User account is inactive");
         }
-        
+
         refreshTokenEntity.IsRevoked = true;
         refreshTokenEntity.RevokedAt = DateTime.UtcNow;
         refreshTokenEntity.RevokedReason = "Token refreshed";
-        
+        _unitOfWork.RefreshTokens.Update(refreshTokenEntity);
+
         var account = refreshTokenEntity.User.Accounts.FirstOrDefault();
         var username = account?.Username ?? refreshTokenEntity.User.Email;
-        
+
         _logger.LogInformation("Refresh token used successfully for user: {UserId}", refreshTokenEntity.UserId);
-        
+
         return await CreateLoginResponseAsync(refreshTokenEntity.User, username);
     }
 

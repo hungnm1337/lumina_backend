@@ -92,7 +92,7 @@ namespace lumina
             // ========================================
             // 4. SERVICES & REPOSITORIES (DI)
             // ========================================
-            
+
             // Azure & Speech Services
             builder.Services.AddScoped<IAzureSpeechService, AzureSpeechService>();
             builder.Services.AddScoped<ServiceLayer.TextToSpeech.ITextToSpeechService, ServiceLayer.TextToSpeech.TextToSpeechService>();
@@ -102,6 +102,10 @@ namespace lumina
             builder.Services.AddScoped<ISpeakingScoringService, SpeakingScoringService>();
             builder.Services.AddScoped<IListeningService, ListeningService>();
             builder.Services.AddScoped<IReadingService, ReadingService>();
+
+            // Speaking Services (3-layer architecture)
+            builder.Services.AddScoped<RepositoryLayer.Speaking.ISpeakingRepository, RepositoryLayer.Speaking.SpeakingRepository>();
+            builder.Services.AddScoped<ISpeakingService, SpeakingService>();
 
             // User & Role Services
             builder.Services.AddScoped<IRoleRepository, RoleRepository>();
@@ -219,6 +223,8 @@ namespace lumina
             builder.Services.AddScoped<ServiceLayer.Quota.IQuotaService, ServiceLayer.Quota.QuotaService>();
             builder.Services.AddScoped<ServiceLayer.Payment.IPayOSService, ServiceLayer.Payment.PayOSService>();
             builder.Services.AddScoped<ServiceLayer.Subscription.ISubscriptionService, ServiceLayer.Subscription.SubscriptionService>();
+
+            
 
             // ========================================
             // 5. HANGFIRE (TRƯỚC builder.Build())
