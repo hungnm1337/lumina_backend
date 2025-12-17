@@ -5,9 +5,12 @@ using DataLayer.DTOs.MockTest;
 using System;
 using System.Threading.Tasks;
 using DataLayer.DTOs.Exam;
+using System.Security.Claims;
+using DataLayer.DTOs.Exam.Speaking;
 
 namespace lumina.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class MockTestController : ControllerBase
@@ -47,6 +50,26 @@ namespace lumina.Controllers
                     return BadRequest("Invalid exam attempt ID. It must be greater than 0.");
                 }
 
+                // Get userId from token
+                var userId = GetUserIdFromToken();
+                if (userId == null)
+                {
+                    return Unauthorized(new { message = "User ID not found in token." });
+                }
+
+                // Validate attempt ownership
+                var validationResult = await _mockTestService.ValidateExamAttemptOwnershipAsync(examAttemptId, userId.Value);
+                if (!validationResult.IsValid)
+                {
+                    return validationResult.ErrorType switch
+                    {
+                        AttemptErrorType.NotFound => NotFound(new { message = validationResult.ErrorMessage }),
+                        AttemptErrorType.Forbidden => StatusCode(403, new { message = validationResult.ErrorMessage }),
+                        AttemptErrorType.InvalidUser => Unauthorized(new { message = validationResult.ErrorMessage }),
+                        _ => BadRequest(new { message = validationResult.ErrorMessage })
+                    };
+                }
+
                 var result = await _mockTestService.GetMocktestFeedbackAsync(examAttemptId);
                 if (result == null)
                 {
@@ -58,6 +81,16 @@ namespace lumina.Controllers
             {
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
+        }
+
+        private int? GetUserIdFromToken()
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out int userId))
+            {
+                return null;
+            }
+            return userId;
         }
        
     }

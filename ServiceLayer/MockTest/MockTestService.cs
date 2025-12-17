@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using DataLayer.DTOs;
 using DataLayer.DTOs.Exam;
 using DataLayer.DTOs.MockTest;
+using DataLayer.DTOs.Exam.Speaking;
 using GenerativeAI;
 using GenerativeAI.Core;
 using Microsoft.Extensions.Configuration;
@@ -76,6 +77,34 @@ namespace ServiceLayer.MockTest
             var feedback = ParseAIResponse(aiResponse);
 
             return feedback;
+        }
+
+        public async Task<AttemptValidationResult> ValidateExamAttemptOwnershipAsync(int examAttemptId, int userId)
+        {
+            // Check if exam attempt exists
+            var examAttempt = await _examAttemptRepository.GetExamAttemptById(examAttemptId);
+            if (examAttempt == null)
+            {
+                return new AttemptValidationResult
+                {
+                    IsValid = false,
+                    ErrorType = AttemptErrorType.NotFound,
+                    ErrorMessage = $"Exam attempt with ID {examAttemptId} not found."
+                };
+            }
+
+            // Check ownership
+            if (examAttempt.ExamAttemptInfo?.UserId != userId)
+            {
+                return new AttemptValidationResult
+                {
+                    IsValid = false,
+                    ErrorType = AttemptErrorType.Forbidden,
+                    ErrorMessage = "You do not have permission to access this exam attempt."
+                };
+            }
+
+            return new AttemptValidationResult { IsValid = true };
         }
 
         private string BuildAnalysisPrompt(DataLayer.DTOs.UserAnswer.ExamAttemptDetailResponseDTO examAttempt, List<string> articleNames)

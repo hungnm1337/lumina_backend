@@ -31,6 +31,8 @@ namespace DataLayer.DTOs.UserAnswer
     {
         public int AttemptID { get; set; }
 
+        public int UserId { get; set; }
+
         public string UserName { get; set; }
 
         public string ExamName { get; set; }
