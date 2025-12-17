@@ -1,4 +1,5 @@
-﻿using DataLayer.DTOs.UserAnswer;
+﻿using DataLayer.DTOs.Exam.Speaking;
+using DataLayer.DTOs.UserAnswer;
 using DataLayer.Models;
 using RepositoryLayer.UnitOfWork;
 using System;
@@ -14,6 +15,40 @@ namespace ServiceLayer.Exam.Listening
         public ListeningService(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork;
+        }
+
+        
+        public async Task<AttemptValidationResult> ValidateAttemptAsync(int attemptId, int userId)
+        {
+            var attempt = await _unitOfWork.ExamAttemptsGeneric
+                .GetAsync(a => a.AttemptID == attemptId);
+
+            if (attempt == null)
+            {
+                return new AttemptValidationResult
+                {
+                    IsValid = false,
+                    ErrorType = AttemptErrorType.NotFound,
+                    ErrorMessage = $"ExamAttempt {attemptId} not found."
+                };
+            }
+
+            if (attempt.UserID != userId)
+            {
+                return new AttemptValidationResult
+                {
+                    IsValid = false,
+                    ErrorType = AttemptErrorType.Forbidden,
+                    ErrorMessage = "User does not own this attempt."
+                };
+            }
+
+            return new AttemptValidationResult
+            {
+                IsValid = true,
+                AttemptId = attemptId,
+                ErrorType = AttemptErrorType.None
+            };
         }
 
         public async Task<SubmitAnswerResponseDTO> SubmitAnswerAsync(SubmitAnswerRequestDTO request)

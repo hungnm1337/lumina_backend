@@ -42,7 +42,6 @@ public class SpeakingController : ControllerBase
             return Unauthorized(new { message = "User ID not found in token." });
         }
 
-        // ⭐ PREMIUM CHECK - Critical validation to prevent unauthorized access
         var quotaCheck = await _quotaService.CheckQuotaAsync(userId.Value, "speaking");
         
         if (!quotaCheck.CanAccess)
@@ -147,7 +146,6 @@ public class SpeakingController : ControllerBase
         return Ok(new { language, transcript });
     }
 
-    #region Private Helper Methods
 
     private int? GetUserIdFromToken()
     {
@@ -170,5 +168,4 @@ public class SpeakingController : ControllerBase
         };
     }
 
-    #endregion
 }
