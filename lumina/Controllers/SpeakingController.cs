@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using ServiceLayer.Exam.Speaking;
+using ServiceLayer.Quota;
 using System;
 using System.Security.Claims;
 using System.Threading;
@@ -17,13 +18,16 @@ public class SpeakingController : ControllerBase
 {
     private readonly ISpeakingService _speakingService;
     private readonly ILogger<SpeakingController> _logger;
+    private readonly IQuotaService _quotaService;
 
     public SpeakingController(
         ISpeakingService speakingService,
-        ILogger<SpeakingController> logger)
+        ILogger<SpeakingController> logger,
+        IQuotaService quotaService)
     {
         _speakingService = speakingService;
         _logger = logger;
+        _quotaService = quotaService;
     }
 
     [HttpPost("submit-answer")]
@@ -31,17 +35,38 @@ public class SpeakingController : ControllerBase
     {
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(90));
 
-        // Validate audio file
-        if (request.Audio == null || request.Audio.Length == 0)
-        {
-            return BadRequest(new { message = "Audio file is required." });
-        }
-
         // Get userId from token
         var userId = GetUserIdFromToken();
         if (userId == null)
         {
             return Unauthorized(new { message = "User ID not found in token." });
+        }
+
+        // ⭐ PREMIUM CHECK - Critical validation to prevent unauthorized access
+        var quotaCheck = await _quotaService.CheckQuotaAsync(userId.Value, "speaking");
+        
+        if (!quotaCheck.CanAccess)
+        {
+            _logger.LogWarning(
+                "[Speaking] Unauthorized access attempt - UserId: {UserId}, SubscriptionType: {SubType}, RequiresUpgrade: {RequiresUpgrade}",
+                userId.Value,
+                quotaCheck.SubscriptionType,
+                quotaCheck.RequiresUpgrade
+            );
+            
+            return StatusCode(402, new  // 402 Payment Required
+            { 
+                message = "Speaking test requires Premium subscription.",
+                requiresUpgrade = quotaCheck.RequiresUpgrade,
+                subscriptionType = quotaCheck.SubscriptionType,
+                canAccess = quotaCheck.CanAccess
+            });
+        }
+
+        // Validate audio file
+        if (request.Audio == null || request.Audio.Length == 0)
+        {
+            return BadRequest(new { message = "Audio file is required." });
         }
 
         try

@@ -224,9 +224,7 @@ namespace lumina
             builder.Services.AddScoped<ServiceLayer.Payment.IPayOSService, ServiceLayer.Payment.PayOSService>();
             builder.Services.AddScoped<ServiceLayer.Subscription.ISubscriptionService, ServiceLayer.Subscription.SubscriptionService>();
 
-            // ✅ Image Merge services (ghép ảnh liên quân)
-            builder.Services.AddScoped<ServiceLayer.ImageMerge.IImageMergeService, ServiceLayer.ImageMerge.ImageMergeService>();
-
+            
 
             // ========================================
             // 5. HANGFIRE (TRƯỚC builder.Build())
