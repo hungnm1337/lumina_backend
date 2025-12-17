@@ -2,14 +2,16 @@ using System;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-using Newtonsoft.Json; 
+using Newtonsoft.Json;
 
-public class CaptionResponse
+namespace ServiceLayer.PictureCaptioning
 {
-    public string caption { get; set; }
-}
+    public class CaptionResponse
+    {
+        public string caption { get; set; }
+    }
 
-public class ImageCaptioningService
+    public class ImageCaptioningService
 {
     private readonly HttpClient _httpClient;
     private readonly string _apiEndpoint = "/caption"; 
@@ -59,5 +61,6 @@ public class ImageCaptioningService
         {
             return $"Error: An unexpected error occurred. Details: {e.Message}";
         }
+    }
     }
 }
