@@ -20,7 +20,6 @@ namespace ServiceLayer.Exam.Writting
         private readonly IWrittingRepository _writtingRepository;
         private readonly IGenerativeAIService _generativeAIService;
         private readonly IUnitOfWork _unitOfWork;
-        private readonly string _apiKey;
 
         public WritingService(IConfiguration configuration, IWrittingRepository writtingRepository, IGenerativeAIService generativeAIService, IUnitOfWork unitOfWork)
         {
@@ -28,7 +27,6 @@ namespace ServiceLayer.Exam.Writting
             _writtingRepository = writtingRepository;
             _generativeAIService = generativeAIService;
             _unitOfWork = unitOfWork;
-            _apiKey = _configuration["Gemini:ApiKey"] ?? throw new InvalidOperationException("Gemini API key is not configured.");
         }
 
         
