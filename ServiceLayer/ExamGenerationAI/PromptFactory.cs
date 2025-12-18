@@ -23,11 +23,11 @@ namespace ServiceLayer.AI.Prompt
             { 7, new PartConfiguration { QuestionsPerPrompt = 3, DefaultPromptCount = 5 } },
             
             // SPEAKING
-            { 8, new PartConfiguration { QuestionsPerPrompt = 1, DefaultPromptCount = 2 } },  // Part 1: Q1-2, 2 prompts
-            { 9, new PartConfiguration { QuestionsPerPrompt = 1, DefaultPromptCount = 1 } },  // Part 2: Q3, 1 prompt
-            { 10, new PartConfiguration { QuestionsPerPrompt = 3, DefaultPromptCount = 1 } }, // Part 3: Q4-6, 1 prompt với 3 câu
-            { 11, new PartConfiguration { QuestionsPerPrompt = 3, DefaultPromptCount = 1 } }, // Part 4: Q7-9, 1 prompt với 3 câu
-            { 12, new PartConfiguration { QuestionsPerPrompt = 2, DefaultPromptCount = 1 } }, // Part 5: Q10-11, 1 prompt với 2 câu
+            { 8, new PartConfiguration { QuestionsPerPrompt = 1, DefaultPromptCount = 2 } },  
+            { 9, new PartConfiguration { QuestionsPerPrompt = 1, DefaultPromptCount = 2 } },  
+            { 10, new PartConfiguration { QuestionsPerPrompt = 3, DefaultPromptCount = 1 } }, 
+            { 11, new PartConfiguration { QuestionsPerPrompt = 3, DefaultPromptCount = 1 } }, 
+            { 12, new PartConfiguration { QuestionsPerPrompt = 1, DefaultPromptCount = 1 } }, 
             
             // WRITING
             { 13, new PartConfiguration { QuestionsPerPrompt = 1, DefaultPromptCount = 5 } },
