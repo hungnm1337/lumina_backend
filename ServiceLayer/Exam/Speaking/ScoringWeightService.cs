@@ -17,57 +17,62 @@ namespace ServiceLayer.Exam.Speaking
         {
             var weights = partCode?.ToUpper() switch
             {
+                // Part 1: Read Aloud - Focus on DELIVERY (70%)
                 "SPEAKING_PART_1" => new ScoringWeights
                 {
-                    PronunciationWeight = 0.50f,
-                    FluencyWeight = 0.25f,
-                    AccuracyWeight = 0.15f,
-                    GrammarWeight = 0.05f,
-                    VocabularyWeight = 0.05f,
-                    ContentWeight = 0.00f,
+                    PronunciationWeight = 0.40f,  // Delivery
+                    FluencyWeight = 0.20f,        // Delivery
+                    AccuracyWeight = 0.10f,       // Delivery
+                    GrammarWeight = 0.15f,        // Language Use
+                    VocabularyWeight = 0.05f,     // Language Use
+                    ContentWeight = 0.10f,        // Task Appropriateness
                     ScaleFactor = 1.0f
                 },
 
+                // Part 2: Describe Picture - Balanced (Delivery 35%, Language 35%, Task 30%)
                 "SPEAKING_PART_2" => new ScoringWeights
                 {
-                    GrammarWeight = 0.25f,
-                    VocabularyWeight = 0.25f,
-                    ContentWeight = 0.20f,
-                    FluencyWeight = 0.15f,
-                    PronunciationWeight = 0.10f,
-                    AccuracyWeight = 0.05f,
+                    PronunciationWeight = 0.15f,  // Delivery
+                    FluencyWeight = 0.15f,        // Delivery
+                    AccuracyWeight = 0.05f,       // Delivery
+                    GrammarWeight = 0.20f,        // Language Use
+                    VocabularyWeight = 0.15f,     // Language Use
+                    ContentWeight = 0.30f,        // Task Appropriateness
                     ScaleFactor = 1.0f
                 },
 
+                // Part 3: Respond to Questions - Focus on TASK (40%) + Language (35%)
                 "SPEAKING_PART_3" => new ScoringWeights
                 {
-                    ContentWeight = 0.30f,
-                    FluencyWeight = 0.25f,
-                    GrammarWeight = 0.20f,
-                    VocabularyWeight = 0.15f,
-                    PronunciationWeight = 0.10f,
+                    ContentWeight = 0.40f,        // Task Appropriateness
+                    GrammarWeight = 0.20f,        // Language Use
+                    VocabularyWeight = 0.15f,     // Language Use
+                    FluencyWeight = 0.15f,        // Delivery
+                    PronunciationWeight = 0.10f,  // Delivery
                     AccuracyWeight = 0.00f,
                     ScaleFactor = 1.0f
                 },
 
+                // Part 4: Respond Using Information - Focus on TASK (45%) + Language (35%)
                 "SPEAKING_PART_4" => new ScoringWeights
                 {
-                    ContentWeight = 0.30f,
-                    GrammarWeight = 0.25f,
-                    VocabularyWeight = 0.20f,
-                    FluencyWeight = 0.15f,
-                    PronunciationWeight = 0.10f,
+                    ContentWeight = 0.45f,        // Task Appropriateness
+                    GrammarWeight = 0.20f,        // Language Use
+                    VocabularyWeight = 0.15f,     // Language Use
+                    FluencyWeight = 0.10f,        // Delivery
+                    PronunciationWeight = 0.10f,  // Delivery
                     AccuracyWeight = 0.00f,
                     ScaleFactor = 1.0f
                 },
 
+                // Part 5: Express Opinion - Balanced (Language 40%, Task 35%, Delivery 25%)
                 "SPEAKING_PART_5" => new ScoringWeights
                 {
-                    GrammarWeight = 0.30f,
-                    VocabularyWeight = 0.25f,
-                    ContentWeight = 0.20f,
-                    FluencyWeight = 0.15f,
-                    PronunciationWeight = 0.10f,
+                    GrammarWeight = 0.25f,        // Language Use
+                    VocabularyWeight = 0.15f,     // Language Use
+                    ContentWeight = 0.35f,        // Task Appropriateness
+                    FluencyWeight = 0.15f,        // Delivery
+                    PronunciationWeight = 0.10f,  // Delivery
                     AccuracyWeight = 0.00f,
                     ScaleFactor = 1.67f
                 },

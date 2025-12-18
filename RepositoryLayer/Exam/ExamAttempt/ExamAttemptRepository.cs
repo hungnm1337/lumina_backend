@@ -288,7 +288,8 @@ namespace RepositoryLayer.Exam.ExamAttempt
                         QuestionNumber = answer.Question.QuestionNumber,
                         ScoreWeight = answer.Question.ScoreWeight,
                         StemText = answer.Question.StemText,
-                        Time = answer.Question.Time
+                        Time = answer.Question.Time,
+                        SampleAnswer = answer.Question.SampleAnswer
                     },
                     Transcript = answer.Transcript,
                     AudioUrl = answer.AudioUrl,

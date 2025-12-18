@@ -72,6 +72,8 @@ namespace DataLayer.DTOs.Exam
 
         public int QuestionNumber { get; set; }
 
+        public string? SampleAnswer { get; set; }
+
         public PromptDTO Prompt { get; set; }
 
         public List<OptionDTO> Options { get; set; }
@@ -113,7 +115,7 @@ namespace DataLayer.DTOs.Exam
         public string? ReferenceImageUrl { get; set; }
         public string? ReferenceAudioUrl { get; set; }
 
-        
+
     }
 
     public class OptionDTO
