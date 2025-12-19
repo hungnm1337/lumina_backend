@@ -16,6 +16,7 @@ namespace ServiceLayer.Streak
         private readonly LuminaSystemContext _context;
         private readonly ILogger<StreakService> _logger;
         private readonly IStreakRepository _streakRepository;
+        private readonly Notification.INotificationService _notificationService;
 
         // Múi giờ GMT+7 (Việt Nam)
         private static readonly TimeZoneInfo GMT7 = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
@@ -23,11 +24,16 @@ namespace ServiceLayer.Streak
         // Danh sách milestone (có thể config từ DB sau)
         private static readonly int[] MILESTONES = { 3, 7, 14, 30, 60, 100, 180, 365 };
 
-        public StreakService(LuminaSystemContext context, ILogger<StreakService> logger, IStreakRepository streakRepository)
+        public StreakService(
+            LuminaSystemContext context, 
+            ILogger<StreakService> logger, 
+            IStreakRepository streakRepository,
+            Notification.INotificationService notificationService)
         {
             _context = context;
             _logger = logger;
             _streakRepository = streakRepository;
+            _notificationService = notificationService;
         }
 
         #region Public Methods
@@ -150,6 +156,16 @@ namespace ServiceLayer.Streak
                     user.StreakFreezesAvailable = (user.StreakFreezesAvailable ?? 0) + 1;
                     eventType = StreakEventType.CompleteDay;
                     message = "Bắt đầu chuỗi học tập!";
+                    
+                    // Gửi thông báo streak
+                    try
+                    {
+                        await _notificationService.SendStreakNotificationAsync(userId, 1, 1);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to send streak notification for user {UserId}", userId);
+                    }
                 }
                 // Case 2: Học lại trong cùng ngày
                 else if (practiceDateLocal == lastPracticeDateOnly.Value)
@@ -164,6 +180,16 @@ namespace ServiceLayer.Streak
                     user.LastPracticeDate = practiceDateLocal.ToDateTime(TimeOnly.MinValue);
                     eventType = StreakEventType.CompleteDay;
                     message = $"Tuyệt vời! Chuỗi {user.CurrentStreak} ngày 🔥";
+                    
+                    // Gửi thông báo streak
+                    try
+                    {
+                        await _notificationService.SendStreakNotificationAsync(userId, user.CurrentStreak ?? 0);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to send streak notification for user {UserId}", userId);
+                    }
                 }
                 // Case 4: Học lại sau nhiều ngày, nhưng streak vẫn còn (được bảo vệ bởi freeze)
                 else if ((user.CurrentStreak ?? 0) > 0 && practiceDateLocal > lastPracticeDateOnly.Value)
@@ -172,6 +198,16 @@ namespace ServiceLayer.Streak
                     user.LastPracticeDate = practiceDateLocal.ToDateTime(TimeOnly.MinValue);
                     eventType = StreakEventType.CompleteDay;
                     message = $"Tuyệt vời! Chuỗi {user.CurrentStreak} ngày 🔥";
+                    
+                    // Gửi thông báo streak
+                    try
+                    {
+                        await _notificationService.SendStreakNotificationAsync(userId, user.CurrentStreak ?? 0);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to send streak notification for user {UserId}", userId);
+                    }
                 }
                 // Nếu streak đã bị reset về 0 (do không còn freeze), thì bắt đầu lại từ 1
                 else if ((user.CurrentStreak ?? 0) == 0)

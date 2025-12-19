@@ -18,5 +18,6 @@ namespace ServiceLayer.Notification
         Task<int> SendPointsNotificationAsync(int userId, int pointsEarned, int totalAccumulatedScore,
             int correctAnswers, int totalQuestions, int timeBonus, int accuracyBonus, bool isFirstAttempt = true);
         Task<int> SendTOEICNotificationAsync(int userId, int estimatedTOEIC, string toeicLevel, string message);
+        Task<int> SendStreakNotificationAsync(int userId, int currentStreak, int freezeTokensEarned = 0);
     }
 }

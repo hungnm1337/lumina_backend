@@ -389,6 +389,125 @@ namespace ServiceLayer.Notification
             return notificationId;
         }
 
+        public async Task<int> SendStreakNotificationAsync(int userId, int currentStreak, int freezeTokensEarned = 0)
+        {
+            try
+            {
+                string title = "🔥 Chuỗi học tập tăng!";
+                string content;
+
+                if (currentStreak == 1)
+                {
+                    content = $"Chúc mừng bạn đã bắt đầu chuỗi học tập! Hãy duy trì mỗi ngày để tạo thói quen học tập tốt. 💪";
+                }
+                else
+                {
+                    content = $"Tuyệt vời! Chuỗi học tập của bạn đã tăng lên {currentStreak} ngày 🔥";
+                    
+                    if (freezeTokensEarned > 0)
+                    {
+                        content += $" Bạn nhận được {freezeTokensEarned} Freeze Token để bảo vệ chuỗi của mình!";
+                    }
+                    
+                    // Thêm lời khuyến khích dựa trên mốc chuỗi
+                    if (currentStreak >= 365)
+                    {
+                        content += " 🏆 Một năm kiên trì! Bạn thật đáng kinh ngạc!";
+                    }
+                    else if (currentStreak >= 180)
+                    {
+                        content += " 🌟 Nửa năm rồi đấy! Sự kiên trì của bạn thật đáng ngưỡng mộ!";
+                    }
+                    else if (currentStreak >= 100)
+                    {
+                        content += " 🎯 100 ngày! Bạn là một chuyên gia thực thụ!";
+                    }
+                    else if (currentStreak >= 60)
+                    {
+                        content += " 💎 2 tháng liên tục! Thói quen học tập đã hình thành!";
+                    }
+                    else if (currentStreak >= 30)
+                    {
+                        content += " ⭐ Một tháng! Bạn đang trên đà rất tốt!";
+                    }
+                    else if (currentStreak >= 14)
+                    {
+                        content += " 🚀 2 tuần! Sự kiên trì đang được đền đáp!";
+                    }
+                    else if (currentStreak >= 7)
+                    {
+                        content += " 🎊 Một tuần! Hãy tiếp tục phát huy!";
+                    }
+                    else if (currentStreak >= 3)
+                    {
+                        content += " 🌱 Bạn đang xây dựng thói quen tốt!";
+                    }
+                    
+                    content += " Hãy tiếp tục duy trì nhé!";
+                }
+
+                // Lấy system user ID
+                var systemUserId = await GetSystemUserIdAsync();
+
+                var notification = new DataLayer.Models.Notification
+                {
+                    Title = title,
+                    Content = content,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedBy = systemUserId,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                var notificationId = await _notificationRepo.CreateAsync(notification);
+                Console.WriteLine($"📢 [NotificationService] Streak Notification {notificationId} created. Streak: {currentStreak} days");
+
+                // Tạo UserNotification
+                var userNotification = new UserNotification
+                {
+                    UserId = userId,
+                    NotificationId = notificationId,
+                    IsRead = false,
+                    CreateAt = DateTime.UtcNow
+                };
+                await _userNotificationRepo.CreateAsync(userNotification);
+
+                // Broadcast realtime qua SignalR
+                try
+                {
+                    var connectionId = ServiceLayer.Hubs.NotificationHub.GetConnectionId(userId);
+                    if (!string.IsNullOrEmpty(connectionId))
+                    {
+                        await _hubContext.Clients.Client(connectionId).SendAsync("ReceiveNotification", new
+                        {
+                            notificationId = notificationId,
+                            title = title,
+                            content = content,
+                            createdAt = notification.CreatedAt
+                        });
+                        Console.WriteLine($"📤 [NotificationService] Streak notification {notificationId} broadcasted to user {userId}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"ℹ️ [NotificationService] User {userId} offline. Notification saved to database.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"⚠️ [NotificationService] Failed to broadcast streak notification: {ex.Message}");
+                }
+
+                return notificationId;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ [NotificationService] Error in SendStreakNotificationAsync for user {userId}:");
+                Console.WriteLine($"   Message: {ex.Message}");
+                Console.WriteLine($"   StackTrace: {ex.StackTrace}");
+                return 0;
+            }
+        }
+
         private string GetEncouragementMessage(double accuracyRate, int timeBonus, int accuracyBonus, int totalPoints)
         {
             int accuracyPercent = (int)(accuracyRate * 100);
