@@ -1,7 +1,7 @@
 using DataLayer.DTOs.Chat;
 using DataLayer.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -10,26 +10,26 @@ using System.Threading.Tasks;
 using System.Text;
 using System.Net.Http;
 using ServiceLayer.UploadFile;
+using DataLayer.DTOs;
+using System.Net.Http.Headers;
 
 namespace ServiceLayer.Chat
 {
     public class ChatService : IChatService
     {
         private readonly LuminaSystemContext _context;
-        private readonly IConfiguration _configuration;
-        private readonly string? _apiKey;
-        private readonly string? _baseUrl;
-        private readonly string? _model;
+        private readonly OpenAIOptions _openAIOptions;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IUploadService _uploadService;
 
-        public ChatService(LuminaSystemContext context, IConfiguration configuration, IHttpClientFactory httpClientFactory, IUploadService uploadService)
+        public ChatService(
+            LuminaSystemContext context, 
+            IOptions<OpenAIOptions> openAIOptions, 
+            IHttpClientFactory httpClientFactory, 
+            IUploadService uploadService)
         {
             _context = context;
-            _configuration = configuration;
-            _apiKey = _configuration["GeminiStudent:ApiKey"];
-            _baseUrl = _configuration["GeminiStudent:BaseUrl"];
-            _model = _configuration["GeminiStudent:Model"];
+            _openAIOptions = openAIOptions.Value;
             _httpClientFactory = httpClientFactory;
             _uploadService = uploadService;
         }
@@ -124,14 +124,18 @@ namespace ServiceLayer.Chat
 - Practice exercises and study plans
 - English learning motivation and guidance
 
+**LANGUAGE SUPPORT:**
+- Accept questions in BOTH Vietnamese and English
+- Users can ask in either language or mix both languages
+- Always respond in Vietnamese with English examples when relevant
+
 **IMPORTANT RULES:**
 1. ONLY answer questions related to TOEIC English learning
 2. If asked about topics outside TOEIC/English learning, politely redirect:
    'Xin lỗi, tôi chỉ có thể hỗ trợ bạn về TOEIC và học tiếng Anh. Bạn có câu hỏi nào về từ vựng, ngữ pháp, chiến lược làm bài TOEIC, hoặc luyện tập không?'
 
-3. Always respond in Vietnamese with English examples when relevant
-4. Be encouraging and educational
-5. Provide TOEIC-specific context when applicable
+3. Be encouraging and educational
+4. Provide TOEIC-specific context when applicable
 
 **OUT OF SCOPE TOPICS:**
 - General knowledge outside English learning
@@ -149,8 +153,21 @@ Always respond with a valid JSON object in the specified format for each questio
         {
             var lowerMessage = message.ToLower();
             
-            // Vocabulary generation
-            if (lowerMessage.Contains("tạo")|| lowerMessage.Contains("create") && (lowerMessage.Contains("từ vựng")|| (lowerMessage.Contains("từ") || lowerMessage.Contains("vocabulary"))))
+            // Vocabulary generation - Improved logic for bilingual support
+            // Support both Vietnamese and English
+            bool hasCreateAction = lowerMessage.Contains("tạo") || 
+                                  lowerMessage.Contains("create") || 
+                                  lowerMessage.Contains("generate") ||
+                                  lowerMessage.Contains("make");
+            
+            bool hasVocabKeyword = lowerMessage.Contains("từ vựng") || 
+                                  lowerMessage.Contains("từ") ||
+                                  lowerMessage.Contains("vocabulary") || 
+                                  lowerMessage.Contains("vocabularies") ||
+                                  lowerMessage.Contains("word") ||
+                                  lowerMessage.Contains("words");
+            
+            if (hasCreateAction && hasVocabKeyword)
                 return "vocabulary_generation";
                 
             // Vocabulary questions
@@ -202,7 +219,7 @@ IMPORTANT: You must respond with ONLY a valid JSON object in this exact format:
 
 Do not include any text outside the JSON object. Start your response with {{ and end with }}.";
 
-            return await CallGeminiAPI(prompt);
+            return await CallOpenAIAPI(prompt);
         }
 
         private async Task<ChatResponseDTO> HandleGrammarQuestion(ChatRequestDTO request)
@@ -227,7 +244,7 @@ IMPORTANT: You must respond with ONLY a valid JSON object in this exact format:
 
 Do not include any text outside the JSON object. Start your response with {{ and end with }}.";
 
-            return await CallGeminiAPI(prompt);
+            return await CallOpenAIAPI(prompt);
         }
 
         private async Task<ChatResponseDTO> HandleTOEICStrategyQuestion(ChatRequestDTO request)
@@ -255,7 +272,7 @@ IMPORTANT: You must respond with ONLY a valid JSON object in this exact format:
 
 Do not include any text outside the JSON object. Start your response with {{ and end with }}.";
 
-            return await CallGeminiAPI(prompt);
+            return await CallOpenAIAPI(prompt);
         }
 
         private async Task<ChatResponseDTO> HandlePracticeQuestion(ChatRequestDTO request)
@@ -279,7 +296,7 @@ IMPORTANT: You must respond with ONLY a valid JSON object in this exact format:
 
 Do not include any text outside the JSON object. Start your response with {{ and end with }}.";
 
-            return await CallGeminiAPI(prompt);
+            return await CallOpenAIAPI(prompt);
         }
 
         private async Task<ChatResponseDTO> GenerateVocabularyResponse(ChatRequestDTO request)
@@ -337,7 +354,7 @@ CRITICAL REQUIREMENTS:
 - Do not include any text outside the JSON object
 - Start your response with {{ and end with }}.";
 
-            var response = await CallGeminiAPI(prompt);
+            var response = await CallOpenAIAPI(prompt);
             
             // Parse vocabularies if present
             if (response.Vocabularies != null && response.Vocabularies.Count > 0)
@@ -436,75 +453,65 @@ IMPORTANT: You must respond with ONLY a valid JSON object in this exact format:
 
 Do not include any text outside the JSON object. Start your response with {{ and end with }}.";
 
-            return await CallGeminiAPI(prompt);
+            return await CallOpenAIAPI(prompt);
         }
 
-        private async Task<ChatResponseDTO> CallGeminiAPI(string prompt)
+        private async Task<ChatResponseDTO> CallOpenAIAPI(string prompt)
         {
             try
             {
-                if (string.IsNullOrEmpty(_apiKey))
+                if (string.IsNullOrEmpty(_openAIOptions.ApiKey))
                 {
-                    throw new Exception("Gemini API key is not configured");
+                    throw new Exception("OpenAI API key is not configured");
                 }
                 
                 // Thêm System Prompt vào đầu
                 var systemPrompt = GetSystemPrompt();
-                var fullPrompt = $"{systemPrompt}\n\n{prompt}";
                 
                 // Create HttpClient from factory
                 using var httpClient = _httpClientFactory.CreateClient();
+                httpClient.DefaultRequestHeaders.Authorization = 
+                    new AuthenticationHeaderValue("Bearer", _openAIOptions.ApiKey);
                 
-                // Prepare the request
+                // Prepare the request - OpenAI format
                 var requestBody = new
                 {
-                    contents = new[]
+                    model = _openAIOptions.Model,
+                    messages = new[]
                     {
-                        new
-                        {
-                            parts = new[]
-                            {
-                                new { text = fullPrompt }
-                            }
-                        }
+                        new { role = "system", content = systemPrompt },
+                        new { role = "user", content = prompt }
                     },
-                    generationConfig = new
-                    {
-                        temperature = 0.3, // Giảm temperature để JSON chính xác hơn
-                        topK = 40,
-                        topP = 0.95,
-                        maxOutputTokens = 8192, // Tăng token limit để đủ cho nhiều vocabularies (có thể 20, 30 từ) với imageDescription
-                    }
+                    temperature = 0.3, // Giảm temperature để JSON chính xác hơn
+                    max_tokens = 8192 // Tăng token limit để đủ cho nhiều vocabularies
                 };
 
                 var json = JsonConvert.SerializeObject(requestBody);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                // Make the API call using configuration from appsettings.json
-                var baseUrl = _baseUrl ?? "https://generativelanguage.googleapis.com/v1beta/models";
-                var model = _model ?? "gemini-1.5-flash";
-                var apiUrl = $"{baseUrl}/{model}:generateContent?key={_apiKey}";
+                // Make the API call to OpenAI
+                var apiUrl = "https://api.openai.com/v1/chat/completions";
                 var response = await httpClient.PostAsync(apiUrl, content);
                 
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
-                    throw new Exception($"Gemini API error: {response.StatusCode} - {errorContent}");
+                    throw new Exception($"OpenAI API error: {response.StatusCode} - {errorContent}");
                 }
 
                 var responseText = await response.Content.ReadAsStringAsync();
                 if (string.IsNullOrEmpty(responseText))
                 {
-                    throw new Exception("No response received from Gemini API");
+                    throw new Exception("No response received from OpenAI API");
                 }
 
-                // Parse the response
-                dynamic geminiResponse = JsonConvert.DeserializeObject(responseText);
-                var generatedText = geminiResponse?.candidates?[0]?.content?.parts?[0]?.text?.ToString();
+                // Parse the response - OpenAI format
+                dynamic openAIResponse = JsonConvert.DeserializeObject(responseText);
+                var generatedText = openAIResponse?.choices?[0]?.message?.content?.ToString();
                 
                 if (string.IsNullOrEmpty(generatedText))
                 {
-                    throw new Exception("No content in Gemini API response");
+                    throw new Exception("No content in OpenAI API response");
                 }
 
                 // Clean up potential markdown formatting
@@ -528,7 +535,7 @@ Do not include any text outside the JSON object. Start your response with {{ and
                     result = JsonConvert.DeserializeObject<ChatResponseDTO>(generatedText);
                     if (result == null)
                     {
-                        throw new Exception("Failed to deserialize Gemini API response");
+                        throw new Exception("Failed to deserialize OpenAI API response");
                     }
                     
                     // Nếu có vocabularies, luôn set answer rỗng để frontend chỉ hiển thị vocabulary list
@@ -602,7 +609,7 @@ Do not include any text outside the JSON object. Start your response with {{ and
             catch (Exception ex)
             {
                 // Log the error for debugging
-                Console.WriteLine($"Gemini API Error: {ex.Message}");
+                Console.WriteLine($"OpenAI API Error: {ex.Message}");
                 Console.WriteLine($"Stack Trace: {ex.StackTrace}");
                 
                 return new ChatResponseDTO

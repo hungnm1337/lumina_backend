@@ -184,7 +184,7 @@ namespace lumina
 
             // Chat Services
             builder.Services.AddScoped<IAIChatService, AIChatService>();
-            builder.Services.AddScoped<IChatService, ChatService>();
+            builder.Services.AddScoped<IChatService, ChatService>(); // Uses IHttpClientFactory and IOptions<OpenAIOptions>
 
             // AI & Mapper Services
             builder.Services.AddScoped<IAIExamMapper, AIExamMapper>();
