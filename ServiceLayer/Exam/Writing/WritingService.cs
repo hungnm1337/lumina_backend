@@ -1,9 +1,12 @@
 
+using DataLayer.DTOs.Exam.Speaking;
 using DataLayer.DTOs.Exam.Writting;
 using DataLayer.DTOs.UserAnswer;
+using DataLayer.Models;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using RepositoryLayer.Exam.Writting;
+using RepositoryLayer.UnitOfWork;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -16,14 +19,48 @@ namespace ServiceLayer.Exam.Writting
         private readonly IConfiguration _configuration;
         private readonly IWrittingRepository _writtingRepository;
         private readonly IGenerativeAIService _generativeAIService;
-        private readonly string _apiKey;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public WritingService(IConfiguration configuration, IWrittingRepository writtingRepository, IGenerativeAIService generativeAIService)
+        public WritingService(IConfiguration configuration, IWrittingRepository writtingRepository, IGenerativeAIService generativeAIService, IUnitOfWork unitOfWork)
         {
             _configuration = configuration;
             _writtingRepository = writtingRepository;
             _generativeAIService = generativeAIService;
-            _apiKey = _configuration["Gemini:ApiKey"] ?? throw new InvalidOperationException("Gemini API key is not configured.");
+            _unitOfWork = unitOfWork;
+        }
+
+        
+        public async Task<AttemptValidationResult> ValidateAttemptAsync(int attemptId, int userId)
+        {
+            var attempt = await _unitOfWork.ExamAttemptsGeneric
+                .GetAsync(a => a.AttemptID == attemptId);
+
+            if (attempt == null)
+            {
+                return new AttemptValidationResult
+                {
+                    IsValid = false,
+                    ErrorType = AttemptErrorType.NotFound,
+                    ErrorMessage = $"ExamAttempt {attemptId} not found."
+                };
+            }
+
+            if (attempt.UserID != userId)
+            {
+                return new AttemptValidationResult
+                {
+                    IsValid = false,
+                    ErrorType = AttemptErrorType.Forbidden,
+                    ErrorMessage = "User does not own this attempt."
+                };
+            }
+
+            return new AttemptValidationResult
+            {
+                IsValid = true,
+                AttemptId = attemptId,
+                ErrorType = AttemptErrorType.None
+            };
         }
 
         public async Task<bool> SaveWritingAnswer(WritingAnswerRequestDTO writingAnswerRequestDTO)

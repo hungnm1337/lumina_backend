@@ -60,6 +60,7 @@ namespace RepositoryLayer.Exam.ExamAttempt
                 .Select(attempt => new ExamAttemptResponseDTO()
                 {
                     AttemptID = attempt.AttemptID,
+                    UserId = attempt.UserID,
                     UserName = attempt.User != null ? attempt.User.FullName : string.Empty,
                     ExamName = attempt.Exam != null ? attempt.Exam.Name : string.Empty,
                     ExamPartName = attempt.ExamPart != null ? attempt.ExamPart.PartCode : string.Empty,
@@ -81,6 +82,7 @@ namespace RepositoryLayer.Exam.ExamAttempt
                 .Select(attempt => new ExamAttemptResponseDTO()
                 {
                     AttemptID = attempt.AttemptID,
+                    UserId = attempt.UserID,
                     UserName = attempt.User != null ? attempt.User.FullName : string.Empty,
                     ExamName = attempt.Exam != null ? attempt.Exam.Name : string.Empty,
                     ExamPartName = attempt.ExamPart != null ? attempt.ExamPart.PartCode : string.Empty,
@@ -286,7 +288,8 @@ namespace RepositoryLayer.Exam.ExamAttempt
                         QuestionNumber = answer.Question.QuestionNumber,
                         ScoreWeight = answer.Question.ScoreWeight,
                         StemText = answer.Question.StemText,
-                        Time = answer.Question.Time
+                        Time = answer.Question.Time,
+                        SampleAnswer = answer.Question.SampleAnswer
                     },
                     Transcript = answer.Transcript,
                     AudioUrl = answer.AudioUrl,

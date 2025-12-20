@@ -1,14 +1,17 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using DataLayer.DTOs;
 using DataLayer.DTOs.Exam;
 using DataLayer.DTOs.MockTest;
-using GenerativeAI;
-using GenerativeAI.Core;
+using DataLayer.DTOs.Exam.Speaking;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using RepositoryLayer;
 using RepositoryLayer.Exam.ExamAttempt;
@@ -22,27 +25,26 @@ namespace ServiceLayer.MockTest
         private readonly IExamAttemptRepository _examAttemptRepository;
         private readonly IArticleRepository _articleRepository;
         private readonly IConfiguration _configuration;
-        private readonly string _geminiApiKey;
-        private readonly string _geminiModel;
+        private readonly HttpClient _httpClient;
+        private readonly OpenAIOptions _openAIOptions;
 
         public MockTestService(
             IMockTestRepository mockTestRepository,
             IExamAttemptRepository examAttemptRepository,
             IArticleRepository articleRepository,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            IOptions<OpenAIOptions> openAIOptions,
+            HttpClient httpClient)
         {
             _mockTestRepository = mockTestRepository;
             _examAttemptRepository = examAttemptRepository;
             _articleRepository = articleRepository;
             _configuration = configuration;
+            _openAIOptions = openAIOptions.Value;
+            _httpClient = httpClient;
 
-            _geminiApiKey = _configuration["GeminiAI:ApiKey"]
-                ?? _configuration["Gemini:ApiKey"]
-                ?? throw new InvalidOperationException("Gemini API key is not configured.");
-
-            _geminiModel = _configuration["GeminiAI:Model"]
-                ?? _configuration["Gemini:Model"]
-                ?? "gemini-2.5-flash";
+            _httpClient.DefaultRequestHeaders.Authorization = 
+                new AuthenticationHeaderValue("Bearer", _openAIOptions.ApiKey);
         }
 
         public async Task<List<ExamPartDTO>> GetMocktestAsync()
@@ -76,6 +78,34 @@ namespace ServiceLayer.MockTest
             var feedback = ParseAIResponse(aiResponse);
 
             return feedback;
+        }
+
+        public async Task<AttemptValidationResult> ValidateExamAttemptOwnershipAsync(int examAttemptId, int userId)
+        {
+            // Check if exam attempt exists
+            var examAttempt = await _examAttemptRepository.GetExamAttemptById(examAttemptId);
+            if (examAttempt == null)
+            {
+                return new AttemptValidationResult
+                {
+                    IsValid = false,
+                    ErrorType = AttemptErrorType.NotFound,
+                    ErrorMessage = $"Exam attempt with ID {examAttemptId} not found."
+                };
+            }
+
+            // Check ownership
+            if (examAttempt.ExamAttemptInfo?.UserId != userId)
+            {
+                return new AttemptValidationResult
+                {
+                    IsValid = false,
+                    ErrorType = AttemptErrorType.Forbidden,
+                    ErrorMessage = "You do not have permission to access this exam attempt."
+                };
+            }
+
+            return new AttemptValidationResult { IsValid = true };
         }
 
         private string BuildAnalysisPrompt(DataLayer.DTOs.UserAnswer.ExamAttemptDetailResponseDTO examAttempt, List<string> articleNames)
@@ -201,23 +231,55 @@ namespace ServiceLayer.MockTest
 
         private async Task<string> GenerateFeedbackFromAIAsync(string prompt)
         {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(600));
+            
+            var requestBody = new
+            {
+                model = _openAIOptions.Model,
+                messages = new[]
+                {
+                    new { role = "system", content = "You are a TOEIC exam analysis expert." },
+                    new { role = "user", content = prompt }
+                },
+                temperature = _openAIOptions.Temperature
+            };
+
+            var jsonContent = JsonConvert.SerializeObject(requestBody);
+            var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+
             try
             {
-                var generativeModel = new GenerativeModel(_geminiApiKey, new ModelParams { Model = _geminiModel });
-                var response = await generativeModel.GenerateContentAsync(prompt);
-                var responseText = response.Text;
+                var response = await _httpClient.PostAsync(
+                    "https://api.openai.com/v1/chat/completions", 
+                    content, 
+                    cts.Token
+                );
 
-                if (string.IsNullOrWhiteSpace(responseText))
+                if (!response.IsSuccessStatusCode)
                 {
-                    throw new Exception("No response received from Gemini API");
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    throw new Exception($"OpenAI API error: {response.StatusCode} - {errorContent}");
                 }
 
-                responseText = responseText.Trim().Replace("```json", "").Replace("```", "");
-                return responseText;
+                var responseBody = await response.Content.ReadAsStringAsync();
+                var jsonResponse = JsonConvert.DeserializeObject<dynamic>(responseBody);
+                string messageContent = jsonResponse.choices[0].message.content.ToString();
+                
+                if (string.IsNullOrWhiteSpace(messageContent))
+                {
+                    throw new Exception("No response received from OpenAI API");
+                }
+
+                messageContent = messageContent.Trim().Replace("```json", "").Replace("```", "");
+                return messageContent;
+            }
+            catch (OperationCanceledException)
+            {
+                throw new Exception("Request timeout after 600 seconds. Please try again.");
             }
             catch (Exception ex)
             {
-                throw new Exception($"Gemini API error: {ex.Message}");
+                throw new Exception($"OpenAI API error: {ex.Message}");
             }
         }
 

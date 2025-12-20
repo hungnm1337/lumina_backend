@@ -8,7 +8,7 @@ namespace DataLayer.DTOs.Exam.Writting
 {
     public class WritingRequestP1DTO
     {
-        public string PictureCaption { get; set; }
+        public string? PictureCaption { get; set; }
 
         public string VocabularyRequest { get; set; }
         public string UserAnswer { get; set; }

@@ -50,7 +50,7 @@ using lumina.Filters;
 using RepositoryLayer.Streak;
 using ServiceLayer.Packages;
 using ServiceLayer.Role;
-
+using ServiceLayer.PictureCaptioning;
 namespace lumina
 {
     public class Program
@@ -92,7 +92,7 @@ namespace lumina
             // ========================================
             // 4. SERVICES & REPOSITORIES (DI)
             // ========================================
-            
+
             // Azure & Speech Services
             builder.Services.AddScoped<IAzureSpeechService, AzureSpeechService>();
             builder.Services.AddScoped<ServiceLayer.TextToSpeech.ITextToSpeechService, ServiceLayer.TextToSpeech.TextToSpeechService>();
@@ -102,6 +102,10 @@ namespace lumina
             builder.Services.AddScoped<ISpeakingScoringService, SpeakingScoringService>();
             builder.Services.AddScoped<IListeningService, ListeningService>();
             builder.Services.AddScoped<IReadingService, ReadingService>();
+
+            // Speaking Services (3-layer architecture)
+            builder.Services.AddScoped<RepositoryLayer.Speaking.ISpeakingRepository, RepositoryLayer.Speaking.SpeakingRepository>();
+            builder.Services.AddScoped<ISpeakingService, SpeakingService>();
 
             // User & Role Services
             builder.Services.AddScoped<IRoleRepository, RoleRepository>();
@@ -175,17 +179,12 @@ namespace lumina
 
             // Writing Services
             builder.Services.AddScoped<IWrittingRepository, WrittingRepository>();
-            builder.Services.AddScoped<IGenerativeAIService>(sp =>
-            {
-                var configuration = sp.GetRequiredService<IConfiguration>();
-                var apiKey = configuration["Gemini:ApiKey"] ?? throw new InvalidOperationException("Gemini API key is not configured.");
-                return new GenerativeAIService(apiKey);
-            });
+            builder.Services.AddHttpClient<IGenerativeAIService, GenerativeAIService>();
             builder.Services.AddScoped<IWritingService, WritingService>();
 
             // Chat Services
             builder.Services.AddScoped<IAIChatService, AIChatService>();
-            builder.Services.AddScoped<IChatService, ChatService>();
+            builder.Services.AddScoped<IChatService, ChatService>(); // Uses IHttpClientFactory and IOptions<OpenAIOptions>
 
             // AI & Mapper Services
             builder.Services.AddScoped<IAIExamMapper, AIExamMapper>();
@@ -219,6 +218,8 @@ namespace lumina
             builder.Services.AddScoped<ServiceLayer.Quota.IQuotaService, ServiceLayer.Quota.QuotaService>();
             builder.Services.AddScoped<ServiceLayer.Payment.IPayOSService, ServiceLayer.Payment.PayOSService>();
             builder.Services.AddScoped<ServiceLayer.Subscription.ISubscriptionService, ServiceLayer.Subscription.SubscriptionService>();
+
+            
 
             // ========================================
             // 5. HANGFIRE (TRƯỚC builder.Build())
@@ -292,6 +293,9 @@ namespace lumina
                 {
                     options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
                     options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+                    // ✅ Serialize DateTime as UTC with 'Z' suffix
+                    options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+                    options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.Never;
                 });
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();

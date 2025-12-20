@@ -2,6 +2,7 @@
 using DataLayer.Models;
 using Microsoft.CognitiveServices.Speech.Transcription;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -124,7 +125,7 @@ namespace RepositoryLayer.UserNote
                     .Include(x => x.Article)
                     .Include(x => x.Section)
                     .AsNoTracking()
-                    .Where(un => un.UserId == userId)
+                    .Where(un => un.UserId == userId && un.NoteContent != "")
                     .Select(un => new UserNoteResponseDTO()
                     {
                         NoteId = un.NoteId,

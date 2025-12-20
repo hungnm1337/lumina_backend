@@ -7,12 +7,15 @@ using DataLayer.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Lumina.Tests.Helpers;
+using RepositoryLayer.UnitOfWork;
 
 namespace Lumina.Test.Services
 {
     public class SendPasswordResetCodeAsyncUnitTest : IDisposable
     {
         private readonly LuminaSystemContext _context;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly Mock<IEmailSender> _mockEmailSender;
         private readonly Mock<ILogger<PasswordResetService>> _mockLogger;
         private readonly IConfiguration _configuration;
@@ -20,11 +23,7 @@ namespace Lumina.Test.Services
 
         public SendPasswordResetCodeAsyncUnitTest()
         {
-            var options = new DbContextOptionsBuilder<LuminaSystemContext>()
-                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-                .Options;
-
-            _context = new LuminaSystemContext(options);
+            (_unitOfWork, _context) = InMemoryDbContextHelper.CreateUnitOfWork();
             _mockEmailSender = new Mock<IEmailSender>();
             _mockLogger = new Mock<ILogger<PasswordResetService>>();
 
@@ -39,7 +38,7 @@ namespace Lumina.Test.Services
                 .Build();
 
             _service = new PasswordResetService(
-                _context,
+                _unitOfWork,
                 _mockEmailSender.Object,
                 _mockLogger.Object,
                 _configuration
