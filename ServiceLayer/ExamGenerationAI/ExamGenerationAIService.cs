@@ -122,10 +122,116 @@ Trả về JSON:
             return JsonConvert.DeserializeObject<IntentResult>(textJson);
         }
 
+        private bool IsOutOfScopeQuestion(string message)
+        {
+            var lowerMessage = message.ToLower();
+            
+            // Nếu câu hỏi rõ ràng về TỪ Vựng tiếng Anh → CHẤP NHẬN
+            var vocabularyIndicators = new[] 
+            { 
+                "tiếng anh là gì", "in english", "english word", "từ tiếng anh",
+                "dịch sang tiếng anh", "translate to english", "nghĩa là gì", "what does",
+                "từ vựng", "vocabulary", "từ này", "word", "nghia cua"
+            };
+            
+            if (vocabularyIndicators.Any(indicator => lowerMessage.Contains(indicator)))
+            {
+                return false; // Đây là câu hỏi từ vựng hợp lệ
+            }
+            
+            // Danh sách từ khóa ngoài phạm vi TOEIC (loại bỏ từ vựng cơ bản)
+            var outOfScopeKeywords = new[]
+            {
+                // Lập trình
+                "lập trình", "programming", "code javascript", "code python", "code java", "html css", "react", "angular", "nodejs", "typescript", "php", "debug", "compiler",
+                
+                // Y tế
+                "y tế", "medical", "bác sĩ", "thuốc chữa", "bệnh viện", "khám bệnh", "chữa bệnh", "phẫu thuật", "chẩn đoán", "bệ nhân",
+                
+                // Pháp luật
+                "pháp luật", "legal", "luật sư", "tòa án", "kiện tụng", "hợp đồng pháp lý", "vi phạm pháp luật", "bản án",
+                
+                // Chính trị & Thời sự
+                "chính trị", "politics", "bầu cử", "chính phủ", "đảng phái", "tổng thống", "thủ tướng",
+                "thời sự hôm nay", "tin tức mới nhất", "sự kiện hiện nay", "báo chí",
+                
+                // Công nghệ (không phải English for IT)
+                "cài đặt phần mềm", "sửa máy tính", "hướng dẫn cài", "database design", "server setup", "cloud deployment",
+                
+                // Ẩm thực (không phải từ vựng food)
+                "công thức nấu ăn", "recipe for", "cách nấu", "how to cook", "bí quyết nấu",
+                
+                // Thể thao (không phải từ vựng sports)
+                "kết quả trận đấu", "lịch thi đấu", "world cup 20", "giải bóng đá",
+                
+                // Giải trí
+                "phim mới", "netflix", "spotify", "xem phim ở đâu", "ca sĩ nào",
+                
+                // Tài chính
+                "đầu tư cổ phiếu", "mua bitcoin", "cryptocurrency", "forex trading", "chứng khoán",
+                
+                // Khoa học (không phải từ vựng khoa học)
+                "giải toán", "solve math", "công thức vật lý", "phương trình hóa học", "thí nghiệm",
+                
+                // Người nổi tiếng (câu hỏi về người cụ thể)
+                "sơn tùng", "jack 97", "k-icm", "bts army", "blackpink", "cristiano ronaldo", "messi", "donald trump",
+                "elon musk", "bill gates", "mark zuckerberg", "steve jobs", "taylor swift concert",
+                
+                // Các chủ đề khác
+                "chơi game", "esports", "streamer", "youtuber nào", "tiktoker",
+                "mua sắm online", "shop thời trang", "skincare routine",
+                "mua xe hơi", "honda exciter", "toyota camry",
+                "nuôi chó mèo", "pet care", "chăm sóc thú cưng",
+                "hẹn hò thế nào", "dating tips", "cách tán gái"
+            };
+            
+            // Kiểm tra các câu hỏi về người cụ thể (pattern: "bạn có biết [tên người]")
+            if (lowerMessage.Contains("bạn có biết") || lowerMessage.Contains("ban có biết") ||
+                lowerMessage.Contains("có biết không") || lowerMessage.Contains("ai là") ||
+                lowerMessage.Contains("who is") || lowerMessage.Contains("do you know"))
+            {
+                // Nếu không hỏi về từ vựng, ngữ pháp, hoặc TOEIC thì là ngoài phạm vi
+                if (!lowerMessage.Contains("từ vựng") && !lowerMessage.Contains("vocabulary") &&
+                    !lowerMessage.Contains("ngữ pháp") && !lowerMessage.Contains("grammar") &&
+                    !lowerMessage.Contains("toeic") && !lowerMessage.Contains("tiếng anh") && 
+                    !lowerMessage.Contains("english"))
+                {
+                    return true;
+                }
+            }
+            
+            return outOfScopeKeywords.Any(keyword => lowerMessage.Contains(keyword));
+        }
+
         public async Task<string> GeneralChatAsync(string userRequest)
         {
+            // Kiểm tra câu hỏi ngoài phạm vi TOEIC
+            if (IsOutOfScopeQuestion(userRequest))
+            {
+                return @"Xin lỗi, tôi chỉ có thể hỗ trợ bạn về các chủ đề liên quan đến TOEIC và học tiếng Anh. 😊
+
+Tôi có thể giúp bạn với:
+• Tạo đề thi và câu hỏi TOEIC (Reading, Listening, Speaking, Writing)
+• Từ vựng TOEIC và cách sử dụng
+• Ngữ pháp tiếng Anh
+• Chiến lược làm bài các Part trong TOEIC
+• Luyện tập và bài tập thực hành
+• Lộ trình học và động viên học tập
+
+Bạn có câu hỏi nào về TOEIC hoặc tiếng Anh mà tôi có thể giúp không?";
+            }
+
             var chatPrompt = $@"
 You are a friendly TOEIC expert assistant. Answer naturally in PLAIN TEXT.
+
+**IMPORTANT SCOPE:**
+You ONLY answer questions related to:
+- TOEIC exam (all parts: Listening, Reading, Speaking, Writing)
+- English vocabulary and grammar for TOEIC
+- TOEIC test strategies and tips
+- English learning methods
+
+If asked about topics outside TOEIC/English learning, politely decline.
 
 User question: ""{userRequest}""
 
@@ -138,6 +244,7 @@ User question: ""{userRequest}""
    - Blank lines between paragraphs
 3. Write in Vietnamese (unless user asks in English)
 4. Be warm, helpful and conversational
+5. Stay within TOEIC/English learning topics only
 
 Example responses:
 
