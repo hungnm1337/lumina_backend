@@ -130,11 +130,17 @@ namespace ServiceLayer.AI.Prompt
                 * Nếu không thể xác định `partNumber`, trả về 0.
 
             2.  **`quantity` (Integer):** Số lượng **cụm đề bài (prompts)** hoặc **câu hỏi đơn lẻ** cần tạo.
-                * **QUAN TRỌNG - ƯU TIÊN CAO NHẤT:** 
-                    - Nếu user KHÔNG nói rõ số lượng (ví dụ: chỉ nói "tạo đề Part X", "cho tôi bài Part Y"), bạn BẮT BUỘC phải lấy giá trị từ bảng `defaultQuantities` bên dưới.
-                    - KHÔNG TỰ Ý đoán hoặc để quantity = 1 nếu không có trong input!
-                * **Chỉ khi nào:** User chỉ định RÕ RÀNG số lượng (ví dụ: "tạo 5 câu", "cho tôi 2 bài", "10 câu part 5"), bạn mới lấy con số đó.
-                * **Bảng số lượng mặc định (`defaultQuantities`) - PHẢI TUÂN THỦ:**
+                * **QUY TẮC ƯU TIÊN TUYỆT ĐỐI:**
+                    1. **HIGHEST PRIORITY**: Nếu user CHỈ ĐỊNH BẤT KỲ CON SỐ NÀO, kể cả số 1 (ví dụ: "tạo 1 câu", "1 bài", "5 câu", "10 bài", "2 đoạn"), BẮT BUỘC phải lấy CHÍNH XÁC con số đó. 
+                    2. **CRITICAL**: Số "1" cũng là một con số hợp lệ! "tạo 1 câu" = quantity 1, KHÔNG PHẢI lấy default!
+                    3. Chỉ khi HOÀN TOÀN KHÔNG CÓ CON SỐ NÀO trong request (ví dụ: "tạo đề Part X", "cho tôi bài Part Y"), mới lấy giá trị từ bảng `defaultQuantities` bên dưới.
+                * **Ví dụ phân biệt (CHÚ Ý ĐẶC BIỆT SỐ 1):**
+                    - "tạo 1 câu part 2" → quantity = 1 ✅ (user nói "1", KHÔNG lấy default 25!)
+                    - "tạo 2 câu part 2" → quantity = 2 ✅ (user nói "2")
+                    - "tạo 5 câu part 2" → quantity = 5 ✅ (user nói "5")
+                    - "tạo đề part 2" → quantity = 25 ✅ (không có số → lấy default)
+                    - "cho 1 bài part 3" → quantity = 1 ✅ (user nói "1", KHÔNG lấy default 5!)
+                * **Bảng số lượng mặc định (`defaultQuantities`) - CHỈ DÙNG KHI KHÔNG CÓ SỐ:**
                     ```json
                     {{{defaultQuantitiesJson}}}
                     ```
@@ -148,12 +154,18 @@ namespace ServiceLayer.AI.Prompt
 
             **Ví dụ phân tích:**
 
+                * Input: `"tạo 1 câu listening part 2"`
+                    Output: `{{ "partNumber": 2, "quantity": 1, "topic": null }}` ⚠️ QUAN TRỌNG: User nói "1 câu" → quantity = 1, KHÔNG PHẢI 25!
+                * Input: `"cho tôi 1 bài part 3"`
+                    Output: `{{ "partNumber": 3, "quantity": 1, "topic": null }}` ⚠️ User nói "1 bài" → quantity = 1, KHÔNG PHẢI 5!
+                * Input: `"tạo 2 câu part 2"`
+                    Output: `{{ "partNumber": 2, "quantity": 2, "topic": null }}` (User nói "2 câu" → quantity = 2)
                 * Input: `"tạo 5 câu Reading Part 5 về giới từ"`
                     Output: `{{ "partNumber": 5, "quantity": 5, "topic": "giới từ" }}`
                 * Input: `"Cho tôi bài Listening Part 1"` (Không có số lượng)
                     Output: `{{ "partNumber": 1, "quantity": 6, "topic": null }}` (Lấy quantity=6 từ bảng mặc định)
                 * Input: `"Tạo 1 đoạn hội thoại Listening Part 3 chủ đề đặt phòng khách sạn"`
-                    Output: `{{ "partNumber": 3, "quantity": 1, "topic": "đặt phòng khách sạn" }}`
+                    Output: `{{ "partNumber": 3, "quantity": 1, "topic": "đặt phòng khách sạn" }}` (User nói "1 đoạn" → quantity = 1)
                 * Input: `"tạo đề Listening Part 2"` (Không có số lượng)
                     Output: `{{ "partNumber": 2, "quantity": 25, "topic": null }}` (Lấy quantity=25 từ bảng)
                 * Input: `"Reading Part 6 chủ đề môi trường"` (Không có số lượng)

@@ -36,6 +36,18 @@ namespace lumina.Controllers
                 if (intent.IsExamRequest)
                 {
                     var (partNumber, quantity, topic) = await _aiService.ParseUserRequestAsync(request.UserRequest);
+                    
+                    // Validate Part request
+                    var (isValid, errorMessage) = _aiService.ValidatePartRequest(partNumber, request.UserRequest);
+                    if (!isValid)
+                    {
+                        return Ok(new
+                        {
+                            type = "error",
+                            message = errorMessage
+                        });
+                    }
+                    
                     var aiExamDto = await _aiService.GenerateExamAsync(partNumber, quantity, topic);
                     var saveDto = _mapper.MapAIGeneratedToCreatePrompts(aiExamDto);
 
