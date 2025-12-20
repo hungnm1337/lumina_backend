@@ -36,6 +36,18 @@ namespace lumina.Controllers
                 if (intent.IsExamRequest)
                 {
                     var (partNumber, quantity, topic) = await _aiService.ParseUserRequestAsync(request.UserRequest);
+                    
+                    // Validate Part request
+                    var (isValid, errorMessage) = _aiService.ValidatePartRequest(partNumber, request.UserRequest);
+                    if (!isValid)
+                    {
+                        return Ok(new
+                        {
+                            type = "error",
+                            message = errorMessage
+                        });
+                    }
+                    
                     var aiExamDto = await _aiService.GenerateExamAsync(partNumber, quantity, topic);
                     var saveDto = _mapper.MapAIGeneratedToCreatePrompts(aiExamDto);
 
@@ -101,7 +113,7 @@ namespace lumina.Controllers
         }
 
 
-        // === Hàm hỗ trợ retry tự động khi Gemini quá tải ===
+        // === Hàm hỗ trợ retry tự động khi quá tải ===
         private async Task<T> ExecuteWithRetryAsync<T>(Func<Task<T>> action, int maxRetries = 2, int delayMs = 2000)
         {
             for (int attempt = 0; attempt <= maxRetries; attempt++)

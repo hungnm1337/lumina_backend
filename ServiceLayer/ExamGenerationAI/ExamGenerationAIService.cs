@@ -84,6 +84,244 @@ namespace ServiceLayer.ExamGenerationAI
             return (parseResult.PartNumber, parseResult.Quantity, parseResult.Topic);
         }
 
+        // Helper method to check if user explicitly specified Part number
+        private bool HasExplicitPartNumber(string userRequest)
+        {
+            var partPattern = @"part\s*\d+";
+            return System.Text.RegularExpressions.Regex.IsMatch(
+                userRequest, 
+                partPattern, 
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase
+            );
+        }
+
+        // Extract the Part number that user wrote in the request (not internal partNumber)
+        private int? ExtractUserPartNumber(string userRequest)
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(
+                userRequest, 
+                @"part\s*(\d+)", 
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase
+            );
+            
+            if (match.Success && int.TryParse(match.Groups[1].Value, out int partNum))
+            {
+                return partNum;
+            }
+            
+            return null;
+        }
+
+        // Validate Part request
+        public (bool isValid, string? errorMessage) ValidatePartRequest(int partNumber, string userRequest)
+        {
+            // Kiểm tra số âm trong user request (trước khi AI parse)
+            if (System.Text.RegularExpressions.Regex.IsMatch(userRequest, @"part\s*-\d+", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+            {
+                return (false, "Part number không hợp lệ. TOEIC chỉ có Part 1 đến Part 15.\n\nVui lòng nhập số Part hợp lệ!");
+            }
+
+            // Kiểm tra user có chỉ định rõ Part number không
+            var lowerRequest = userRequest.ToLower();
+            bool isSkillOnly = (lowerRequest.Contains("listening") || 
+                                lowerRequest.Contains("reading") || 
+                                lowerRequest.Contains("speaking") || 
+                                lowerRequest.Contains("writing") ||
+                                lowerRequest.Contains("nghe") ||
+                                lowerRequest.Contains("đọc") ||
+                                lowerRequest.Contains("nói") ||
+                                lowerRequest.Contains("viết"));
+            
+            if (isSkillOnly && !HasExplicitPartNumber(userRequest))
+            {
+                return (false, @"Vui lòng chỉ rõ Part number bạn muốn tạo!
+Ví dụ đúng:
+• Tạo 5 câu Listening Part 1
+• Tạo 10 câu Reading Part 5
+• Gen đề Speaking Part 3
+Không đủ thông tin:
+• Tạo câu listening (thiếu Part number)
+• Cho tôi đề reading (thiếu Part number)
+Hãy cho tôi biết Part cụ thể nhé!");
+            }
+
+            // Kiểm tra Part có tồn tại không
+            if (partNumber < 1 || partNumber > 15)
+            {
+                return (false, GetInvalidPartMessage(partNumber));
+            }
+
+            // Kiểm tra xem user có yêu cầu nhiều Part cùng lúc không
+            if (IsMultiplePartsRequest(userRequest))
+            {
+                return (false, @"Xin lỗi, tôi chỉ có thể tạo câu hỏi cho từng Part một.
+
+Ví dụ:
+• Đúng: Tạo 10 câu Listening Part 1
+• Đúng: Tạo 5 câu Reading Part 7
+• Sai: Tạo đề Listening Part 1, 2, 3
+
+Hãy chọn một Part để tạo đề nhé!");
+            }
+
+            // Kiểm tra Skill và Part có khớp không (dựa trên số Part mà user GHI)
+            var userPartNum = ExtractUserPartNumber(userRequest);
+            
+            if (userPartNum.HasValue)
+            {
+                // Nếu có từ "listening" thì Part phải từ 1-4
+                if ((lowerRequest.Contains("listening") || lowerRequest.Contains("nghe")))
+                {
+                    if (userPartNum.Value < 1 || userPartNum.Value > 4)
+                    {
+                        return (false, GetListeningPartErrorMessage());
+                    }
+                }
+
+                // Nếu có từ "reading" thì Part phải từ 5-7
+                if ((lowerRequest.Contains("reading") || lowerRequest.Contains("đọc")))
+                {
+                    if (userPartNum.Value < 5 || userPartNum.Value > 7)
+                    {
+                        return (false, GetReadingPartErrorMessage());
+                    }
+                }
+
+                // Nếu có từ "speaking" thì Part phải từ 1-5 (user perspective)
+                if ((lowerRequest.Contains("speaking") || lowerRequest.Contains("nói")))
+                {
+                    if (userPartNum.Value < 1 || userPartNum.Value > 5)
+                    {
+                        return (false, GetSpeakingPartErrorMessage());
+                    }
+                }
+
+                // Nếu có từ "writing" thì Part phải từ 1-3 (user perspective)
+                if ((lowerRequest.Contains("writing") || lowerRequest.Contains("viết")))
+                {
+                    if (userPartNum.Value < 1 || userPartNum.Value > 3)
+                    {
+                        return (false, GetWritingPartErrorMessage());
+                    }
+                }
+            }
+
+            return (true, null);
+        }
+
+        private bool IsMultiplePartsRequest(string userRequest)
+        {
+            var lowerRequest = userRequest.ToLower();
+            
+            // Kiểm tra pattern: "part 1, 2", "part 1 và 2", "part 1, part 2", etc.
+            var multiPartPatterns = new[]
+            {
+                @"part\s+\d+\s*,\s*\d+",           // "part 1, 2"
+                @"part\s+\d+\s*,\s*part\s+\d+",     // "part 1, part 2"
+                @"part\s+\d+\s+và\s+\d+",           // "part 1 và 2"
+                @"part\s+\d+\s+and\s+\d+",          // "part 1 and 2"
+                @"part\s+\d+\s*,\s*\d+\s*,\s*\d+"  // "part 1, 2, 3"
+            };
+
+            foreach (var pattern in multiPartPatterns)
+            {
+                if (System.Text.RegularExpressions.Regex.IsMatch(lowerRequest, pattern))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private string GetInvalidPartMessage(int partNumber)
+        {
+            return $@"Xin lỗi, không tồn tại Part {partNumber} trong TOEIC.
+
+{GetTOEICStructure()}";
+        }
+
+        private string GetListeningPartErrorMessage()
+        {
+            return @"Xin lỗi, TOEIC Listening chỉ có 4 Part (Part 1-4).
+
+**LISTENING (Part 1-4):**
+• Part 1: Mô tả tranh (6 câu)
+• Part 2: Hỏi đáp (25 câu)
+• Part 3: Hội thoại ngắn (39 câu)
+• Part 4: Độc thoại (30 câu)
+
+Bạn muốn tạo Part nào?";
+        }
+
+        private string GetReadingPartErrorMessage()
+        {
+            return @"Xin lỗi, TOEIC Reading chỉ có 3 Part (Part 5-7).
+
+**READING (Part 5-7):**
+• Part 5: Hoàn thành câu (30 câu)
+• Part 6: Hoàn thành đoạn văn (16 câu)
+• Part 7: Đọc hiểu (15 câu)
+
+Bạn muốn tạo Part nào?";
+        }
+
+        private string GetSpeakingPartErrorMessage()
+        {
+            return @"Xin lỗi, TOEIC Speaking có 5 task (đánh số Part 1-5).
+
+**SPEAKING (Part 1-5):**
+• Part 1: Đọc văn bản (2 câu)
+• Part 2: Mô tả ảnh (2 câu)
+• Part 3: Trả lời câu hỏi (3 câu)
+• Part 4: Trả lời với thông tin (3 câu)
+• Part 5: Biểu đạt ý kiến (1 câu)
+
+Bạn muốn tạo Part nào?";
+        }
+
+        private string GetWritingPartErrorMessage()
+        {
+            return @"Xin lỗi, TOEIC Writing có 3 task (đánh số Part 1-3).
+
+**WRITING (Part 1-3):**
+• Part 1: Viết câu dựa vào ảnh (5 câu)
+• Part 2: Trả lời email (2 câu)
+• Part 3: Viết bài luận (1 câu)
+
+Bạn muốn tạo Part nào?";
+        }
+
+        private string GetTOEICStructure()
+        {
+            return @"**CẤU TRÚC ĐỀ THI TOEIC:**
+
+**LISTENING (Part 1-4):**
+• Part 1: Mô tả tranh (6 câu)
+• Part 2: Hỏi đáp (25 câu)
+• Part 3: Hội thoại (15 câu)
+• Part 4: Độc thoại (15 câu)
+
+**READING (Part 5-7):**
+• Part 5: Hoàn thành câu (30 câu)
+• Part 6: Hoàn thành đoạn văn (16 câu)
+• Part 7: Đọc hiểu (15 câu)
+
+**SPEAKING (Part 8-12):**
+• Part 1: Đọc văn bản (2 câu)
+• Part 2: Mô tả ảnh (2 câu)
+• Part 3: Trả lời câu hỏi (3 câu)
+• Part 4: Trả lời với thông tin (3 câu)
+• Part 5: Biểu đạt ý kiến (1 câu)
+
+**WRITING (Part 13-15):**
+• Part 1: Viết câu dựa vào ảnh (5 câu)
+• Part 2: Trả lời email (2 câu)
+• Part 3: Viết bài luận (1 câu)
+
+Bạn muốn tạo Part nào?";
+        }
+
         public async Task<AIGeneratedExamDTO> GenerateExamAsync(
             int partNumber, 
             int quantity, 
@@ -122,10 +360,116 @@ Trả về JSON:
             return JsonConvert.DeserializeObject<IntentResult>(textJson);
         }
 
+        private bool IsOutOfScopeQuestion(string message)
+        {
+            var lowerMessage = message.ToLower();
+            
+            // Nếu câu hỏi rõ ràng về TỪ Vựng tiếng Anh → CHẤP NHẬN
+            var vocabularyIndicators = new[] 
+            { 
+                "tiếng anh là gì", "in english", "english word", "từ tiếng anh",
+                "dịch sang tiếng anh", "translate to english", "nghĩa là gì", "what does",
+                "từ vựng", "vocabulary", "từ này", "word", "nghia cua"
+            };
+            
+            if (vocabularyIndicators.Any(indicator => lowerMessage.Contains(indicator)))
+            {
+                return false; // Đây là câu hỏi từ vựng hợp lệ
+            }
+            
+            // Danh sách từ khóa ngoài phạm vi TOEIC (loại bỏ từ vựng cơ bản)
+            var outOfScopeKeywords = new[]
+            {
+                // Lập trình
+                "lập trình", "programming", "code javascript", "code python", "code java", "html css", "react", "angular", "nodejs", "typescript", "php", "debug", "compiler",
+                
+                // Y tế
+                "y tế", "medical", "bác sĩ", "thuốc chữa", "bệnh viện", "khám bệnh", "chữa bệnh", "phẫu thuật", "chẩn đoán", "bệ nhân",
+                
+                // Pháp luật
+                "pháp luật", "legal", "luật sư", "tòa án", "kiện tụng", "hợp đồng pháp lý", "vi phạm pháp luật", "bản án",
+                
+                // Chính trị & Thời sự
+                "chính trị", "politics", "bầu cử", "chính phủ", "đảng phái", "tổng thống", "thủ tướng",
+                "thời sự hôm nay", "tin tức mới nhất", "sự kiện hiện nay", "báo chí",
+                
+                // Công nghệ (không phải English for IT)
+                "cài đặt phần mềm", "sửa máy tính", "hướng dẫn cài", "database design", "server setup", "cloud deployment",
+                
+                // Ẩm thực (không phải từ vựng food)
+                "công thức nấu ăn", "recipe for", "cách nấu", "how to cook", "bí quyết nấu",
+                
+                // Thể thao (không phải từ vựng sports)
+                "kết quả trận đấu", "lịch thi đấu", "world cup 20", "giải bóng đá",
+                
+                // Giải trí
+                "phim mới", "netflix", "spotify", "xem phim ở đâu", "ca sĩ nào",
+                
+                // Tài chính
+                "đầu tư cổ phiếu", "mua bitcoin", "cryptocurrency", "forex trading", "chứng khoán",
+                
+                // Khoa học (không phải từ vựng khoa học)
+                "giải toán", "solve math", "công thức vật lý", "phương trình hóa học", "thí nghiệm",
+                
+                // Người nổi tiếng (câu hỏi về người cụ thể)
+                "sơn tùng", "jack 97", "k-icm", "bts army", "blackpink", "cristiano ronaldo", "messi", "donald trump",
+                "elon musk", "bill gates", "mark zuckerberg", "steve jobs", "taylor swift concert",
+                
+                // Các chủ đề khác
+                "chơi game", "esports", "streamer", "youtuber nào", "tiktoker",
+                "mua sắm online", "shop thời trang", "skincare routine",
+                "mua xe hơi", "honda exciter", "toyota camry",
+                "nuôi chó mèo", "pet care", "chăm sóc thú cưng",
+                "hẹn hò thế nào", "dating tips", "cách tán gái"
+            };
+            
+            // Kiểm tra các câu hỏi về người cụ thể (pattern: "bạn có biết [tên người]")
+            if (lowerMessage.Contains("bạn có biết") || lowerMessage.Contains("ban có biết") ||
+                lowerMessage.Contains("có biết không") || lowerMessage.Contains("ai là") ||
+                lowerMessage.Contains("who is") || lowerMessage.Contains("do you know"))
+            {
+                // Nếu không hỏi về từ vựng, ngữ pháp, hoặc TOEIC thì là ngoài phạm vi
+                if (!lowerMessage.Contains("từ vựng") && !lowerMessage.Contains("vocabulary") &&
+                    !lowerMessage.Contains("ngữ pháp") && !lowerMessage.Contains("grammar") &&
+                    !lowerMessage.Contains("toeic") && !lowerMessage.Contains("tiếng anh") && 
+                    !lowerMessage.Contains("english"))
+                {
+                    return true;
+                }
+            }
+            
+            return outOfScopeKeywords.Any(keyword => lowerMessage.Contains(keyword));
+        }
+
         public async Task<string> GeneralChatAsync(string userRequest)
         {
+            // Kiểm tra câu hỏi ngoài phạm vi TOEIC
+            if (IsOutOfScopeQuestion(userRequest))
+            {
+                return @"Xin lỗi, tôi chỉ có thể hỗ trợ bạn về các chủ đề liên quan đến TOEIC và học tiếng Anh.
+
+Tôi có thể giúp bạn với:
+• Tạo đề thi và câu hỏi TOEIC (Reading, Listening, Speaking, Writing)
+• Từ vựng TOEIC và cách sử dụng
+• Ngữ pháp tiếng Anh
+• Chiến lược làm bài các Part trong TOEIC
+• Luyện tập và bài tập thực hành
+• Lộ trình học và động viên học tập
+
+Bạn có câu hỏi nào về TOEIC hoặc tiếng Anh mà tôi có thể giúp không?";
+            }
+
             var chatPrompt = $@"
 You are a friendly TOEIC expert assistant. Answer naturally in PLAIN TEXT.
+
+**IMPORTANT SCOPE:**
+You ONLY answer questions related to:
+- TOEIC exam (all parts: Listening, Reading, Speaking, Writing)
+- English vocabulary and grammar for TOEIC
+- TOEIC test strategies and tips
+- English learning methods
+
+If asked about topics outside TOEIC/English learning, politely decline.
 
 User question: ""{userRequest}""
 
@@ -138,6 +482,7 @@ User question: ""{userRequest}""
    - Blank lines between paragraphs
 3. Write in Vietnamese (unless user asks in English)
 4. Be warm, helpful and conversational
+5. Stay within TOEIC/English learning topics only
 
 Example responses:
 
@@ -217,7 +562,7 @@ Now answer the user's question (PLAIN TEXT, NO JSON):";
         private string CleanChatResponseSimple(string text)
         {
             if (string.IsNullOrWhiteSpace(text))
-                return "Xin lỗi, tôi không thể trả lời câu hỏi này. Vui lòng thử lại! 😊";
+                return "Xin lỗi, tôi không thể trả lời câu hỏi này. Vui lòng thử lại!";
 
             try
             {

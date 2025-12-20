@@ -131,11 +131,6 @@ namespace lumina.Controllers
                     return BadRequest(new { Message = "UserAnswer cannot be empty." });
                 }
 
-                if (string.IsNullOrWhiteSpace(request.PictureCaption))
-                {
-                    return BadRequest(new { Message = "PictureCaption cannot be empty." });
-                }
-
                 var result = await _writingService.GetFeedbackP1FromAI(request);
 
                 return Ok(result);
