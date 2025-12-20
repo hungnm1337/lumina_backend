@@ -13,6 +13,8 @@ namespace ServiceLayer.ExamGenerationAI
     {
         Task<(int partNumber, int quantity, string? topic)> ParseUserRequestAsync(string userRequest);
 
+        (bool isValid, string? errorMessage) ValidatePartRequest(int partNumber, string userRequest);
+
         Task<AIGeneratedExamDTO> GenerateExamAsync(int partNumber, int quantity, string? topic);
 
         Task<string> GenerateResponseAsync(string prompt);
