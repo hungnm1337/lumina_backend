@@ -101,7 +101,7 @@ namespace lumina.Controllers
         }
 
 
-        // === Hàm hỗ trợ retry tự động khi Gemini quá tải ===
+        // === Hàm hỗ trợ retry tự động khi quá tải ===
         private async Task<T> ExecuteWithRetryAsync<T>(Func<Task<T>> action, int maxRetries = 2, int delayMs = 2000)
         {
             for (int attempt = 0; attempt <= maxRetries; attempt++)
