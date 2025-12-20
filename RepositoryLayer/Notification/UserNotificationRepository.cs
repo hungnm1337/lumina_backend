@@ -24,7 +24,7 @@ namespace RepositoryLayer.Notification
                 .OrderByDescending(un => un.CreateAt)
                 .ToListAsync();
 
-            return userNotifications.Select(un => new UserNotificationDTO
+            var result = userNotifications.Select(un => new UserNotificationDTO
             {
                 UniqueId = un.UniqueId,
                 UserId = un.UserId,
@@ -32,8 +32,17 @@ namespace RepositoryLayer.Notification
                 Title = un.Notification?.Title ?? "",
                 Content = un.Notification?.Content ?? "",
                 IsRead = un.IsRead ?? false,
-                CreatedAt = un.CreateAt
+                CreatedAt = DateTime.SpecifyKind(un.CreateAt, DateTimeKind.Utc) // ✅ Specify UTC
             }).ToList();
+            
+            // Debug log
+            if (result.Any())
+            {
+                var latest = result.First();
+                Console.WriteLine($"[UserNotificationRepo] Latest notification: {latest.Title}, CreatedAt: {latest.CreatedAt:O}, Now: {DateTime.UtcNow:O}");
+            }
+            
+            return result;
         }
 
         public async Task<UserNotificationDTO?> GetByIdAsync(int uniqueId)
@@ -52,7 +61,7 @@ namespace RepositoryLayer.Notification
                 Title = userNotification.Notification?.Title ?? "",
                 Content = userNotification.Notification?.Content ?? "",
                 IsRead = userNotification.IsRead ?? false,
-                CreatedAt = userNotification.CreateAt
+                CreatedAt = DateTime.SpecifyKind(userNotification.CreateAt, DateTimeKind.Utc) // ✅ Specify UTC
             };
         }
 
