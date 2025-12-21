@@ -157,7 +157,9 @@ namespace RepositoryLayer.Exam.ExamAttempt
         {
             var readingAnswers = await _context.UserAnswerMultipleChoices
                 .AsNoTracking()
-                .Where(answer => answer.AttemptID == attemptId)
+                .Where(answer => answer.AttemptID == attemptId
+                    && (answer.Question.QuestionType == "Reading" ||
+                        answer.Question.PartId >= 5 && answer.Question.PartId <= 7))
                 .Select(answer => new ReadingAnswerResponseDTO()
                 {
                     AttemptID = answer.AttemptID,
@@ -343,26 +345,56 @@ namespace RepositoryLayer.Exam.ExamAttempt
         {
             try
             {
+                // 1. Lấy thông tin Option và Validate
                 var option = await _context.Options
                     .Include(o => o.Question)
                     .FirstOrDefaultAsync(o => o.OptionId == model.SelectedOptionId);
+
                 if (option == null || model.ExamAttemptId <= 0 || model.QuestionId <= 0 || option.QuestionId != model.QuestionId)
                 {
-                    throw new KeyNotFoundException($"Model invalid");
+                    // Tùy chọn: Log lỗi ở đây nếu cần thiết
+                    return false;
                 }
-                var answer = new DataLayer.Models.UserAnswerMultipleChoice()
+
+                // 2. Tính toán điểm số và tính đúng sai chung để dùng cho cả Update và Insert
+                bool isCorrect = option.IsCorrect ?? false;
+                int score = isCorrect ? (option.Question?.ScoreWeight ?? 0) : 0;
+
+                // 3. Kiểm tra xem câu trả lời đã tồn tại chưa
+                var existingAnswer = await _context.UserAnswerMultipleChoices
+                    .FirstOrDefaultAsync(x => x.AttemptID == model.ExamAttemptId
+                                           && x.QuestionId == model.QuestionId);
+
+                if (existingAnswer != null)
                 {
-                    AttemptID = model.ExamAttemptId,
-                    QuestionId = model.QuestionId,
-                    SelectedOptionId = model.SelectedOptionId,
-                    IsCorrect = option.IsCorrect ?? false,
-                    Score = (option.IsCorrect ?? false) ? (option.Question?.ScoreWeight ?? 0) : 0
-                };
-                await _context.UserAnswerMultipleChoices.AddAsync(answer);
+                    // === UPDATE ===
+                    // Cập nhật lại các trường cần thiết
+                    existingAnswer.SelectedOptionId = model.SelectedOptionId;
+                    existingAnswer.IsCorrect = isCorrect;
+                    existingAnswer.Score = score;
+
+                    // EF Core tự động track sự thay đổi của biến existingAnswer
+                }
+                else
+                {
+                    // === INSERT ===
+                    var answer = new DataLayer.Models.UserAnswerMultipleChoice()
+                    {
+                        AttemptID = model.ExamAttemptId,
+                        QuestionId = model.QuestionId,
+                        SelectedOptionId = model.SelectedOptionId,
+                        IsCorrect = isCorrect,
+                        Score = score
+                    };
+                    await _context.UserAnswerMultipleChoices.AddAsync(answer);
+                }
+
+                // 4. Lưu thay đổi vào DB
                 return await _context.SaveChangesAsync() > 0;
             }
-            catch
+            catch (Exception ex)
             {
+                // Nên log ex ở đây để debug
                 return false;
             }
         }
