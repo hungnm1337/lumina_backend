@@ -263,7 +263,7 @@ namespace ServiceLayer.AI.Prompt
                     new AIGeneratedQuestionDTO
                     {
                         PartId = 1,
-                        QuestionType = "Listening_Photograph",
+                        QuestionType = "Listening",
                         StemText = "Choose the statement that best describes the picture.",
                         Explanation = "Lựa chọn (B) mô tả đúng nhất hành động trong ảnh: 'The woman is pointing at the screen'. Các lựa chọn khác không khớp với bối cảnh.",
                         ScoreWeight = 1,
@@ -336,7 +336,7 @@ namespace ServiceLayer.AI.Prompt
             3. Questions  
             - Mỗi Prompt chỉ có 1 Question.
             - PartId luôn bằng 1.
-            - QuestionType = Listening_Photograph.
+            - QuestionType = Listening.
             - Có Explanation bằng tiếng Việt, giải thích vì sao đáp án đúng.
 
             ---
@@ -499,7 +499,7 @@ namespace ServiceLayer.AI.Prompt
                 ReferenceAudioUrl = "\"A woman asks a man, \\\"Hi Tom, do you have a moment to talk about the quarterly report?\\\" The man replies, \\\"Sure, come on in. I was just reviewing the sales data. Is there a problem?\\\" The woman says, \\\"Not a problem, but I think we should include the customer feedback from last month's survey. It provides some valuable insights.\\\" The man responds, \\\"That's a great idea. Can you summarize the key findings for me by noon?\\\"", // Cả hai đều dùng kịch bản tường thuật
                 Questions = new List<AIGeneratedQuestionDTO> {
                     new AIGeneratedQuestionDTO {
-                        PartId = 3, QuestionType = "MultipleChoice_Conversation",
+                        PartId = 3, QuestionType = "Listening",
                         StemText = "What are the speakers mainly discussing?",
                         Explanation = "Người kể chuyện cho biết cuộc trò chuyện bắt đầu về 'the quarterly report' và các chi tiết sau đó đều xoay quanh nó.",
                         ScoreWeight = 1, Time = 30,
@@ -510,7 +510,7 @@ namespace ServiceLayer.AI.Prompt
                         }
                     },
                     new AIGeneratedQuestionDTO {
-                        PartId = 3, QuestionType = "MultipleChoice_Conversation",
+                        PartId = 3, QuestionType = "Listening",
                         StemText = "What does the woman suggest?",
                         Explanation = "Theo lời tường thuật, người phụ nữ nói 'I think we should include the customer feedback from last month's survey.'",
                         ScoreWeight = 1, Time = 30,
@@ -521,7 +521,7 @@ namespace ServiceLayer.AI.Prompt
                         }
                     },
                      new AIGeneratedQuestionDTO {
-                        PartId = 3, QuestionType = "MultipleChoice_Conversation",
+                        PartId = 3, QuestionType = "Listening",
                         StemText = "What does the man ask the woman to do?",
                         Explanation = "Người kể chuyện thuật lại lời người đàn ông yêu cầu: 'Can you summarize the key findings for me by noon?'.",
                         ScoreWeight = 1, Time = 30,
@@ -542,7 +542,7 @@ namespace ServiceLayer.AI.Prompt
                 ReferenceAudioUrl = "\"A woman asks a man, \\\"Hi Tom, do you have a moment to talk about the quarterly report?\\\" The man replies, \\\"Sure, come on in. I was just reviewing the sales data. Is there a problem?\\\" The woman says, \\\"Not a problem, but I think we should include the customer feedback from last month's survey. It provides some valuable insights.\\\" The man responds, \\\"That's a great idea. Can you summarize the key findings for me by noon?\\\"", // Cả hai đều dùng kịch bản tường thuật
                 Questions = new List<AIGeneratedQuestionDTO> {
                     new AIGeneratedQuestionDTO {
-                        PartId = 3, QuestionType = "MultipleChoice_Conversation",
+                        PartId = 3, QuestionType = "Listening",
                         StemText = "What are the speakers mainly discussing?",
                         Explanation = "Người kể chuyện cho biết cuộc trò chuyện bắt đầu về 'the quarterly report' và các chi tiết sau đó đều xoay quanh nó.",
                         ScoreWeight = 1, Time = 30,
@@ -553,7 +553,7 @@ namespace ServiceLayer.AI.Prompt
                         }
                     },
                     new AIGeneratedQuestionDTO {
-                        PartId = 3, QuestionType = "MultipleChoice_Conversation",
+                        PartId = 3, QuestionType = "Listening",
                         StemText = "What does the woman suggest?",
                         Explanation = "Theo lời tường thuật, người phụ nữ nói 'I think we should include the customer feedback from last month's survey.'",
                         ScoreWeight = 1, Time = 30,
@@ -564,7 +564,7 @@ namespace ServiceLayer.AI.Prompt
                         }
                     },
                      new AIGeneratedQuestionDTO {
-                        PartId = 3, QuestionType = "MultipleChoice_Conversation",
+                        PartId = 3, QuestionType = "Listening",
                         StemText = "What does the man ask the woman to do?",
                         Explanation = "Người kể chuyện thuật lại lời người đàn ông yêu cầu: 'Can you summarize the key findings for me by noon?'.",
                         ScoreWeight = 1, Time = 30,
@@ -646,7 +646,7 @@ namespace ServiceLayer.AI.Prompt
                     new AIGeneratedQuestionDTO
                     {
                         PartId = 4,
-                        QuestionType = "MultipleChoice_Talk",
+                        QuestionType = "Listening",
                         StemText = "What is the purpose of the talk?",
                         Explanation = "The speaker says this is a reminder about the annual company picnic.",
                         ScoreWeight = 1,
@@ -662,7 +662,7 @@ namespace ServiceLayer.AI.Prompt
                     new AIGeneratedQuestionDTO
                     {
                         PartId = 4,
-                        QuestionType = "MultipleChoice_Talk",
+                        QuestionType = "Listening",
                         StemText = "Where will the event take place?",
                         Explanation = "The speaker clearly mentions Riverside Park as the venue.",
                         ScoreWeight = 1,
@@ -678,7 +678,7 @@ namespace ServiceLayer.AI.Prompt
                     new AIGeneratedQuestionDTO
                     {
                         PartId = 4,
-                        QuestionType = "MultipleChoice_Talk",
+                        QuestionType = "Listening",
                         StemText = "What will be provided to participants?",
                         Explanation = "Lunch will be provided around noon.",
                         ScoreWeight = 1,
@@ -751,7 +751,7 @@ namespace ServiceLayer.AI.Prompt
                     new AIGeneratedQuestionDTO
                     {
                         PartId = 5,
-                        QuestionType = "MultipleChoice_SentenceCompletion",
+                        QuestionType = "Reading",
                         StemText = "The team ...... the project last month.",
                         Explanation = "Thì quá khứ đơn → 'completed'",
                         ScoreWeight = 1,
@@ -775,7 +775,7 @@ namespace ServiceLayer.AI.Prompt
                     new AIGeneratedQuestionDTO
                     {
                         PartId = 5,
-                        QuestionType = "MultipleChoice_SentenceCompletion",
+                        QuestionType = "Reading",
                         StemText = "Submit reports ...... Friday.",
                         Explanation = "'By' chỉ thời hạn",
                         ScoreWeight = 1,
@@ -820,7 +820,7 @@ namespace ServiceLayer.AI.Prompt
       - StemText: Incomplete sentence with "......" for the blank
       - 4 Options (A/B/C/D), only 1 IsCorrect=true
       - Explanation in Vietnamese
-      - PartId: 5, QuestionType: "MultipleChoice_SentenceCompletion"
+      - PartId: 5, QuestionType: "Reading"
       - ScoreWeight: 1, Time: 30
 
     **Grammar/Vocabulary focus:**
@@ -860,7 +860,7 @@ namespace ServiceLayer.AI.Prompt
                          Description = "To: All Staff\nSubject: Office Renovation Update\nPlease be advised that the main entrance [__1__] closed next Monday due to ongoing renovations. Access to the building will be available [__2__] the rear entrance near the parking lot. [__3__]. We expect the work to be completed by Friday. Thank you for your [__4__].",
                          Questions = new List<AIGeneratedQuestionDTO> {
                              new AIGeneratedQuestionDTO {
-                                 PartId = 6, QuestionType = "MultipleChoice_TextCompletion",
+                                 PartId = 6, QuestionType = "Reading",
                                  StemText = "Select the best word for blank [1]", // Câu hỏi chỉ vị trí blank
                                  Explanation = "'Will be' is needed...",
                                  ScoreWeight = 1, Time = 45,
@@ -920,7 +920,7 @@ namespace ServiceLayer.AI.Prompt
                 Questions = new List<AIGeneratedQuestionDTO> {
                     new AIGeneratedQuestionDTO {
                         PartId = 7,
-                        QuestionType = "MultipleChoice_SinglePassage",
+                        QuestionType = "Reading",
                         StemText = "What is the main purpose of the email?",
                         Explanation = "Email thông báo về chính sách làm việc từ xa mới ('New Remote Work Policy').",
                         ScoreWeight = 1,
@@ -934,7 +934,7 @@ namespace ServiceLayer.AI.Prompt
                     },
                     new AIGeneratedQuestionDTO {
                         PartId = 7,
-                        QuestionType = "MultipleChoice_SinglePassage",
+                        QuestionType = "Reading",
                         StemText = "When will the new policy take effect?",
                         Explanation = "Email nói rõ 'Effective April 1st'.",
                         ScoreWeight = 1,
@@ -948,7 +948,7 @@ namespace ServiceLayer.AI.Prompt
                     },
                     new AIGeneratedQuestionDTO {
                         PartId = 7,
-                        QuestionType = "MultipleChoice_SinglePassage",
+                        QuestionType = "Reading",
                         StemText = "What are employees asked to do by March 25th?",
                         Explanation = "Email yêu cầu 'submit your preferred remote work schedule to your direct manager by March 25th'.",
                         ScoreWeight = 1,
@@ -1002,7 +1002,7 @@ namespace ServiceLayer.AI.Prompt
                 Questions = new List<AIGeneratedQuestionDTO> {
                     new AIGeneratedQuestionDTO {
                         PartId = 8,
-                        QuestionType = "SPEAKING",
+                        QuestionType = "Speaking",
                         StemText = "Read the text aloud clearly and naturally.",
                         ScoreWeight = 3,
                         Time = 45,
@@ -1026,7 +1026,7 @@ namespace ServiceLayer.AI.Prompt
         - Phải chứa đoạn văn cần đọc (dài khoảng 100-150 từ) trong trường `Description`.
         - Phải chứa **MỘT** đối tượng `AIGeneratedQuestionDTO` trong mảng `Questions`. Đối tượng này dùng để lưu:
             - `PartId`: 8
-            - `QuestionType`: "ReadAloud"
+            - `QuestionType`: "Speaking"
             - `StemText`: Hướng dẫn chung như "Read the text aloud clearly and naturally."
             - `ScoreWeight`: Điểm cho phần đọc (ví dụ: 3).
             - `Time`: Tổng thời gian cho phần đọc (ví dụ: 90 giây = 45s chuẩn bị + 45s đọc).
@@ -1063,7 +1063,7 @@ namespace ServiceLayer.AI.Prompt
                 Questions = new List<AIGeneratedQuestionDTO> {
                     new AIGeneratedQuestionDTO {
                         PartId = 9,
-                        QuestionType = "SPEAKING",
+                        QuestionType = "Speaking",
                         StemText = "Describe the picture in detail.",
                         ScoreWeight = 3,
                         Time = 45,
@@ -1115,7 +1115,7 @@ namespace ServiceLayer.AI.Prompt
                 Questions = new List<AIGeneratedQuestionDTO> {
                     new AIGeneratedQuestionDTO {
                         PartId = 10,
-                        QuestionType = "SPEAKING",
+                        QuestionType = "Speaking",
                         StemText = "How often do you read books?",
                         ScoreWeight = 3,
                         Time = 60,
@@ -1123,7 +1123,7 @@ namespace ServiceLayer.AI.Prompt
                     },
                     new AIGeneratedQuestionDTO {
                         PartId = 10,
-                        QuestionType = "SPEAKING",
+                        QuestionType = "Speaking",
                         StemText = "What kind of books do you enjoy reading the most?",
                         ScoreWeight = 3,
                         Time = 60,
@@ -1131,7 +1131,7 @@ namespace ServiceLayer.AI.Prompt
                     },
                     new AIGeneratedQuestionDTO {
                         PartId = 10,
-                        QuestionType = "SPEAKING",
+                        QuestionType = "Speaking",
                         StemText = "Describe your favorite place to read.",
                         ScoreWeight = 3,
                         Time = 60,
@@ -1188,7 +1188,7 @@ namespace ServiceLayer.AI.Prompt
                 Questions = new List<AIGeneratedQuestionDTO> {
                     new AIGeneratedQuestionDTO {
                         PartId = 11,
-                        QuestionType = "SPEAKING",
+                        QuestionType = "Speaking",
                         StemText = "What time does the conference begin?",
                         ScoreWeight = 3,
                         Time = 30,
@@ -1196,7 +1196,7 @@ namespace ServiceLayer.AI.Prompt
                     },
                     new AIGeneratedQuestionDTO {
                         PartId = 11,
-                        QuestionType = "SPEAKING",
+                        QuestionType = "Speaking",
                         StemText = "Could you tell me what Workshop A is about?",
                         ScoreWeight = 3,
                         Time = 30,
@@ -1204,7 +1204,7 @@ namespace ServiceLayer.AI.Prompt
                     },
                     new AIGeneratedQuestionDTO {
                         PartId = 11,
-                        QuestionType = "SPEAKING",
+                        QuestionType = "Speaking",
                         StemText = "How long is the coffee break?",
                         ScoreWeight = 3,
                         Time = 30,
@@ -1258,7 +1258,7 @@ namespace ServiceLayer.AI.Prompt
                 Questions = new List<AIGeneratedQuestionDTO> {
                     new AIGeneratedQuestionDTO {
                         PartId = 12,
-                        QuestionType = "SPEAKING",
+                        QuestionType = "Speaking",
                         StemText = "Some people prefer to work for a large company, while others prefer a small company. Which do you prefer and why? Include specific reasons and examples to support your opinion.",
                         ScoreWeight = 5,
                         Time = 60,
@@ -1324,7 +1324,7 @@ namespace ServiceLayer.AI.Prompt
                     new AIGeneratedQuestionDTO
                     {
                         PartId = 19,
-                        QuestionType = "WRITING",
+                        QuestionType = "Writing",
                         // Hướng dẫn cố định
                         StemText = "Write ONE sentence based on the picture using the TWO words or phrases provided.",
                         // Câu mẫu đúng (để AI học cách viết)
@@ -1405,7 +1405,7 @@ namespace ServiceLayer.AI.Prompt
                 Questions = new List<AIGeneratedQuestionDTO> {
                     new AIGeneratedQuestionDTO {
                         PartId = 14, 
-                        QuestionType = "WRITING",
+                        QuestionType = "Writing",
                         // Hướng dẫn viết nằm trong StemText
                         StemText = "Read the email. Respond to the Marketing Team as a staff member. In your email, ask TWO questions and make ONE suggestion about the survey.",
                         // Email mẫu nằm trong Explanation
@@ -1468,7 +1468,7 @@ namespace ServiceLayer.AI.Prompt
                     new AIGeneratedQuestionDTO
                     {
                         PartId = 2,
-                        QuestionType = "WRITING",
+                        QuestionType = "Writing",
                         StemText = "Do you agree or disagree with the following statement? 'Technology makes people less creative.' Use specific reasons and examples to support your answer.",
                         Explanation = "[Sample Outline:\n- Introduction: State opinion (agree/disagree).\n- Body Paragraph 1: Reason 1 + Example...\n- Conclusion: Restate opinion...]",
                         ScoreWeight = 5,
