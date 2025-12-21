@@ -118,7 +118,7 @@ namespace ServiceLayer.ExamGenerationAI
             // Kiểm tra số âm trong user request (trước khi AI parse)
             if (System.Text.RegularExpressions.Regex.IsMatch(userRequest, @"part\s*-\d+", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
             {
-                return (false, "Part number không hợp lệ. TOEIC chỉ có Part 1 đến Part 15.\n\nVui lòng nhập số Part hợp lệ!");
+                return (false, "Part number không hợp lệ.\n\nVui lòng nhập số Part hợp lệ!");
             }
 
             // Kiểm tra user có chỉ định rõ Part number không
@@ -244,7 +244,6 @@ Hãy chọn một Part để tạo đề nhé!");
         private string GetListeningPartErrorMessage()
         {
             return @"Xin lỗi, TOEIC Listening chỉ có 4 Part (Part 1-4).
-
 **LISTENING (Part 1-4):**
 • Part 1: Mô tả tranh (6 câu)
 • Part 2: Hỏi đáp (25 câu)
@@ -257,7 +256,6 @@ Bạn muốn tạo Part nào?";
         private string GetReadingPartErrorMessage()
         {
             return @"Xin lỗi, TOEIC Reading chỉ có 3 Part (Part 5-7).
-
 **READING (Part 5-7):**
 • Part 5: Hoàn thành câu (30 câu)
 • Part 6: Hoàn thành đoạn văn (16 câu)
@@ -269,7 +267,6 @@ Bạn muốn tạo Part nào?";
         private string GetSpeakingPartErrorMessage()
         {
             return @"Xin lỗi, TOEIC Speaking có 5 task (đánh số Part 1-5).
-
 **SPEAKING (Part 1-5):**
 • Part 1: Đọc văn bản (2 câu)
 • Part 2: Mô tả ảnh (2 câu)
@@ -283,7 +280,6 @@ Bạn muốn tạo Part nào?";
         private string GetWritingPartErrorMessage()
         {
             return @"Xin lỗi, TOEIC Writing có 3 task (đánh số Part 1-3).
-
 **WRITING (Part 1-3):**
 • Part 1: Viết câu dựa vào ảnh (5 câu)
 • Part 2: Trả lời email (2 câu)
@@ -295,30 +291,25 @@ Bạn muốn tạo Part nào?";
         private string GetTOEICStructure()
         {
             return @"**CẤU TRÚC ĐỀ THI TOEIC:**
-
-**LISTENING (Part 1-4):**
+**LISTENING:**
 • Part 1: Mô tả tranh (6 câu)
 • Part 2: Hỏi đáp (25 câu)
 • Part 3: Hội thoại (15 câu)
 • Part 4: Độc thoại (15 câu)
-
-**READING (Part 5-7):**
+**READING:**
 • Part 5: Hoàn thành câu (30 câu)
 • Part 6: Hoàn thành đoạn văn (16 câu)
 • Part 7: Đọc hiểu (15 câu)
-
-**SPEAKING (Part 8-12):**
+**SPEAKING:**
 • Part 1: Đọc văn bản (2 câu)
 • Part 2: Mô tả ảnh (2 câu)
 • Part 3: Trả lời câu hỏi (3 câu)
 • Part 4: Trả lời với thông tin (3 câu)
 • Part 5: Biểu đạt ý kiến (1 câu)
-
-**WRITING (Part 13-15):**
+**WRITING:**
 • Part 1: Viết câu dựa vào ảnh (5 câu)
 • Part 2: Trả lời email (2 câu)
 • Part 3: Viết bài luận (1 câu)
-
 Bạn muốn tạo Part nào?";
         }
 

@@ -265,7 +265,7 @@ namespace ServiceLayer.AI.Prompt
                         PartId = 1,
                         QuestionType = "Listening_Photograph",
                         StemText = "Choose the statement that best describes the picture.",
-                        Explanation = "Lựa chọn (A) mô tả đúng nhất hành động trong ảnh: 'The woman is pointing at the screen'. Các lựa chọn khác không khớp với bối cảnh.",
+                        Explanation = "Lựa chọn (B) mô tả đúng nhất hành động trong ảnh: 'The woman is pointing at the screen'. Các lựa chọn khác không khớp với bối cảnh.",
                         ScoreWeight = 1,
                         Time = 60,
                         Options = new List<AIGeneratedOptionDTO>
