@@ -23,7 +23,7 @@ namespace RepositoryLayer.MockTest
         public async Task<List<ExamPartDTO>> GetMocktestAsync()
         {
             var examId = await _context.Exams
-                .Where(e => e.ExamSetKey == "10-2025")
+                .Where(e => e.ExamSetKey == "MockTest")
                 .Select(e => e.ExamId)
                 .ToListAsync();
             var examParts = await _context.ExamParts

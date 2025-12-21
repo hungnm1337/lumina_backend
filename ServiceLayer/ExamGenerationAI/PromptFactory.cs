@@ -267,7 +267,7 @@ namespace ServiceLayer.AI.Prompt
                         StemText = "Choose the statement that best describes the picture.",
                         Explanation = "Lựa chọn (B) mô tả đúng nhất hành động trong ảnh: 'The woman is pointing at the screen'. Các lựa chọn khác không khớp với bối cảnh.",
                         ScoreWeight = 1,
-                        Time = 60,
+                        Time = 30,
                         Options = new List<AIGeneratedOptionDTO>
                         {
                             new AIGeneratedOptionDTO { Label = "A", Content = "The man is talking on the phone.", IsCorrect = false },
@@ -650,7 +650,7 @@ namespace ServiceLayer.AI.Prompt
                         StemText = "What is the purpose of the talk?",
                         Explanation = "The speaker says this is a reminder about the annual company picnic.",
                         ScoreWeight = 1,
-                        Time = 30,
+                        Time = 60,
                         Options = new List<AIGeneratedOptionDTO>
                         {
                             new AIGeneratedOptionDTO { Label = "A", Content = "To remind employees about a company event", IsCorrect = true },
@@ -666,7 +666,7 @@ namespace ServiceLayer.AI.Prompt
                         StemText = "Where will the event take place?",
                         Explanation = "The speaker clearly mentions Riverside Park as the venue.",
                         ScoreWeight = 1,
-                        Time = 30,
+                        Time = 60,
                         Options = new List<AIGeneratedOptionDTO>
                         {
                             new AIGeneratedOptionDTO { Label = "A", Content = "At the company cafeteria", IsCorrect = false },
@@ -682,7 +682,7 @@ namespace ServiceLayer.AI.Prompt
                         StemText = "What will be provided to participants?",
                         Explanation = "Lunch will be provided around noon.",
                         ScoreWeight = 1,
-                        Time = 30,
+                        Time = 60,
                         Options = new List<AIGeneratedOptionDTO>
                         {
                             new AIGeneratedOptionDTO { Label = "A", Content = "Transportation", IsCorrect = false },
@@ -1191,7 +1191,7 @@ namespace ServiceLayer.AI.Prompt
                         QuestionType = "Speaking",
                         StemText = "What time does the conference begin?",
                         ScoreWeight = 3,
-                        Time = 30,
+                        Time = 45,
                         SampleAnswer = "According to the schedule, the conference begins at 9:00 AM with the opening remarks."
                     },
                     new AIGeneratedQuestionDTO {
@@ -1199,7 +1199,7 @@ namespace ServiceLayer.AI.Prompt
                         QuestionType = "Speaking",
                         StemText = "Could you tell me what Workshop A is about?",
                         ScoreWeight = 3,
-                        Time = 30,
+                        Time = 45,
                         SampleAnswer = "Certainly. Workshop A, which takes place at 10:00 AM, focuses on Marketing Strategies."
                     },
                     new AIGeneratedQuestionDTO {
@@ -1207,7 +1207,7 @@ namespace ServiceLayer.AI.Prompt
                         QuestionType = "Speaking",
                         StemText = "How long is the coffee break?",
                         ScoreWeight = 3,
-                        Time = 30,
+                        Time = 45,
                         SampleAnswer = "Based on the schedule, the coffee break starts at 11:00 AM and Workshop B begins at 11:30 AM, so the coffee break lasts for 30 minutes."
                     }
                 }
@@ -1330,7 +1330,7 @@ namespace ServiceLayer.AI.Prompt
                         // Câu mẫu đúng (để AI học cách viết)
                         CorrectAnswer = "null",
                         ScoreWeight = 3,
-                        Time = 90
+                        Time = 60
                     }
                 }
             }
