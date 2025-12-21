@@ -23,11 +23,11 @@ namespace ServiceLayer.AI.Prompt
             { 7, new PartConfiguration { QuestionsPerPrompt = 3, DefaultPromptCount = 5 } },
             
             // SPEAKING
-            { 8, new PartConfiguration { QuestionsPerPrompt = 1, DefaultPromptCount = 2 } },  // Part 1: Q1-2, 2 prompts
-            { 9, new PartConfiguration { QuestionsPerPrompt = 1, DefaultPromptCount = 1 } },  // Part 2: Q3, 1 prompt
-            { 10, new PartConfiguration { QuestionsPerPrompt = 3, DefaultPromptCount = 1 } }, // Part 3: Q4-6, 1 prompt với 3 câu
-            { 11, new PartConfiguration { QuestionsPerPrompt = 3, DefaultPromptCount = 1 } }, // Part 4: Q7-9, 1 prompt với 3 câu
-            { 12, new PartConfiguration { QuestionsPerPrompt = 2, DefaultPromptCount = 1 } }, // Part 5: Q10-11, 1 prompt với 2 câu
+            { 8, new PartConfiguration { QuestionsPerPrompt = 1, DefaultPromptCount = 2 } },  
+            { 9, new PartConfiguration { QuestionsPerPrompt = 1, DefaultPromptCount = 2 } },  
+            { 10, new PartConfiguration { QuestionsPerPrompt = 3, DefaultPromptCount = 1 } }, 
+            { 11, new PartConfiguration { QuestionsPerPrompt = 3, DefaultPromptCount = 1 } }, 
+            { 12, new PartConfiguration { QuestionsPerPrompt = 1, DefaultPromptCount = 1 } }, 
             
             // WRITING
             { 13, new PartConfiguration { QuestionsPerPrompt = 1, DefaultPromptCount = 5 } },
@@ -130,15 +130,27 @@ namespace ServiceLayer.AI.Prompt
                 * Nếu không thể xác định `partNumber`, trả về 0.
 
             2.  **`quantity` (Integer):** Số lượng **cụm đề bài (prompts)** hoặc **câu hỏi đơn lẻ** cần tạo.
-                * **QUAN TRỌNG - ƯU TIÊN CAO NHẤT:** 
-                    - Nếu user KHÔNG nói rõ số lượng (ví dụ: chỉ nói "tạo đề Part X", "cho tôi bài Part Y"), bạn BẮT BUỘC phải lấy giá trị từ bảng `defaultQuantities` bên dưới.
-                    - KHÔNG TỰ Ý đoán hoặc để quantity = 1 nếu không có trong input!
-                * **Chỉ khi nào:** User chỉ định RÕ RÀNG số lượng (ví dụ: "tạo 5 câu", "cho tôi 2 bài", "10 câu part 5"), bạn mới lấy con số đó.
-                * **Bảng số lượng mặc định (`defaultQuantities`) - PHẢI TUÂN THỦ:**
+                * **QUY TẮC ƯU TIÊN TUYỆT ĐỐI:**
+                    1. **HIGHEST PRIORITY**: Nếu user CHỈ ĐỊNH BẤT KỲ CON SỐ NÀO, kể cả số 1 (ví dụ: "tạo 1 câu", "1 bài", "5 câu", "10 bài", "2 đoạn"), BẮT BUỘC phải lấy CHÍNH XÁC con số đó. 
+                    2. **CRITICAL**: Số "1" cũng là một con số hợp lệ! "tạo 1 câu" = quantity 1, KHÔNG PHẢI lấy default!
+                    3. Chỉ khi HOÀN TOÀN KHÔNG CÓ CON SỐ NÀO trong request (ví dụ: "tạo đề Part X", "cho tôi bài Part Y"), mới lấy giá trị từ bảng `defaultQuantities` bên dưới.
+                * **⚠️ CỰC KỲ QUAN TRỌNG - TRÁNH NHẦM LẪN:**
+                    - Bước 1: Xác định `partNumber` CHÍNH XÁC theo mapping ở trên
+                    - Bước 2: Dùng `partNumber` ĐÃ MAPPING để tìm quantity trong bảng defaultQuantities
+                    - ❌ SAI: "Speaking Part 2" → tìm key 2 trong bảng → 25 (WRONG!)
+                    - ✅ ĐÚNG: "Speaking Part 2" → partNumber = 9 → tìm key 9 trong bảng → 2 (CORRECT!)
+                * **Ví dụ phân biệt (CHÚ Ý ĐẶC BIỆT SỐ 1):**
+                    - "tạo 1 câu part 2" → quantity = 1 ✅ (user nói "1", KHÔNG lấy default 25!)
+                    - "tạo 2 câu part 2" → quantity = 2 ✅ (user nói "2")
+                    - "tạo 5 câu part 2" → quantity = 5 ✅ (user nói "5")
+                    - "tạo đề part 2" → quantity = 25 ✅ (không có số → lấy default)
+                    - "cho 1 bài part 3" → quantity = 1 ✅ (user nói "1", KHÔNG lấy default 5!)
+                    - "tạo đề speaking part 2" → partNumber = 9 → quantity = 2 ✅ (lấy default của key 9, KHÔNG PHẢI key 2!)
+                * **Bảng số lượng mặc định (`defaultQuantities`) - CHỈ DÙNG KHI KHÔNG CÓ SỐ:**
                     ```json
                     {{{defaultQuantitiesJson}}}
                     ```
-                    *(Giải thích bảng: Key là partNumber, Value là số lượng prompts/items mặc định cần tạo cho part đó)*
+                    *(Giải thích bảng: Key là partNumber SAU KHI ĐÃ MAPPING, Value là số lượng prompts/items mặc định)*
                 * Nếu không xác định được `partNumber`, `quantity` có thể là 1.
 
             3.  **`topic` (String | null):** Chủ đề cụ thể, điểm ngữ pháp, hoặc loại tình huống mà người dùng yêu cầu (ví dụ: "thì hiện tại hoàn thành", "email xin nghỉ phép", "họp trực tuyến", "chủ đề môi trường"). Nếu không có chủ đề nào được đề cập, trả về `null`. Cố gắng trích xuất chủ đề chính xác nhất có thể.
@@ -148,12 +160,22 @@ namespace ServiceLayer.AI.Prompt
 
             **Ví dụ phân tích:**
 
+                * Input: `"tạo đề speaking part 2"`
+                    Output: `{{ "partNumber": 9, "quantity": 2, "topic": null }}` ⚠️ CỰC KỲ QUAN TRỌNG: Speaking Part 2 = partNumber 9 → lấy quantity từ key 9 = 2, KHÔNG PHẢI key 2 = 25!
+                * Input: `"tạo đề writing part 2"`
+                    Output: `{{ "partNumber": 14, "quantity": 2, "topic": null }}` ⚠️ Writing Part 2 = partNumber 14 → lấy quantity từ key 14 = 2!
+                * Input: `"tạo 1 câu listening part 2"`
+                    Output: `{{ "partNumber": 2, "quantity": 1, "topic": null }}` ⚠️ User nói "1 câu" → quantity = 1, KHÔNG PHẢI 25!
+                * Input: `"cho tôi 1 bài part 3"`
+                    Output: `{{ "partNumber": 3, "quantity": 1, "topic": null }}` ⚠️ User nói "1 bài" → quantity = 1, KHÔNG PHẢI 5!
+                * Input: `"tạo 2 câu part 2"`
+                    Output: `{{ "partNumber": 2, "quantity": 2, "topic": null }}` (User nói "2 câu" → quantity = 2)
                 * Input: `"tạo 5 câu Reading Part 5 về giới từ"`
                     Output: `{{ "partNumber": 5, "quantity": 5, "topic": "giới từ" }}`
                 * Input: `"Cho tôi bài Listening Part 1"` (Không có số lượng)
                     Output: `{{ "partNumber": 1, "quantity": 6, "topic": null }}` (Lấy quantity=6 từ bảng mặc định)
                 * Input: `"Tạo 1 đoạn hội thoại Listening Part 3 chủ đề đặt phòng khách sạn"`
-                    Output: `{{ "partNumber": 3, "quantity": 1, "topic": "đặt phòng khách sạn" }}`
+                    Output: `{{ "partNumber": 3, "quantity": 1, "topic": "đặt phòng khách sạn" }}` (User nói "1 đoạn" → quantity = 1)
                 * Input: `"tạo đề Listening Part 2"` (Không có số lượng)
                     Output: `{{ "partNumber": 2, "quantity": 25, "topic": null }}` (Lấy quantity=25 từ bảng)
                 * Input: `"Reading Part 6 chủ đề môi trường"` (Không có số lượng)
@@ -241,9 +263,9 @@ namespace ServiceLayer.AI.Prompt
                     new AIGeneratedQuestionDTO
                     {
                         PartId = 1,
-                        QuestionType = "Listening_Photograph",
+                        QuestionType = "Listening",
                         StemText = "Choose the statement that best describes the picture.",
-                        Explanation = "Lựa chọn (A) mô tả đúng nhất hành động trong ảnh: 'The woman is pointing at the screen'. Các lựa chọn khác không khớp với bối cảnh.",
+                        Explanation = "Lựa chọn (B) mô tả đúng nhất hành động trong ảnh: 'The woman is pointing at the screen'. Các lựa chọn khác không khớp với bối cảnh.",
                         ScoreWeight = 1,
                         Time = 60,
                         Options = new List<AIGeneratedOptionDTO>
@@ -261,43 +283,71 @@ namespace ServiceLayer.AI.Prompt
 
             string jsonExample = JsonConvert.SerializeObject(exampleDto, Formatting.Indented);
 
-            return $"""
-            Bạn là một chuyên gia tạo đề thi **TOEIC Listening Part 1 – Photographs**.
+                return $"""
+            Bạn là chuyên gia ra đề TOEIC Listening Part 1 – Photographs theo chuẩn ETS.
 
             ---
 
-            ### 🧩 Mô tả phần thi:
-            - Ở phần này, thí sinh **xem một bức tranh** và **nghe bốn câu mô tả ngắn** (được phát một lần).
-            - Nhiệm vụ của thí sinh là **chọn câu mô tả phù hợp nhất với hình ảnh**.
-            - Có tổng cộng **6 câu (6 bức ảnh)** trong phần thi thật, mỗi câu gồm 1 ảnh và 4 lựa chọn.
+            Mô tả phần thi TOEIC Part 1:
+            - Thí sinh xem một bức ảnh và nghe bốn câu mô tả ngắn (chỉ nghe một lần).
+            - Nhiệm vụ là chọn câu mô tả đúng nhất với hình ảnh.
+            - Mỗi đề Part 1 gồm 6 câu hỏi (6 bức ảnh).
 
             ---
 
-            ### 🎯 Nhiệm vụ:
-            Tạo ra **{quantity} bộ đề Part 1**, mỗi bộ tương ứng **1 bức ảnh**.  
-            Với mỗi bộ đề (`Prompt`), cần bao gồm:
+            Quy tắc TOEIC Part 1 bắt buộc:
+            - Mỗi ảnh chỉ mô tả một hành động chính đang diễn ra.
+            - Chỉ dùng thì Present Continuous hoặc Present Simple.
+            - Không suy đoán cảm xúc, ý định hoặc hành động trong tương lai.
+            - Không dùng câu hỏi hoặc câu mệnh lệnh.
+            - Không dùng từ mang tính phán đoán như: seems, probably, might.
 
-            1. **Mô tả ảnh (`ReferenceImageUrl`)**  
-               - Viết **một mô tả chi tiết bằng tiếng Anh** cho bức ảnh (ví dụ: “A man is repairing a bicycle in front of a shop”).  
-               - Mô tả này sẽ được dùng để **tạo ảnh minh họa bằng AI** sau này.  
-
-            2. **Câu nói mô tả ảnh (`ReferenceAudioUrl`)**  
-               - Mô tả chi tiết hình ảnh với 4 câu bằng tiếng Anh để người học hiểu rõ hơn về hình ảnh, đặt trong `ReferenceAudioUrl`.  
-               - Các câu này là **âm thanh** mà thí sinh sẽ nghe.  
-
-            3. **Tạo câu hỏi (`Questions`)**  
-               - Mỗi `Question` đại diện cho **một bức ảnh**.  
-               - Thêm giải thích (`Explanation`) ngắn gọn **bằng tiếng Việt**, nói rõ vì sao đáp án đúng.
-
-            4. **Các trường bắt buộc khác:**  
-               - `ExamExamTitle`, `Skill`, `PartLabel`, `PartId`, `QuestionType`, `ScoreWeight`, `Time`.
-           
             ---
 
-            ### 🧠 Ví dụ cấu trúc JSON (1 ảnh mẫu):
+            Quy tắc tạo đáp án sai (distractors):
+            Trong 3 đáp án sai, cần có:
+            - 1 câu dùng động từ gần giống (holding / carrying / placing…).
+            - 1 câu đúng người nhưng sai hành động.
+            - 1 câu đúng hành động nhưng sai đối tượng hoặc vị trí.
+
+            ---
+
+            Phân bổ độ khó (bắt buộc):
+            - Prompt 1–2: Dễ (1 người, hành động rõ ràng).
+            - Prompt 3–4: Trung bình (2 người trở lên, bối cảnh công việc hoặc nơi công cộng).
+            - Prompt 5–6: Khó (nhiều người, có bẫy vị trí, đối tượng hoặc passive voice).
+
+            ---
+
+            Nhiệm vụ:
+            Tạo {quantity} Prompt TOEIC Listening Part 1, mỗi Prompt tương ứng một bức ảnh.
+
+            Mỗi Prompt phải bao gồm:
+
+            1. ReferenceImageUrl  
+            - Là mô tả chi tiết bằng tiếng Anh của hình ảnh.
+            - Dùng để AI tạo ảnh minh họa.
+
+            2. ReferenceAudioUrl  
+            - Là nội dung audio gồm đúng 4 câu mô tả.
+            - Nội dung phải trùng với 4 options.
+            - Không thêm mô tả hay giải thích ngoài 4 câu.
+
+            3. Questions  
+            - Mỗi Prompt chỉ có 1 Question.
+            - PartId luôn bằng 1.
+            - QuestionType = Listening.
+            - Có Explanation bằng tiếng Việt, giải thích vì sao đáp án đúng.
+
+            ---
+            Quy tắc về vị trí đáp án đúng:
+            - Đáp án đúng phải được phân bố NGẪU NHIÊN giữa các lựa chọn A, B, C, D.
+            - Không được để tất cả câu có cùng vị trí đáp án đúng.
+            - Trong một đề 6 câu, vị trí đáp án đúng phải đa dạng (ví dụ: A, C, D, B, A, C).
+            
+            Ví dụ JSON mẫu (1 Prompt):
             ```json
             {jsonExample}
-            ```
 
             ---
 
@@ -350,37 +400,86 @@ namespace ServiceLayer.AI.Prompt
             string jsonExample = JsonConvert.SerializeObject(exampleDto, Formatting.Indented);
             
             return $"""
-    You are an expert TOEIC Listening Part 2 question generator.
+    Bạn là chuyên gia ra đề TOEIC Listening Part 2 – Question-Response theo chuẩn ETS.
 
-    **CRITICAL REQUIREMENT:**
-    - You MUST generate EXACTLY {quantity} prompts. NO MORE, NO LESS.
-    - The Prompts array MUST contain precisely {quantity} items.
-    - Count carefully before returning the JSON.
+    ---
 
-    **Structure (for EACH of the {quantity} prompts):**
-    - 1 question/statement in ReferenceAudioUrl
-    - 1 Question object with:
-      - StemText (same as ReferenceAudioUrl)
-      - 3 Options (A/B/C), only 1 correct
-      - Vietnamese Explanation
+    Mô tả phần thi TOEIC Part 2:
+    - Thí sinh nghe một câu hỏi hoặc câu phát biểu (chỉ nghe một lần).
+    - Sau đó nghe ba đáp án (A, B, C).
+    - Nhiệm vụ là chọn đáp án phù hợp nhất với câu hỏi/phát biểu.
+    - Mỗi đề Part 2 gồm 25 câu hỏi.
 
-    **Example (1 prompt):**
+    ---
+
+    Quy tắc TOEIC Part 2 bắt buộc:
+    - Câu hỏi phải tự nhiên, ngắn gọn (5-10 từ).
+    - Các loại câu hỏi: WH-questions (What, Where, When, Who, Why, How), Yes/No questions, Choice questions, Statement responses.
+    - Đáp án đúng phải trả lời trực tiếp hoặc gián tiếp hợp lý với câu hỏi.
+    - Không dùng từ mang tính phán đoán như: seems, probably, might trong câu hỏi.
+
+    ---
+
+    Quy tắc tạo đáp án sai (distractors):
+    Trong 2 đáp án sai, cần có:
+    - 1 đáp án có từ phát âm tương tự hoặc từ cùng chủ đề (sound-alike trap).
+    - 1 đáp án trả lời sai ngữ cảnh (wrong context).
+    - Tránh đáp án quá hiển nhiên sai hoặc không liên quan.
+
+    ---
+
+    Phân bổ độ khó (bắt buộc):
+    - Prompt 1–10: Dễ (WH-questions trực tiếp, đáp án rõ ràng).
+    - Prompt 11–20: Trung bình (Yes/No questions, Statement responses, hoặc câu hỏi gián tiếp).
+    - Prompt 21–25: Khó (Statement responses phức tạp, đáp án gián tiếp, có bẫy về âm thanh hoặc ngữ cảnh).
+
+    ---
+
+    Quy tắc về vị trí đáp án đúng:
+    - Đáp án đúng phải được phân bố NGẪU NHIÊN giữa các lựa chọn A, B, C.
+    - Không được để tất cả câu có cùng vị trí đáp án đúng.
+    - Trong một đề 25 câu, vị trí đáp án đúng phải đa dạng và cân bằng (khoảng 8-9 câu cho mỗi vị trí A, B, C).
+
+    ---
+
+    Nhiệm vụ:
+    Tạo CHÍNH XÁC {quantity} Prompt TOEIC Listening Part 2. KHÔNG HƠN, KHÔNG KÉM.
+
+    Mỗi Prompt phải bao gồm:
+
+    1. ReferenceAudioUrl  
+    - Là câu hỏi hoặc câu phát biểu ngắn gọn bằng tiếng Anh.
+    - Không thêm mô tả hay giải thích.
+
+    2. Questions  
+    - Mỗi Prompt chỉ có 1 Question.
+    - PartId luôn bằng 2.
+    - QuestionType = Listening.
+    - StemText = "Listen and choose the most appropriate answer."
+    - Có Explanation bằng tiếng Việt, giải thích vì sao đáp án đúng và tại sao các đáp án khác sai.
+
+    3. Options
+    - Chỉ có 3 options (A, B, C).
+    - Chỉ 1 option có IsCorrect = true.
+
+    ---
+
+    Ví dụ JSON mẫu (1 Prompt):
     ```json
     {jsonExample}
     ```
 
-    **Validation before response:**
-    - Check: Prompts.length === {quantity} ✓
-    - Check: Each Prompt has 1 Question ✓
-    - Check: Each Question has 3 Options ✓
+    ---
 
-    **Output format:**
-    - Return ONLY valid JSON (AIGeneratedExamDTO)
-    - No markdown blocks (```json)
-    - No explanations
-    - No extra text
+    ### ⚠️ Lưu ý:
+    - Trả về **một đối tượng JSON duy nhất** theo cấu trúc `AIGeneratedExamDTO`.
+    - Mảng Prompts phải chứa CHÍNH XÁC {quantity} items.
+    - Mỗi Prompt có đúng 1 Question.
+    - Mỗi Question có đúng 3 Options.
+    - Không thêm bất kỳ markdown, text mô tả hay lời giải thích bên ngoài JSON.
+    - Đảm bảo tất cả các chuỗi đều là tiếng Anh chuẩn, tự nhiên và dễ hiểu.
 
-    Generate EXACTLY {quantity} prompts now:
+    Hãy bắt đầu tạo **{quantity} câu hỏi Part 2 (Question-Response)** ngay bây giờ.
     """;
         }
 
@@ -400,7 +499,7 @@ namespace ServiceLayer.AI.Prompt
                 ReferenceAudioUrl = "\"A woman asks a man, \\\"Hi Tom, do you have a moment to talk about the quarterly report?\\\" The man replies, \\\"Sure, come on in. I was just reviewing the sales data. Is there a problem?\\\" The woman says, \\\"Not a problem, but I think we should include the customer feedback from last month's survey. It provides some valuable insights.\\\" The man responds, \\\"That's a great idea. Can you summarize the key findings for me by noon?\\\"", // Cả hai đều dùng kịch bản tường thuật
                 Questions = new List<AIGeneratedQuestionDTO> {
                     new AIGeneratedQuestionDTO {
-                        PartId = 3, QuestionType = "MultipleChoice_Conversation",
+                        PartId = 3, QuestionType = "Listening",
                         StemText = "What are the speakers mainly discussing?",
                         Explanation = "Người kể chuyện cho biết cuộc trò chuyện bắt đầu về 'the quarterly report' và các chi tiết sau đó đều xoay quanh nó.",
                         ScoreWeight = 1, Time = 30,
@@ -411,7 +510,7 @@ namespace ServiceLayer.AI.Prompt
                         }
                     },
                     new AIGeneratedQuestionDTO {
-                        PartId = 3, QuestionType = "MultipleChoice_Conversation",
+                        PartId = 3, QuestionType = "Listening",
                         StemText = "What does the woman suggest?",
                         Explanation = "Theo lời tường thuật, người phụ nữ nói 'I think we should include the customer feedback from last month's survey.'",
                         ScoreWeight = 1, Time = 30,
@@ -422,7 +521,7 @@ namespace ServiceLayer.AI.Prompt
                         }
                     },
                      new AIGeneratedQuestionDTO {
-                        PartId = 3, QuestionType = "MultipleChoice_Conversation",
+                        PartId = 3, QuestionType = "Listening",
                         StemText = "What does the man ask the woman to do?",
                         Explanation = "Người kể chuyện thuật lại lời người đàn ông yêu cầu: 'Can you summarize the key findings for me by noon?'.",
                         ScoreWeight = 1, Time = 30,
@@ -443,7 +542,7 @@ namespace ServiceLayer.AI.Prompt
                 ReferenceAudioUrl = "\"A woman asks a man, \\\"Hi Tom, do you have a moment to talk about the quarterly report?\\\" The man replies, \\\"Sure, come on in. I was just reviewing the sales data. Is there a problem?\\\" The woman says, \\\"Not a problem, but I think we should include the customer feedback from last month's survey. It provides some valuable insights.\\\" The man responds, \\\"That's a great idea. Can you summarize the key findings for me by noon?\\\"", // Cả hai đều dùng kịch bản tường thuật
                 Questions = new List<AIGeneratedQuestionDTO> {
                     new AIGeneratedQuestionDTO {
-                        PartId = 3, QuestionType = "MultipleChoice_Conversation",
+                        PartId = 3, QuestionType = "Listening",
                         StemText = "What are the speakers mainly discussing?",
                         Explanation = "Người kể chuyện cho biết cuộc trò chuyện bắt đầu về 'the quarterly report' và các chi tiết sau đó đều xoay quanh nó.",
                         ScoreWeight = 1, Time = 30,
@@ -454,7 +553,7 @@ namespace ServiceLayer.AI.Prompt
                         }
                     },
                     new AIGeneratedQuestionDTO {
-                        PartId = 3, QuestionType = "MultipleChoice_Conversation",
+                        PartId = 3, QuestionType = "Listening",
                         StemText = "What does the woman suggest?",
                         Explanation = "Theo lời tường thuật, người phụ nữ nói 'I think we should include the customer feedback from last month's survey.'",
                         ScoreWeight = 1, Time = 30,
@@ -465,7 +564,7 @@ namespace ServiceLayer.AI.Prompt
                         }
                     },
                      new AIGeneratedQuestionDTO {
-                        PartId = 3, QuestionType = "MultipleChoice_Conversation",
+                        PartId = 3, QuestionType = "Listening",
                         StemText = "What does the man ask the woman to do?",
                         Explanation = "Người kể chuyện thuật lại lời người đàn ông yêu cầu: 'Can you summarize the key findings for me by noon?'.",
                         ScoreWeight = 1, Time = 30,
@@ -547,7 +646,7 @@ namespace ServiceLayer.AI.Prompt
                     new AIGeneratedQuestionDTO
                     {
                         PartId = 4,
-                        QuestionType = "MultipleChoice_Talk",
+                        QuestionType = "Listening",
                         StemText = "What is the purpose of the talk?",
                         Explanation = "The speaker says this is a reminder about the annual company picnic.",
                         ScoreWeight = 1,
@@ -563,7 +662,7 @@ namespace ServiceLayer.AI.Prompt
                     new AIGeneratedQuestionDTO
                     {
                         PartId = 4,
-                        QuestionType = "MultipleChoice_Talk",
+                        QuestionType = "Listening",
                         StemText = "Where will the event take place?",
                         Explanation = "The speaker clearly mentions Riverside Park as the venue.",
                         ScoreWeight = 1,
@@ -579,7 +678,7 @@ namespace ServiceLayer.AI.Prompt
                     new AIGeneratedQuestionDTO
                     {
                         PartId = 4,
-                        QuestionType = "MultipleChoice_Talk",
+                        QuestionType = "Listening",
                         StemText = "What will be provided to participants?",
                         Explanation = "Lunch will be provided around noon.",
                         ScoreWeight = 1,
@@ -652,7 +751,7 @@ namespace ServiceLayer.AI.Prompt
                     new AIGeneratedQuestionDTO
                     {
                         PartId = 5,
-                        QuestionType = "MultipleChoice_SentenceCompletion",
+                        QuestionType = "Reading",
                         StemText = "The team ...... the project last month.",
                         Explanation = "Thì quá khứ đơn → 'completed'",
                         ScoreWeight = 1,
@@ -676,7 +775,7 @@ namespace ServiceLayer.AI.Prompt
                     new AIGeneratedQuestionDTO
                     {
                         PartId = 5,
-                        QuestionType = "MultipleChoice_SentenceCompletion",
+                        QuestionType = "Reading",
                         StemText = "Submit reports ...... Friday.",
                         Explanation = "'By' chỉ thời hạn",
                         ScoreWeight = 1,
@@ -721,7 +820,7 @@ namespace ServiceLayer.AI.Prompt
       - StemText: Incomplete sentence with "......" for the blank
       - 4 Options (A/B/C/D), only 1 IsCorrect=true
       - Explanation in Vietnamese
-      - PartId: 5, QuestionType: "MultipleChoice_SentenceCompletion"
+      - PartId: 5, QuestionType: "Reading"
       - ScoreWeight: 1, Time: 30
 
     **Grammar/Vocabulary focus:**
@@ -761,7 +860,7 @@ namespace ServiceLayer.AI.Prompt
                          Description = "To: All Staff\nSubject: Office Renovation Update\nPlease be advised that the main entrance [__1__] closed next Monday due to ongoing renovations. Access to the building will be available [__2__] the rear entrance near the parking lot. [__3__]. We expect the work to be completed by Friday. Thank you for your [__4__].",
                          Questions = new List<AIGeneratedQuestionDTO> {
                              new AIGeneratedQuestionDTO {
-                                 PartId = 6, QuestionType = "MultipleChoice_TextCompletion",
+                                 PartId = 6, QuestionType = "Reading",
                                  StemText = "Select the best word for blank [1]", // Câu hỏi chỉ vị trí blank
                                  Explanation = "'Will be' is needed...",
                                  ScoreWeight = 1, Time = 45,
@@ -821,7 +920,7 @@ namespace ServiceLayer.AI.Prompt
                 Questions = new List<AIGeneratedQuestionDTO> {
                     new AIGeneratedQuestionDTO {
                         PartId = 7,
-                        QuestionType = "MultipleChoice_SinglePassage",
+                        QuestionType = "Reading",
                         StemText = "What is the main purpose of the email?",
                         Explanation = "Email thông báo về chính sách làm việc từ xa mới ('New Remote Work Policy').",
                         ScoreWeight = 1,
@@ -835,7 +934,7 @@ namespace ServiceLayer.AI.Prompt
                     },
                     new AIGeneratedQuestionDTO {
                         PartId = 7,
-                        QuestionType = "MultipleChoice_SinglePassage",
+                        QuestionType = "Reading",
                         StemText = "When will the new policy take effect?",
                         Explanation = "Email nói rõ 'Effective April 1st'.",
                         ScoreWeight = 1,
@@ -849,7 +948,7 @@ namespace ServiceLayer.AI.Prompt
                     },
                     new AIGeneratedQuestionDTO {
                         PartId = 7,
-                        QuestionType = "MultipleChoice_SinglePassage",
+                        QuestionType = "Reading",
                         StemText = "What are employees asked to do by March 25th?",
                         Explanation = "Email yêu cầu 'submit your preferred remote work schedule to your direct manager by March 25th'.",
                         ScoreWeight = 1,
@@ -903,7 +1002,7 @@ namespace ServiceLayer.AI.Prompt
                 Questions = new List<AIGeneratedQuestionDTO> {
                     new AIGeneratedQuestionDTO {
                         PartId = 8,
-                        QuestionType = "SPEAKING",
+                        QuestionType = "Speaking",
                         StemText = "Read the text aloud clearly and naturally.",
                         ScoreWeight = 3,
                         Time = 45,
@@ -927,7 +1026,7 @@ namespace ServiceLayer.AI.Prompt
         - Phải chứa đoạn văn cần đọc (dài khoảng 100-150 từ) trong trường `Description`.
         - Phải chứa **MỘT** đối tượng `AIGeneratedQuestionDTO` trong mảng `Questions`. Đối tượng này dùng để lưu:
             - `PartId`: 8
-            - `QuestionType`: "ReadAloud"
+            - `QuestionType`: "Speaking"
             - `StemText`: Hướng dẫn chung như "Read the text aloud clearly and naturally."
             - `ScoreWeight`: Điểm cho phần đọc (ví dụ: 3).
             - `Time`: Tổng thời gian cho phần đọc (ví dụ: 90 giây = 45s chuẩn bị + 45s đọc).
@@ -964,7 +1063,7 @@ namespace ServiceLayer.AI.Prompt
                 Questions = new List<AIGeneratedQuestionDTO> {
                     new AIGeneratedQuestionDTO {
                         PartId = 9,
-                        QuestionType = "SPEAKING",
+                        QuestionType = "Speaking",
                         StemText = "Describe the picture in detail.",
                         ScoreWeight = 3,
                         Time = 45,
@@ -1016,7 +1115,7 @@ namespace ServiceLayer.AI.Prompt
                 Questions = new List<AIGeneratedQuestionDTO> {
                     new AIGeneratedQuestionDTO {
                         PartId = 10,
-                        QuestionType = "SPEAKING",
+                        QuestionType = "Speaking",
                         StemText = "How often do you read books?",
                         ScoreWeight = 3,
                         Time = 60,
@@ -1024,7 +1123,7 @@ namespace ServiceLayer.AI.Prompt
                     },
                     new AIGeneratedQuestionDTO {
                         PartId = 10,
-                        QuestionType = "SPEAKING",
+                        QuestionType = "Speaking",
                         StemText = "What kind of books do you enjoy reading the most?",
                         ScoreWeight = 3,
                         Time = 60,
@@ -1032,7 +1131,7 @@ namespace ServiceLayer.AI.Prompt
                     },
                     new AIGeneratedQuestionDTO {
                         PartId = 10,
-                        QuestionType = "SPEAKING",
+                        QuestionType = "Speaking",
                         StemText = "Describe your favorite place to read.",
                         ScoreWeight = 3,
                         Time = 60,
@@ -1089,7 +1188,7 @@ namespace ServiceLayer.AI.Prompt
                 Questions = new List<AIGeneratedQuestionDTO> {
                     new AIGeneratedQuestionDTO {
                         PartId = 11,
-                        QuestionType = "SPEAKING",
+                        QuestionType = "Speaking",
                         StemText = "What time does the conference begin?",
                         ScoreWeight = 3,
                         Time = 30,
@@ -1097,7 +1196,7 @@ namespace ServiceLayer.AI.Prompt
                     },
                     new AIGeneratedQuestionDTO {
                         PartId = 11,
-                        QuestionType = "SPEAKING",
+                        QuestionType = "Speaking",
                         StemText = "Could you tell me what Workshop A is about?",
                         ScoreWeight = 3,
                         Time = 30,
@@ -1105,7 +1204,7 @@ namespace ServiceLayer.AI.Prompt
                     },
                     new AIGeneratedQuestionDTO {
                         PartId = 11,
-                        QuestionType = "SPEAKING",
+                        QuestionType = "Speaking",
                         StemText = "How long is the coffee break?",
                         ScoreWeight = 3,
                         Time = 30,
@@ -1159,7 +1258,7 @@ namespace ServiceLayer.AI.Prompt
                 Questions = new List<AIGeneratedQuestionDTO> {
                     new AIGeneratedQuestionDTO {
                         PartId = 12,
-                        QuestionType = "SPEAKING",
+                        QuestionType = "Speaking",
                         StemText = "Some people prefer to work for a large company, while others prefer a small company. Which do you prefer and why? Include specific reasons and examples to support your opinion.",
                         ScoreWeight = 5,
                         Time = 60,
@@ -1225,7 +1324,7 @@ namespace ServiceLayer.AI.Prompt
                     new AIGeneratedQuestionDTO
                     {
                         PartId = 19,
-                        QuestionType = "WRITING",
+                        QuestionType = "Writing",
                         // Hướng dẫn cố định
                         StemText = "Write ONE sentence based on the picture using the TWO words or phrases provided.",
                         // Câu mẫu đúng (để AI học cách viết)
@@ -1306,7 +1405,7 @@ namespace ServiceLayer.AI.Prompt
                 Questions = new List<AIGeneratedQuestionDTO> {
                     new AIGeneratedQuestionDTO {
                         PartId = 14, 
-                        QuestionType = "WRITING",
+                        QuestionType = "Writing",
                         // Hướng dẫn viết nằm trong StemText
                         StemText = "Read the email. Respond to the Marketing Team as a staff member. In your email, ask TWO questions and make ONE suggestion about the survey.",
                         // Email mẫu nằm trong Explanation
@@ -1369,7 +1468,7 @@ namespace ServiceLayer.AI.Prompt
                     new AIGeneratedQuestionDTO
                     {
                         PartId = 2,
-                        QuestionType = "WRITING",
+                        QuestionType = "Writing",
                         StemText = "Do you agree or disagree with the following statement? 'Technology makes people less creative.' Use specific reasons and examples to support your answer.",
                         Explanation = "[Sample Outline:\n- Introduction: State opinion (agree/disagree).\n- Body Paragraph 1: Reason 1 + Example...\n- Conclusion: Restate opinion...]",
                         ScoreWeight = 5,

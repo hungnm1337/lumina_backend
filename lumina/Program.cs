@@ -184,7 +184,7 @@ namespace lumina
 
             // Chat Services
             builder.Services.AddScoped<IAIChatService, AIChatService>();
-            builder.Services.AddScoped<IChatService, ChatService>();
+            builder.Services.AddScoped<IChatService, ChatService>(); // Uses IHttpClientFactory and IOptions<OpenAIOptions>
 
             // AI & Mapper Services
             builder.Services.AddScoped<IAIExamMapper, AIExamMapper>();
@@ -293,6 +293,9 @@ namespace lumina
                 {
                     options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
                     options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+                    // ✅ Serialize DateTime as UTC with 'Z' suffix
+                    options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+                    options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.Never;
                 });
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
