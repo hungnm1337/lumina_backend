@@ -155,12 +155,10 @@ Hãy cho tôi biết Part cụ thể nhé!");
             if (IsMultiplePartsRequest(userRequest))
             {
                 return (false, @"Xin lỗi, tôi chỉ có thể tạo câu hỏi cho từng Part một.
-
 Ví dụ:
 • Đúng: Tạo 10 câu Listening Part 1
 • Đúng: Tạo 5 câu Reading Part 7
 • Sai: Tạo đề Listening Part 1, 2, 3
-
 Hãy chọn một Part để tạo đề nhé!");
             }
 
