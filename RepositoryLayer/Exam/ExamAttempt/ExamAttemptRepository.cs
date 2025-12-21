@@ -10,7 +10,7 @@ namespace RepositoryLayer.Exam.ExamAttempt
 {
     public static class ExamAttemptStatus
     {
-        public const string Doing = "Doing";
+        public const string Not_Completed = "Not Completed";
         public const string Completed = "Completed";
     }
 
@@ -157,7 +157,8 @@ namespace RepositoryLayer.Exam.ExamAttempt
         {
             var readingAnswers = await _context.UserAnswerMultipleChoices
                 .AsNoTracking()
-                .Where(answer => answer.AttemptID == attemptId)
+                .Where(answer => answer.AttemptID == attemptId
+                    && (answer.Question.QuestionType.StartsWith("Reading")))
                 .Select(answer => new ReadingAnswerResponseDTO()
                 {
                     AttemptID = answer.AttemptID,
@@ -212,16 +213,28 @@ namespace RepositoryLayer.Exam.ExamAttempt
         private async Task<List<ListeningAnswerResponseDTO>> GetListeningAnswerByAttemptId(int attemptId)
         {
             var listeningAnswers = await _context.UserAnswerMultipleChoices
+                .Include(a => a.Question)
+                    .ThenInclude(q => q.Options)
+                .Include(a => a.Question.Prompt)
+                .Include(a => a.Question.Part)
+                .Include(a => a.SelectedOption)
                 .AsNoTracking()
                 .Where(answer => answer.AttemptID == attemptId
-                    && (answer.Question.QuestionType == "Listening" ||
-                        answer.Question.PartId >= 1 && answer.Question.PartId <= 4))
+                    && (answer.Question.QuestionType.StartsWith("Listening")))
                 .Select(answer => new ListeningAnswerResponseDTO()
                 {
                     AttemptID = answer.AttemptID,
                     Question = new DataLayer.DTOs.Exam.QuestionDTO()
                     {
-                        Options = null!,
+                        Options = answer.Question.Options
+                            .Select(option => new DataLayer.DTOs.Exam.OptionDTO()
+                            {
+                                OptionId = option.OptionId,
+                                Content = option.Content ?? string.Empty,
+                                IsCorrect = option.IsCorrect,
+                                QuestionId = option.QuestionId
+                            })
+                            .ToList(),
                         PromptId = answer.Question.PromptId,
                         QuestionId = answer.Question.QuestionId,
                         PartCode = answer.Question.Part != null ? answer.Question.Part.PartCode : string.Empty,
@@ -320,7 +333,7 @@ namespace RepositoryLayer.Exam.ExamAttempt
                 ExamID = model.ExamID,
                 ExamPartId = model.ExamPartId,
                 StartTime = model.StartTime,
-                Status = ExamAttemptStatus.Doing
+                Status = ExamAttemptStatus.Not_Completed
             };
 
             await _context.ExamAttempts.AddAsync(attempt);
@@ -343,26 +356,56 @@ namespace RepositoryLayer.Exam.ExamAttempt
         {
             try
             {
+                // 1. Lấy thông tin Option và Validate
                 var option = await _context.Options
                     .Include(o => o.Question)
                     .FirstOrDefaultAsync(o => o.OptionId == model.SelectedOptionId);
+
                 if (option == null || model.ExamAttemptId <= 0 || model.QuestionId <= 0 || option.QuestionId != model.QuestionId)
                 {
-                    throw new KeyNotFoundException($"Model invalid");
+                    // Tùy chọn: Log lỗi ở đây nếu cần thiết
+                    return false;
                 }
-                var answer = new DataLayer.Models.UserAnswerMultipleChoice()
+
+                // 2. Tính toán điểm số và tính đúng sai chung để dùng cho cả Update và Insert
+                bool isCorrect = option.IsCorrect ?? false;
+                int score = isCorrect ? (option.Question?.ScoreWeight ?? 0) : 0;
+
+                // 3. Kiểm tra xem câu trả lời đã tồn tại chưa
+                var existingAnswer = await _context.UserAnswerMultipleChoices
+                    .FirstOrDefaultAsync(x => x.AttemptID == model.ExamAttemptId
+                                           && x.QuestionId == model.QuestionId);
+
+                if (existingAnswer != null)
                 {
-                    AttemptID = model.ExamAttemptId,
-                    QuestionId = model.QuestionId,
-                    SelectedOptionId = model.SelectedOptionId,
-                    IsCorrect = option.IsCorrect ?? false,
-                    Score = (option.IsCorrect ?? false) ? (option.Question?.ScoreWeight ?? 0) : 0
-                };
-                await _context.UserAnswerMultipleChoices.AddAsync(answer);
+                    // === UPDATE ===
+                    // Cập nhật lại các trường cần thiết
+                    existingAnswer.SelectedOptionId = model.SelectedOptionId;
+                    existingAnswer.IsCorrect = isCorrect;
+                    existingAnswer.Score = score;
+
+                    // EF Core tự động track sự thay đổi của biến existingAnswer
+                }
+                else
+                {
+                    // === INSERT ===
+                    var answer = new DataLayer.Models.UserAnswerMultipleChoice()
+                    {
+                        AttemptID = model.ExamAttemptId,
+                        QuestionId = model.QuestionId,
+                        SelectedOptionId = model.SelectedOptionId,
+                        IsCorrect = isCorrect,
+                        Score = score
+                    };
+                    await _context.UserAnswerMultipleChoices.AddAsync(answer);
+                }
+
+                // 4. Lưu thay đổi vào DB
                 return await _context.SaveChangesAsync() > 0;
             }
-            catch
+            catch (Exception ex)
             {
+                // Nên log ex ở đây để debug
                 return false;
             }
         }
