@@ -603,7 +603,33 @@ Do not include any text outside the JSON object. Start your response with {{ and
 
         private async Task<ChatResponseDTO> GenerateVocabularyResponse(ChatRequestDTO request)
         {
-            // STEP 1: Validate count first
+            // STEP 0: Check if user specified exact words (comma-separated list)
+            var (isSpecificWords, specifiedWords, wordCount, specificWordsError) = DetectSpecificWordsRequest(request.Message);
+            
+            if (isSpecificWords)
+            {
+                // Handle specific words mode
+                if (!string.IsNullOrEmpty(specificWordsError))
+                {
+                    // Validation error (count mismatch or > 30 words)
+                    return new ChatResponseDTO
+                    {
+                        Answer = specificWordsError,
+                        ConversationType = "error",
+                        Suggestions = new List<string>
+                        {
+                            "tạo 3 từ vựng book, read, study",
+                            "tạo từ vựng computer, phone, internet",
+                            "generate vocabulary meeting, presentation, report"
+                        }
+                    };
+                }
+                
+                // Generate for specific words (SKIP topic validation)
+                return await GenerateSpecificVocabularies(request, specifiedWords!);
+            }
+            
+            // STEP 1: Topic-based mode - Validate count first
             var (count, countError) = ExtractVocabularyCountWithValidation(request.Message);
             if (!string.IsNullOrEmpty(countError))
             {
@@ -837,6 +863,184 @@ CRITICAL REQUIREMENTS:
             
             // Topic hợp lệ
             return (extractedTopic, null);
+        }
+
+        // Detect if user specified exact words (comma-separated list)
+        private (bool isSpecificWords, List<string>? words, int count, string? errorMessage) DetectSpecificWordsRequest(string message)
+        {
+            // Patterns to detect specific words list with optional count
+            var patterns = new[]
+            {
+                // "tạo 3 từ vựng word1, word2, word3" or "create 3 vocabulary word1, word2, word3"
+                @"(?:tạo|create|generate|make)\s+(\d+)\s+(?:từ\s*vựng|vocabulary|vocabularies|words?)\s+(.+)",
+                
+                // "tạo từ vựng word1, word2, word3" or "create vocabulary word1, word2, word3"
+                @"(?:tạo|create|generate|make)\s+(?:từ\s*vựng|vocabulary|vocabularies|words?)\s+(.+)",
+                
+                // "từ vựng word1, word2, word3" or "vocabulary word1, word2, word3"
+                @"(?:từ\s*vựng|vocabulary|vocabularies)\s+(.+)"
+            };
+            
+            foreach (var pattern in patterns)
+            {
+                var match = System.Text.RegularExpressions.Regex.Match(message, pattern, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                if (match.Success)
+                {
+                    // Determine which group has the words text
+                    string wordsText = "";
+                    int? specifiedCount = null;
+                    
+                    if (match.Groups.Count == 3 && !string.IsNullOrEmpty(match.Groups[1].Value) && char.IsDigit(match.Groups[1].Value[0]))
+                    {
+                        // Pattern with count: Group 1 = count, Group 2 = words
+                        int.TryParse(match.Groups[1].Value, out int c);
+                        specifiedCount = c;
+                        wordsText = match.Groups[2].Value.Trim();
+                    }
+                    else if (match.Groups.Count >= 2)
+                    {
+                        // Pattern without count: last group = words
+                        wordsText = match.Groups[match.Groups.Count - 1].Value.Trim();
+                    }
+                    
+                    // Check if contains comma (indicates specific words list)
+                    if (!string.IsNullOrEmpty(wordsText) && (wordsText.Contains(",") || wordsText.Contains("、")))
+                    {
+                        // Split words by comma
+                        var separators = new[] { ",", "、" };
+                        var words = wordsText.Split(separators, StringSplitOptions.RemoveEmptyEntries)
+                            .Select(w => w.Trim())
+                            .Where(w => !string.IsNullOrWhiteSpace(w))
+                            .ToList();
+                        
+                        int actualCount = words.Count;
+                        
+                        // Validate maximum 30 words
+                        if (actualCount > 30)
+                        {
+                            return (false, null, 0, "Số lượng từ vựng tối đa là 30. Vui lòng giảm số lượng xuống!");
+                        }
+                        
+                        // Validate count matches if specified
+                        if (specifiedCount.HasValue)
+                        {
+                            if (specifiedCount.Value != actualCount)
+                            {
+                                return (false, null, 0, $"Số lượng bạn chỉ định ({specifiedCount}) không khớp với danh sách từ ({actualCount} từ). Vui lòng kiểm tra lại!");
+                            }
+                            
+                            // Validate count > 0
+                            if (specifiedCount.Value <= 0)
+                            {
+                                return (false, null, 0, "Số lượng từ vựng phải lớn hơn 0. Vui lòng nhập số từ 1 đến 30!");
+                            }
+                        }
+                        
+                        // All validations passed
+                        return (true, words, actualCount, null);
+                    }
+                }
+            }
+            
+            // Not a specific words request
+            return (false, null, 0, null);
+        }
+
+        // Generate vocabularies for user-specified exact words
+        private async Task<ChatResponseDTO> GenerateSpecificVocabularies(ChatRequestDTO request, List<string> words)
+        {
+            int count = words.Count;
+            string wordsList = string.Join(", ", words);
+            
+            var prompt = $@"You are a TOEIC vocabulary expert. Generate vocabulary definitions for SPECIFIC words provided by the user.
+
+**User's Request:** {request.Message}
+**Specific Words to Define:** {wordsList}
+**Number of words:** {count}
+
+**Instructions:**
+Generate vocabulary entries for EXACTLY these {count} words in order: {wordsList}
+
+For EACH word, you MUST:
+1. **Word field MUST ALWAYS be in ENGLISH:**
+   - If user input is Vietnamese (e.g., ""đọc sách"") → translate to English (""reading"")
+   - If user input is English (e.g., ""book"") → keep as English (""book"")
+   - The ""word"" field should NEVER contain Vietnamese text
+2. **Definition field MUST be in Vietnamese:**
+   - Provide Vietnamese meaning/translation
+3. Include example sentence in English
+4. Include word type (Noun, Verb, Adjective, Gerund, etc.)
+5. Determine appropriate TOEIC category (Business, Travel, Technology, Education, etc.)
+6. Include a detailed image description for that specific word
+
+**CRITICAL TRANSLATION RULES:**
+- User input ""đọc sách"" (Vietnamese) → word: ""reading"" (English), definition: ""đọc, việc đọc sách""
+- User input ""sách"" (Vietnamese) → word: ""book"" (English), definition: ""sách, quyển sách""
+- User input ""book"" (English) → word: ""book"" (English), definition: ""sách, quyển sách""
+- ALL vocabulary entries MUST have English word, Vietnamese definition
+
+**IMPORTANT RULES:**
+- Generate entries for ALL {count} words in the EXACT order provided
+- Do NOT skip any words or add extra words
+- Auto-detect each word's language and translate Vietnamese → English for word field
+- If input is a phrase (e.g., ""lập trình Python""), translate entire phrase to English
+
+IMPORTANT: You must respond with ONLY a valid JSON object in this exact format:
+{{
+    ""answer"": """",
+    ""vocabularies"": [
+        {{
+            ""word"": ""reading"",
+            ""definition"": ""đọc, việc đọc sách"",
+            ""example"": ""Reading books is my favorite hobby."",
+            ""typeOfWord"": ""Noun/Gerund"",
+            ""category"": ""Education"",
+            ""imageDescription"": ""A person reading a book in a comfortable chair, warm lighting, peaceful atmosphere, educational setting""
+        }},
+        {{
+            ""word"": ""book"",
+            ""definition"": ""sách, quyển sách"",
+            ""example"": ""I bought a new book yesterday."",
+            ""typeOfWord"": ""Noun"",
+            ""category"": ""Education"",
+            ""imageDescription"": ""A stack of books on a wooden table, colorful covers, library or study room setting""
+        }}
+    ],
+    ""hasSaveOption"": true,
+    ""saveAction"": ""CREATE_VOCABULARY_LIST"",
+    ""conversationType"": ""vocabulary_generation""
+}}
+
+CRITICAL REQUIREMENTS:
+- You MUST generate EXACTLY {count} vocabulary entries (not more, not less)
+- EVERY vocabulary item MUST have an imageDescription field (do not skip any)
+- Process words in the exact order given: {wordsList}
+- Set ""answer"" to empty string ("""")
+- Do not include any text outside the JSON object
+- Start your response with {{ and end with }}.";
+
+            var response = await CallOpenAIAPI(prompt);
+            
+            // Generate Pollinations URLs for images (same as topic-based generation)
+            if (response.Vocabularies != null && response.Vocabularies.Count > 0)
+            {
+                response.HasSaveOption = true;
+                response.SaveAction = "CREATE_VOCABULARY_LIST";
+                
+                foreach (var vocab in response.Vocabularies)
+                {
+                    // Nếu không có imageDescription, tạo một mô tả đơn giản từ word
+                    if (string.IsNullOrWhiteSpace(vocab.ImageDescription))
+                    {
+                        vocab.ImageDescription = $"A visual representation of {vocab.Word.ToLower()}, {vocab.Definition}";
+                    }
+                    
+                    var pollinationsUrl = GeneratePollinationsImageUrl(vocab.ImageDescription);
+                    vocab.ImageUrl = pollinationsUrl;
+                }
+            }
+            
+            return response;
         }
 
         // Generate Pollinations AI image URL from description
