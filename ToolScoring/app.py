@@ -107,6 +107,76 @@ class CaptionResponse(BaseModel):
     caption: str
 
 # -----------------------------------------------------------------------------
+# Contradiction Detection (for Part 2)
+# -----------------------------------------------------------------------------
+def detect_semantic_contradiction(transcript_text: str, sample_answer_text: str) -> float:
+    """
+    INTELLIGENT contradiction detection using Semantic Similarity + Negation Analysis.
+    
+    Strategy:
+    1. Find sentences with negation words (not, no, cannot, nobody, etc.)
+    2. Remove negation words to get the actual content being negated
+    3. Compare semantic similarity between negated content and sample answer
+    4. If similarity is HIGH → CONTRADICTION!
+    
+    Example:
+        Sample: "people walking in the market"
+        Transcript: "I cannot see anyone"
+        → Remove "cannot": "I see anyone"
+        → Similarity("see anyone", "people walking") = HIGH
+        → CONTRADICTION!
+    
+    Returns: Contradiction penalty (0-50 points)
+    """
+    import re
+    
+    negation_words = [
+        'not', 'no', 'cannot', "can't", 'cant',
+        'nobody', 'no one', 'noone', 'nothing', 'nowhere',
+        'neither', 'never', 'none', 'without'
+    ]
+    
+    sentences = re.split(r'[.!?]+', transcript_text)
+    sentences = [s.strip() for s in sentences if s.strip()]
+    
+    contradiction_penalty = 0
+    
+    for sentence in sentences:
+        sentence_lower = sentence.lower()
+        has_negation = any(neg in sentence_lower for neg in negation_words)
+        
+        if has_negation:
+            clean_sentence = sentence_lower
+            for neg in negation_words:
+                clean_sentence = clean_sentence.replace(neg, ' ')
+            clean_sentence = ' '.join(clean_sentence.split()).strip()
+            
+            if len(clean_sentence) < 5:
+                continue
+            
+            try:
+                emb_clean = semantic_model.encode(clean_sentence, convert_to_tensor=True)
+                emb_sample = semantic_model.encode(sample_answer_text, convert_to_tensor=True)
+                similarity = util.cos_sim(emb_clean, emb_sample)
+                similarity_score = float(similarity.item())
+                
+                if similarity_score > 0.45:
+                    penalty_amount = similarity_score * 80
+                    contradiction_penalty += penalty_amount
+                    
+                    print(f"[CONTRADICTION] Negation + high similarity ({similarity_score:.2f}): '{sentence}'")
+                    print(f"  → Negated content: '{clean_sentence}' vs Sample: '{sample_answer_text[:50]}...'")
+                    print(f"  → Penalty: {penalty_amount:.1f} points")
+            except Exception as e:
+                print(f"[WARNING] Contradiction detection error: {e}")
+    
+    final_penalty = min(contradiction_penalty, 50)
+    if final_penalty > 0:
+        print(f"[CONTRADICTION] Total penalty: {final_penalty:.1f} points")
+    
+    return final_penalty
+
+# -----------------------------------------------------------------------------
 # Endpoint: NLP Scoring (giữ nguyên thuật toán từ main.py)
 # -----------------------------------------------------------------------------
 @app.post("/score_nlp", response_model=ScoreResponse)
@@ -365,15 +435,18 @@ def score_natural_language_processing(request: ScoreRequest):
     print(f"[NLP DEBUG] QA Relevance Score: {qa_relevance_score:.2f}")
     
     # Off-topic penalty for completely irrelevant responses
+    # CRITICAL FIX: Skip off-topic penalty for Part 2 (picture description)
+    # Part 2 questions are always generic ("Describe the picture..."), so QA relevance is meaningless
     off_topic_penalty = 0
-    if qa_relevance_score < 20:
-        # Transcript has NOTHING to do with question
-        off_topic_penalty = 30
-        print(f"[NLP DEBUG] ❌ Off-topic penalty: {off_topic_penalty} (score < 20)")
-    elif qa_relevance_score < 35:
-        # Marginally related but doesn't really answer
-        off_topic_penalty = 15
-        print(f"[NLP DEBUG] ⚠️  Off-topic penalty: {off_topic_penalty} (score < 35)")
+    if part_code != "SPEAKING_PART_2":
+        if qa_relevance_score < 20:
+            # Transcript has NOTHING to do with question
+            off_topic_penalty = 30
+            print(f"[NLP DEBUG] ❌ Off-topic penalty: {off_topic_penalty} (score < 20)")
+        elif qa_relevance_score < 35:
+            # Marginally related but doesn't really answer
+            off_topic_penalty = 15
+            print(f"[NLP DEBUG] ⚠️  Off-topic penalty: {off_topic_penalty} (score < 35)")
     
     # =================================================================
     # DIMENSION 2: Sample Answer Similarity (30% - Reference Quality)
@@ -417,15 +490,15 @@ def score_natural_language_processing(request: ScoreRequest):
     
     if not is_read_aloud:  # Only for Parts 2-5
         if part_code == "SPEAKING_PART_2":
-            # Part 2: Picture description (20-30 words optimal)
+            # Part 2: Picture description (20-50 words optimal, more flexible)
             if word_count < 10:
-                min_word_count_penalty = 40  # Severe
+                min_word_count_penalty = 40  # Severe - too short
             elif word_count < 15:
                 min_word_count_penalty = 25
             elif word_count < 20:
-                min_word_count_penalty = 15
-            elif word_count < 30:
-                min_word_count_penalty = 5   # Light - still acceptable
+                min_word_count_penalty = 10  # Reduced from 15
+            elif word_count < 50:
+                min_word_count_penalty = 0   # Optimal range 20-50 words, no penalty
                 
         elif part_code == "SPEAKING_PART_3":
             # Part 3: Short answer questions (15-25 words optimal)
@@ -551,17 +624,59 @@ def score_natural_language_processing(request: ScoreRequest):
     # =================================================================
     # FINAL 4-DIMENSIONAL CONTENT SCORE
     # =================================================================
-    # CRITICAL FIX FOR PART 2: Pictures can be described many ways
-    # Reduce sample similarity weight, increase QA relevance for Part 2
+    # INTELLIGENT PART 2 SCORING: Pictures can be described many ways
     if part_code == "SPEAKING_PART_2":
-        # Part 2: Describe a Picture
-        # Sample answer is just ONE way to describe, user can describe differently
+        # Part 2: Describe a Picture - Use sample_answer as IMAGE CONTENT ground truth
+        # Sample answer represents what's IN THE PICTURE, not just one way to describe
+        
+        # Calculate Descriptive Vocabulary Score
+        descriptive_words = {
+            'visual': ['see', 'picture', 'image', 'show', 'display', 'appear', 'visible'],
+            'colors': ['red', 'blue', 'green', 'yellow', 'white', 'black', 'colorful', 'vibrant', 'bright', 'dark'],
+            'positions': ['front', 'behind', 'next to', 'above', 'below', 'left', 'right', 'center', 'background', 'foreground'],
+            'sizes': ['large', 'small', 'big', 'tiny', 'huge', 'massive', 'little'],
+            'actions': ['walking', 'talking', 'selling', 'buying', 'standing', 'sitting', 'running', 'working'],
+            'adjectives': ['beautiful', 'busy', 'crowded', 'peaceful', 'lively', 'quiet', 'modern', 'old', 'new']
+        }
+        
+        descriptive_count = 0
+        for category, words in descriptive_words.items():
+            for word in words:
+                if word in transcript_lower:
+                    descriptive_count += 1
+        
+        # Score based on descriptive word count
+        if descriptive_count >= 8:
+            descriptive_vocab_score = 95 + min(descriptive_count - 8, 5)  # 95-100
+        elif descriptive_count >= 5:
+            descriptive_vocab_score = 80 + (descriptive_count - 5) * 5  # 80-95
+        elif descriptive_count >= 3:
+            descriptive_vocab_score = 60 + (descriptive_count - 3) * 10  # 60-80
+        else:
+            descriptive_vocab_score = descriptive_count * 20  # 0-60
+        
+        # DIMENSION 1: Sample Answer Relevance (50%) - Does description match picture content?
+        # For Part 2, sample_answer represents WHAT'S IN THE PICTURE
+        picture_content_relevance = sample_similarity_score
+        
+        # DIMENSION 2: Descriptive Vocabulary Quality (25%)
+        # Rich, visual descriptive words
+        
+        # DIMENSION 3: Completeness & Detail (15%)
+        # Already calculated above
+        
+        # DIMENSION 4: Question keywords (10%) - Basic structure like "I can see"
+        # Low weight since question is generic
+        
         content_score = (
-            qa_relevance_score * 0.50 +        # Increase: Does desc match picture? (50%)
-            sample_similarity_score * 0.20 +    # Decrease: Sample is just reference (20%)
-            keyword_coverage_score * 0.15 +     # mentions key elements (15%)
-            completeness_score * 0.15           # Sufficient detail (15%)
+            picture_content_relevance * 0.50 +  # Does desc match picture content? (50%)
+            descriptive_vocab_score * 0.25 +    # Uses rich visual vocabulary? (25%)
+            completeness_score * 0.15 +         # Sufficient detail? (15%)
+            keyword_coverage_score * 0.10       # Basic structure words? (10%)
         )
+        
+        # Apply semantic contradiction detection
+        contradiction_penalty = detect_semantic_contradiction(transcript_text, sample_answer_text)
     else:
         # Part 3, 4, 5: Standard weights
         content_score = (
@@ -575,16 +690,30 @@ def score_natural_language_processing(request: ScoreRequest):
     print(f"\n[NLP DEBUG] ========== CONTENT SCORE BREAKDOWN ==========")
     print(f"[NLP DEBUG] Part Code: {part_code}")
     print(f"[NLP DEBUG] Word Count: {word_count}")
-    print(f"[NLP DEBUG] Dimension 1 - QA Relevance: {qa_relevance_score:.2f}")
-    print(f"[NLP DEBUG] Dimension 2 - Sample Similarity: {sample_similarity_score:.2f}")
-    print(f"[NLP DEBUG] Dimension 3 - Keyword Coverage: {keyword_coverage_score:.2f}")
-    print(f"[NLP DEBUG] Dimension 4 - Completeness: {completeness_score:.2f}")
+    
+    if part_code == "SPEAKING_PART_2":
+        print(f"[NLP DEBUG] Dimension 1 - Picture Content Match: {sample_similarity_score:.2f}")
+        print(f"[NLP DEBUG] Dimension 2 - Descriptive Vocabulary: {descriptive_vocab_score:.2f}")
+        print(f"[NLP DEBUG] Dimension 3 - Completeness: {completeness_score:.2f}")
+        print(f"[NLP DEBUG] Dimension 4 - Structure Keywords: {keyword_coverage_score:.2f}")
+    else:
+        print(f"[NLP DEBUG] Dimension 1 - QA Relevance: {qa_relevance_score:.2f}")
+        print(f"[NLP DEBUG] Dimension 2 - Sample Similarity: {sample_similarity_score:.2f}")
+        print(f"[NLP DEBUG] Dimension 3 - Keyword Coverage: {keyword_coverage_score:.2f}")
+        print(f"[NLP DEBUG] Dimension 4 - Completeness: {completeness_score:.2f}")
+    
     print(f"[NLP DEBUG] Off-topic Penalty: -{off_topic_penalty}")
+    if part_code == "SPEAKING_PART_2":
+        print(f"[NLP DEBUG] Contradiction Penalty: -{contradiction_penalty:.1f}")
     print(f"[NLP DEBUG] Word Count Penalty: -{min_word_count_penalty}")
     print(f"[NLP DEBUG] Content (before penalties): {content_score:.2f}")
     
     # Apply off-topic penalty (from Dimension 1)
     content_score = content_score - off_topic_penalty
+    
+    # Apply contradiction penalty (Part 2 only)
+    if part_code == "SPEAKING_PART_2":
+        content_score = content_score - contradiction_penalty
     
     # Apply minimum word count penalty
     content_score = content_score - min_word_count_penalty
