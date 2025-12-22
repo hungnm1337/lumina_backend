@@ -137,7 +137,34 @@ namespace ServiceLayer.Exam.Speaking
 
             Console.WriteLine($"[Speaking] Transcript result: {azureResult.Transcript}");
 
-            var nlpResult = await GetNlpScoresAsync(azureResult.Transcript, question.SampleAnswer);
+            var nlpResult = await GetNlpScoresAsync(azureResult.Transcript, question.SampleAnswer, question.StemText, partCode);
+
+            // =================================================================
+            // CRITICAL FIX: Calculate ACTUAL text coverage for Part 1
+            // Azure CompletenessScore is misleading - it measures pronunciation
+            // accuracy of spoken words, NOT % of reference text covered.
+            // We need to calculate: (words in transcript) / (words in reference)
+            // =================================================================
+            double actualCoveragePercent = 100.0;  // Default for non-Part1
+            
+            if (partCode?.ToUpper() == "SPEAKING_PART_1")
+            {
+                var transcriptWords = azureResult.Transcript?
+                    .Split(new[] { ' ', '\t', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Length ?? 0;
+                
+                var referenceWords = question.SampleAnswer
+                    .Split(new[] { ' ', '\t', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Length;
+                
+                if (referenceWords > 0)
+                {
+                    actualCoveragePercent = (double)transcriptWords / referenceWords * 100.0;
+                }
+                
+                Console.WriteLine(
+                    $"[Speaking] Part 1 Coverage: {transcriptWords}/{referenceWords} words = {actualCoveragePercent:F1}%");
+            }
 
             var weights = _scoringWeightService.GetWeightsForPart(partCode);
             var overallScore = _scoringWeightService.CalculateOverallScore(
@@ -147,7 +174,8 @@ namespace ServiceLayer.Exam.Speaking
                 azureResult.FluencyScore,
                 nlpResult.Grammar_score,
                 nlpResult.Vocabulary_score,
-                nlpResult.Content_score
+                nlpResult.Content_score,
+                actualCoveragePercent  // Pass ACTUAL coverage, not Azure's CompletenessScore
             );
 
             Console.WriteLine($"[Speaking] OverallScore calculated: {overallScore:F1} for PartCode={partCode}");
@@ -229,7 +257,7 @@ namespace ServiceLayer.Exam.Speaking
         }
 
        
-        private async Task<NlpResponseDTO> GetNlpScoresAsync(string transcript, string sampleAnswer)
+        private async Task<NlpResponseDTO> GetNlpScoresAsync(string transcript, string sampleAnswer, string questionText, string partCode = null)
         {
             try
             {
@@ -245,7 +273,9 @@ namespace ServiceLayer.Exam.Speaking
                 var request = new NlpRequestDTO
                 {
                     Transcript = transcript,
-                    Sample_answer = sampleAnswer
+                    Sample_answer = sampleAnswer,
+                    Question = questionText,  // NEW: Pass question for QA relevance
+                    Part_code = partCode  // Pass part code for part-specific scoring
                 };
 
                 var response = await client.PostAsJsonAsync($"{nlpServiceUrl}/score_nlp", request);

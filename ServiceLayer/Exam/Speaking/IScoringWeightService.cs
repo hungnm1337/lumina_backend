@@ -15,6 +15,7 @@ namespace ServiceLayer.Exam.Speaking
             double fluencyScore,
             double grammarScore,
             double vocabularyScore,
-            double contentScore);
+            double contentScore,
+            double completenessScore = 100);
     }
 }
