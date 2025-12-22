@@ -130,21 +130,38 @@ namespace ServiceLayer.AI.Prompt
                 * Nếu không thể xác định `partNumber`, trả về 0.
 
             2.  **`quantity` (Integer):** Số lượng **cụm đề bài (prompts)** hoặc **câu hỏi đơn lẻ** cần tạo.
-                * **QUY TẮC ƯU TIÊN TUYỆT ĐỐI:**
-                    1. **HIGHEST PRIORITY**: Nếu user CHỈ ĐỊNH BẤT KỲ CON SỐ NÀO, kể cả số 1 (ví dụ: "tạo 1 câu", "1 bài", "5 câu", "10 bài", "2 đoạn"), BẮT BUỘC phải lấy CHÍNH XÁC con số đó. 
-                    2. **CRITICAL**: Số "1" cũng là một con số hợp lệ! "tạo 1 câu" = quantity 1, KHÔNG PHẢI lấy default!
-                    3. Chỉ khi HOÀN TOÀN KHÔNG CÓ CON SỐ NÀO trong request (ví dụ: "tạo đề Part X", "cho tôi bài Part Y"), mới lấy giá trị từ bảng `defaultQuantities` bên dưới.
+                * **🚨 QUY TẮC PHÁT HIỆN SỐ LƯỢNG (ĐỌC KỸ TRƯỚC KHI PARSE):**
+                    1. **Tìm CON SỐ rõ ràng**: Quét tìm các con số như 1, 2, 3, 5, 10, 20, 25, 30... trong request
+                    2. **Kiểm tra từ đi kèm**: Con số phải đi KÈM với từ chỉ đơn vị như: "câu", "bài", "đoạn", "passage", "hội thoại", "question"
+                    3. **Nếu tìm thấy CON SỐ + ĐƠN VỊ**: Lấy CHÍNH XÁC con số đó làm quantity
+                    4. **Nếu KHÔNG tìm thấy CON SỐ (chỉ có "đề", "bài", "phần" mà không có số)**: Lấy giá trị từ bảng defaultQuantities
+                
+                * **⚠️ PHÂN BIỆT QUAN TRỌNG:**
+                    - "tạo **1 đề**" → CÓ SỐ 1 → quantity = 1 ✅
+                    - "tạo **đề**" → KHÔNG CÓ SỐ → lấy default ✅
+                    - "tạo **1 câu**" → CÓ SỐ 1 + "câu" → quantity = 1 ✅
+                    - "tạo **đề part 3**" → KHÔNG CÓ SỐ (số "3" là part number, không phải quantity) → lấy default ✅
+                    - "tạo **đề part 3 topic Travel**" → KHÔNG CÓ SỐ → lấy default ✅
                 * **⚠️ CỰC KỲ QUAN TRỌNG - TRÁNH NHẦM LẪN:**
                     - Bước 1: Xác định `partNumber` CHÍNH XÁC theo mapping ở trên
                     - Bước 2: Dùng `partNumber` ĐÃ MAPPING để tìm quantity trong bảng defaultQuantities
                     - ❌ SAI: "Speaking Part 2" → tìm key 2 trong bảng → 25 (WRONG!)
                     - ✅ ĐÚNG: "Speaking Part 2" → partNumber = 9 → tìm key 9 trong bảng → 2 (CORRECT!)
-                * **Ví dụ phân biệt (CHÚ Ý ĐẶC BIỆT SỐ 1):**
-                    - "tạo 1 câu part 2" → quantity = 1 ✅ (user nói "1", KHÔNG lấy default 25!)
-                    - "tạo 2 câu part 2" → quantity = 2 ✅ (user nói "2")
-                    - "tạo 5 câu part 2" → quantity = 5 ✅ (user nói "5")
-                    - "tạo đề part 2" → quantity = 25 ✅ (không có số → lấy default)
-                    - "cho 1 bài part 3" → quantity = 1 ✅ (user nói "1", KHÔNG lấy default 5!)
+                * **Ví dụ phân tích CỤ THỂ (QUAN TRỌNG - HỌC KỸ CÁC VÍ DỤ NÀY):**
+                    
+                    **📌 Trường hợp CÓ SỐ + ĐƠN VỊ → lấy số đó:**
+                    - "tạo 1 câu part 2" → quantity = 1 ✅ (có "1 câu")
+                    - "tạo 2 câu part 2" → quantity = 2 ✅ (có "2 câu")
+                    - "tạo 5 câu part 2" → quantity = 5 ✅ (có "5 câu")
+                    - "cho 1 bài part 3" → quantity = 1 ✅ (có "1 bài")
+                    - "tạo 3 đoạn part 4" → quantity = 3 ✅ (có "3 đoạn")
+                    
+                    **📌 Trường hợp KHÔNG CÓ SỐ → lấy default:**
+                    - "tạo đề part 2" → quantity = 25 ✅ (không có số, lấy default của part 2)
+                    - "tạo đề listening part 3" → quantity = 5 ✅ (không có số, lấy default của part 3)
+                    - "tạo đề listening part 3 topic Travel" → quantity = 5 ✅ (KHÔNG có số, số "3" chỉ là part number!)
+                    - "tạo đề listening part 4 chủ đề Health" → quantity = 5 ✅ (KHÔNG có số, lấy default)
+                    - "cho tôi bài listening part 3" → quantity = 5 ✅ (không có số, lấy default)
                     - "tạo đề speaking part 2" → partNumber = 9 → quantity = 2 ✅ (lấy default của key 9, KHÔNG PHẢI key 2!)
                 * **Bảng số lượng mặc định (`defaultQuantities`) - CHỈ DÙNG KHI KHÔNG CÓ SỐ:**
                     ```json
@@ -161,15 +178,21 @@ namespace ServiceLayer.AI.Prompt
             **Ví dụ phân tích:**
 
                 * Input: `"tạo đề speaking part 2"`
-                    Output: `{{ "partNumber": 9, "quantity": 2, "topic": null }}` ⚠️ CỰC KỲ QUAN TRỌNG: Speaking Part 2 = partNumber 9 → lấy quantity từ key 9 = 2, KHÔNG PHẢI key 2 = 25!
+                    Output: `{{ "partNumber": 9, "quantity": 2, "topic": null }}` ⚠️ Không có số → lấy default từ key 9 = 2!
+                * Input: `"tạo đề listening part 3 topic Travel"`
+                    Output: `{{ "partNumber": 3, "quantity": 5, "topic": "Travel" }}` ⚠️ KHÔNG CÓ SỐ (chỉ có "đề") → lấy default 5, số "3" chỉ là part number!
+                * Input: `"tạo đề listening part 4 chủ đề Health"`
+                    Output: `{{ "partNumber": 4, "quantity": 5, "topic": "Health" }}` ⚠️ KHÔNG CÓ SỐ → lấy default 5!
+                * Input: `"tạo 1 đề listening part 3"`
+                    Output: `{{ "partNumber": 3, "quantity": 1, "topic": null }}` ⚠️ CÓ SỐ "1 đề" → quantity = 1!
                 * Input: `"tạo đề writing part 2"`
-                    Output: `{{ "partNumber": 14, "quantity": 2, "topic": null }}` ⚠️ Writing Part 2 = partNumber 14 → lấy quantity từ key 14 = 2!
+                    Output: `{{ "partNumber": 14, "quantity": 2, "topic": null }}` ⚠️ Writing Part 2 = partNumber 14 → lấy default 2!
                 * Input: `"tạo 1 câu listening part 2"`
-                    Output: `{{ "partNumber": 2, "quantity": 1, "topic": null }}` ⚠️ User nói "1 câu" → quantity = 1, KHÔNG PHẢI 25!
+                    Output: `{{ "partNumber": 2, "quantity": 1, "topic": null }}` ⚠️ CÓ "1 câu" → quantity = 1!
                 * Input: `"cho tôi 1 bài part 3"`
-                    Output: `{{ "partNumber": 3, "quantity": 1, "topic": null }}` ⚠️ User nói "1 bài" → quantity = 1, KHÔNG PHẢI 5!
+                    Output: `{{ "partNumber": 3, "quantity": 1, "topic": null }}` ⚠️ CÓ "1 bài" → quantity = 1!
                 * Input: `"tạo 2 câu part 2"`
-                    Output: `{{ "partNumber": 2, "quantity": 2, "topic": null }}` (User nói "2 câu" → quantity = 2)
+                    Output: `{{ "partNumber": 2, "quantity": 2, "topic": null }}` (CÓ "2 câu" → quantity = 2)
                 * Input: `"tạo 5 câu Reading Part 5 về giới từ"`
                     Output: `{{ "partNumber": 5, "quantity": 5, "topic": "giới từ" }}`
                 * Input: `"Cho tôi bài Listening Part 1"` (Không có số lượng)
@@ -188,6 +211,10 @@ namespace ServiceLayer.AI.Prompt
                     Output: `{{ "partNumber": 12, "quantity": 1, "topic": "công việc từ xa" }}` (Speaking Part 5 → partNumber=12)
                 * Input: `"làm giúp bài part 4 listening"` (Không có số lượng)
                     Output: `{{ "partNumber": 4, "quantity": 5, "topic": null }}` (Lấy quantity=5 từ bảng mặc định)
+                * Input: `"tạo đề listening part 4 chủ đề Health"` (Không có số lượng, CHỈ CÓ chủ đề)
+                    Output: `{{ "partNumber": 4, "quantity": 5, "topic": "Health" }}` ⚠️ KHÔNG có số → lấy default 5, KHÔNG PHẢI 1!
+                * Input: `"tạo đề listening part 3 về kinh doanh"` (Không có số lượng)
+                    Output: `{{ "partNumber": 3, "quantity": 5, "topic": "kinh doanh" }}` (Lấy quantity=5 từ bảng, KHÔNG PHẢI 1 hay 3!)
                 * Input: `"tạo đề Writing Part 2"` (Không có số lượng)
                     Output: `{{ "partNumber": 14, "quantity": 2, "topic": null }}` (Writing Part 2 → partNumber=14, lấy quantity=2)
                 * Input: `"cho tôi Writing Part 1"` (Không có số lượng)
@@ -210,26 +237,26 @@ namespace ServiceLayer.AI.Prompt
             switch (partNumber)
             {
                 // Listening
-                case 1: return CreateListeningPart1Prompt(quantity);
-                case 2: return CreateListeningPart2Prompt(quantity);
+                case 1: return CreateListeningPart1Prompt(quantity, safeTopic);
+                case 2: return CreateListeningPart2Prompt(quantity, safeTopic);
                 case 3: return CreateListeningPart3Prompt(quantity, safeTopic);
                 case 4: return CreateListeningPart4Prompt(quantity, safeTopic);
 
                 // Reading
-                case 5: return CreateReadingPart5Prompt(quantity, topic);
+                case 5: return CreateReadingPart5Prompt(quantity, safeTopic);
                 case 6: return CreateReadingPart6Prompt(quantity, safeTopic);
                 case 7:
                     return CreateReadingPart7Prompt(quantity, safeTopic);
 
                 // Speaking 
-                case 8: return CreateSpeakingPart1Prompt(quantity);
-                case 9: return CreateSpeakingPart2Prompt(quantity);
+                case 8: return CreateSpeakingPart1Prompt(quantity, safeTopic);
+                case 9: return CreateSpeakingPart2Prompt(quantity, safeTopic);
                 case 10: return CreateSpeakingPart3Prompt(quantity, safeTopic);
                 case 11: return CreateSpeakingPart4Prompt(quantity, safeTopic);
                 case 12: return CreateSpeakingPart5Prompt(quantity, safeTopic);
 
                 // Writing (Mapping giả định: 19=Q1-5, 20=Q6-7, 21=Q8)
-                case 13: return CreateWritingPart1Prompt(quantity);
+                case 13: return CreateWritingPart1Prompt(quantity,safeTopic);
                 case 14: return CreateWritingPart2Prompt(quantity, safeTopic);
                 case 15: return CreateWritingPart3Prompt(quantity, safeTopic);
 
@@ -242,7 +269,7 @@ namespace ServiceLayer.AI.Prompt
 
         // --- Specific Prompt Generation Methods (Updated Examples) ---
 
-        private static string CreateListeningPart1Prompt(int quantity)
+        private static string CreateListeningPart1Prompt(int quantity, string safeTopic)
         {
             // Ví dụ mẫu huấn luyện
             var exampleDto = new AIGeneratedExamDTO
@@ -267,7 +294,7 @@ namespace ServiceLayer.AI.Prompt
                         StemText = "Choose the statement that best describes the picture.",
                         Explanation = "Lựa chọn (B) mô tả đúng nhất hành động trong ảnh: 'The woman is pointing at the screen'. Các lựa chọn khác không khớp với bối cảnh.",
                         ScoreWeight = 1,
-                        Time = 60,
+                        Time = 30,
                         Options = new List<AIGeneratedOptionDTO>
                         {
                             new AIGeneratedOptionDTO { Label = "A", Content = "The man is talking on the phone.", IsCorrect = false },
@@ -285,6 +312,11 @@ namespace ServiceLayer.AI.Prompt
 
                 return $"""
             Bạn là chuyên gia ra đề TOEIC Listening Part 1 – Photographs theo chuẩn ETS.
+
+            ---
+
+            **Chủ đề:** {safeTopic}
+            (Tất cả các bức ảnh nên liên quan đến chủ đề này. Nếu chủ đề là "chung" hoặc "tổng quát", tạo ảnh đa dạng về công việc, đời sống, du lịch...)
 
             ---
 
@@ -361,21 +393,21 @@ namespace ServiceLayer.AI.Prompt
         }
 
 
-        private static string CreateListeningPart2Prompt(int quantity)
+        private static string CreateListeningPart2Prompt(int quantity, string safeTopic)
         {
             var exampleDto = new AIGeneratedExamDTO
             {
-                ExamExamTitle = "AI Generated Listening Part 2",
+                ExamExamTitle = $"AI Generated Listening Part 2 - {safeTopic}",
                 Skill = "Listening",
                 PartLabel = "Part 2",
-                Prompts = new List<AIGeneratedPromptDTO> 
+                Prompts = new List<AIGeneratedPromptDTO>
                 {
                     new AIGeneratedPromptDTO
                     {
                         ExamTitle = "Question-Response",
                         Description = "You will hear a question or statement and three responses...",
                         ReferenceAudioUrl = "Where is the marketing report?",
-                        Questions = new List<AIGeneratedQuestionDTO> 
+                        Questions = new List<AIGeneratedQuestionDTO>
                         {
                             new AIGeneratedQuestionDTO
                             {
@@ -383,7 +415,7 @@ namespace ServiceLayer.AI.Prompt
                                 QuestionType = "Listening",
                                 StemText = "Listen and choose the most appropriate answer?",
                                 Explanation = "Câu hỏi 'Where' hỏi về địa điểm. Lựa chọn (B) là hợp lý nhất.",
-                                ScoreWeight = 1, 
+                                ScoreWeight = 1,
                                 Time = 30,
                                 Options = new List<AIGeneratedOptionDTO>
                                 {
@@ -396,90 +428,44 @@ namespace ServiceLayer.AI.Prompt
                     }
                 }
             };
-            
+
             string jsonExample = JsonConvert.SerializeObject(exampleDto, Formatting.Indented);
-            
+
             return $"""
-    Bạn là chuyên gia ra đề TOEIC Listening Part 2 – Question-Response theo chuẩn ETS.
+    You are an expert TOEIC Listening Part 2 question generator.
 
-    ---
+    **Topic:** {safeTopic}
+    (All questions should relate to this topic when possible. If topic is general/broad, create diverse workplace/daily life scenarios.)
 
-    Mô tả phần thi TOEIC Part 2:
-    - Thí sinh nghe một câu hỏi hoặc câu phát biểu (chỉ nghe một lần).
-    - Sau đó nghe ba đáp án (A, B, C).
-    - Nhiệm vụ là chọn đáp án phù hợp nhất với câu hỏi/phát biểu.
-    - Mỗi đề Part 2 gồm 25 câu hỏi.
+    **CRITICAL REQUIREMENT:**
+    - You MUST generate EXACTLY {quantity} prompts. NO MORE, NO LESS.
+    - The Prompts array MUST contain precisely {quantity} items.
+    - Count carefully before returning the JSON.
 
-    ---
+    **Structure (for EACH of the {quantity} prompts):**
+    - 1 question/statement in ReferenceAudioUrl
+    - 1 Question object with:
+      - StemText (same as ReferenceAudioUrl)
+      - 3 Options (A/B/C), only 1 correct
+      - Vietnamese Explanation
 
-    Quy tắc TOEIC Part 2 bắt buộc:
-    - Câu hỏi phải tự nhiên, ngắn gọn (5-10 từ).
-    - Các loại câu hỏi: WH-questions (What, Where, When, Who, Why, How), Yes/No questions, Choice questions, Statement responses.
-    - Đáp án đúng phải trả lời trực tiếp hoặc gián tiếp hợp lý với câu hỏi.
-    - Không dùng từ mang tính phán đoán như: seems, probably, might trong câu hỏi.
-
-    ---
-
-    Quy tắc tạo đáp án sai (distractors):
-    Trong 2 đáp án sai, cần có:
-    - 1 đáp án có từ phát âm tương tự hoặc từ cùng chủ đề (sound-alike trap).
-    - 1 đáp án trả lời sai ngữ cảnh (wrong context).
-    - Tránh đáp án quá hiển nhiên sai hoặc không liên quan.
-
-    ---
-
-    Phân bổ độ khó (bắt buộc):
-    - Prompt 1–10: Dễ (WH-questions trực tiếp, đáp án rõ ràng).
-    - Prompt 11–20: Trung bình (Yes/No questions, Statement responses, hoặc câu hỏi gián tiếp).
-    - Prompt 21–25: Khó (Statement responses phức tạp, đáp án gián tiếp, có bẫy về âm thanh hoặc ngữ cảnh).
-
-    ---
-
-    Quy tắc về vị trí đáp án đúng:
-    - Đáp án đúng phải được phân bố NGẪU NHIÊN giữa các lựa chọn A, B, C.
-    - Không được để tất cả câu có cùng vị trí đáp án đúng.
-    - Trong một đề 25 câu, vị trí đáp án đúng phải đa dạng và cân bằng (khoảng 8-9 câu cho mỗi vị trí A, B, C).
-
-    ---
-
-    Nhiệm vụ:
-    Tạo CHÍNH XÁC {quantity} Prompt TOEIC Listening Part 2. KHÔNG HƠN, KHÔNG KÉM.
-
-    Mỗi Prompt phải bao gồm:
-
-    1. ReferenceAudioUrl  
-    - Là câu hỏi hoặc câu phát biểu ngắn gọn bằng tiếng Anh.
-    - Không thêm mô tả hay giải thích.
-
-    2. Questions  
-    - Mỗi Prompt chỉ có 1 Question.
-    - PartId luôn bằng 2.
-    - QuestionType = Listening.
-    - StemText = "Listen and choose the most appropriate answer."
-    - Có Explanation bằng tiếng Việt, giải thích vì sao đáp án đúng và tại sao các đáp án khác sai.
-
-    3. Options
-    - Chỉ có 3 options (A, B, C).
-    - Chỉ 1 option có IsCorrect = true.
-
-    ---
-
-    Ví dụ JSON mẫu (1 Prompt):
+    **Example (1 prompt):**
     ```json
     {jsonExample}
     ```
 
-    ---
+    **Validation before response:**
+    - Check: Prompts.length === {quantity} ✓
+    - Check: Each Prompt has 1 Question ✓
+    - Check: Each Question has 3 Options ✓
 
-    ### ⚠️ Lưu ý:
-    - Trả về **một đối tượng JSON duy nhất** theo cấu trúc `AIGeneratedExamDTO`.
-    - Mảng Prompts phải chứa CHÍNH XÁC {quantity} items.
-    - Mỗi Prompt có đúng 1 Question.
-    - Mỗi Question có đúng 3 Options.
-    - Không thêm bất kỳ markdown, text mô tả hay lời giải thích bên ngoài JSON.
-    - Đảm bảo tất cả các chuỗi đều là tiếng Anh chuẩn, tự nhiên và dễ hiểu.
+    **Output format:**
+    - Return ONLY valid JSON (AIGeneratedExamDTO)
+    - No markdown blocks (```json)
+    - No explanations
+    - No extra text
 
-    Hãy bắt đầu tạo **{quantity} câu hỏi Part 2 (Question-Response)** ngay bây giờ.
+    Generate EXACTLY {quantity} prompts now:
     """;
         }
 
@@ -650,7 +636,7 @@ namespace ServiceLayer.AI.Prompt
                         StemText = "What is the purpose of the talk?",
                         Explanation = "The speaker says this is a reminder about the annual company picnic.",
                         ScoreWeight = 1,
-                        Time = 30,
+                        Time = 60,
                         Options = new List<AIGeneratedOptionDTO>
                         {
                             new AIGeneratedOptionDTO { Label = "A", Content = "To remind employees about a company event", IsCorrect = true },
@@ -666,7 +652,7 @@ namespace ServiceLayer.AI.Prompt
                         StemText = "Where will the event take place?",
                         Explanation = "The speaker clearly mentions Riverside Park as the venue.",
                         ScoreWeight = 1,
-                        Time = 30,
+                        Time = 60,
                         Options = new List<AIGeneratedOptionDTO>
                         {
                             new AIGeneratedOptionDTO { Label = "A", Content = "At the company cafeteria", IsCorrect = false },
@@ -682,7 +668,7 @@ namespace ServiceLayer.AI.Prompt
                         StemText = "What will be provided to participants?",
                         Explanation = "Lunch will be provided around noon.",
                         ScoreWeight = 1,
-                        Time = 30,
+                        Time = 60,
                         Options = new List<AIGeneratedOptionDTO>
                         {
                             new AIGeneratedOptionDTO { Label = "A", Content = "Transportation", IsCorrect = false },
@@ -733,7 +719,7 @@ namespace ServiceLayer.AI.Prompt
         }
 
 
-        private static string CreateReadingPart5Prompt(int quantity, string? topic)
+        private static string CreateReadingPart5Prompt(int quantity, string safeTopic)
         {
             var exampleDto = new AIGeneratedExamDTO
             {
@@ -811,7 +797,7 @@ namespace ServiceLayer.AI.Prompt
     - Each Prompts[i].Questions.length MUST equal 1
     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-    **Topic/Focus:** {topic ?? "General business vocabulary and grammar"}
+    **Topic/Focus:** {safeTopic}
 
     **Each Prompt structure:**
     - ExamTitle: "Incomplete Sentence"
@@ -988,11 +974,11 @@ namespace ServiceLayer.AI.Prompt
 
 
         // --- Speaking Prompts (Updated DTOs) ---
-        private static string CreateSpeakingPart1Prompt(int quantity)
+        private static string CreateSpeakingPart1Prompt(int quantity, string safeTopic)
         {
             var exampleDto = new AIGeneratedExamDTO
             {
-                ExamExamTitle = "AI Generated Speaking Q1-2",
+                ExamExamTitle = $"AI Generated Speaking Q1-2 - {safeTopic}",
                 Skill = "SPEAKING",
                 PartLabel = "Q1-2",
                 Prompts = new List<AIGeneratedPromptDTO> {
@@ -1018,6 +1004,9 @@ namespace ServiceLayer.AI.Prompt
 
             return $"""
     Bạn là một chuyên gia ra đề thi TOEIC Speaking Questions 1-2 (Read a text aloud).
+
+    **Chủ đề:** {safeTopic}
+    (Tạo các đoạn văn thông báo, hướng dẫn, hoặc giới thiệu liên quan đến chủ đề: {safeTopic}. Nếu chủ đề là "tổng quát", tạo đa dạng về sự kiện, dịch vụ, thông báo công ty...)
 
     **Yêu cầu:**
     - Tạo ra một đối tượng JSON **AIGeneratedExamDTO** duy nhất.
@@ -1048,11 +1037,11 @@ namespace ServiceLayer.AI.Prompt
     """;
         }
 
-        private static string CreateSpeakingPart2Prompt(int quantity)
+        private static string CreateSpeakingPart2Prompt(int quantity, string safeTopic)
         {
             var exampleDto = new AIGeneratedExamDTO
             {
-                ExamExamTitle = "AI Generated Speaking Q3",
+                ExamExamTitle = $"AI Generated Speaking Q3 - {safeTopic}",
                 Skill = "SPEAKING",
                 PartLabel = "Q3",
                 Prompts = new List<AIGeneratedPromptDTO> {
@@ -1078,6 +1067,9 @@ namespace ServiceLayer.AI.Prompt
 
             return $"""
     Bạn là một chuyên gia ra đề thi TOEIC Speaking Question 3 (Describe a picture).
+
+    **Chủ đề:** {safeTopic}
+    (Tất cả các bức ảnh nên liên quan đến chủ đề: {safeTopic}. Ví dụ: nếu chủ đề là "y tế" → ảnh về bệnh viện, bác sĩ, phòng khám...)
 
     **Yêu cầu:**
     - Tạo ra chính xác **{quantity}** đề bài mô tả tranh.
@@ -1191,7 +1183,7 @@ namespace ServiceLayer.AI.Prompt
                         QuestionType = "Speaking",
                         StemText = "What time does the conference begin?",
                         ScoreWeight = 3,
-                        Time = 30,
+                        Time = 45,
                         SampleAnswer = "According to the schedule, the conference begins at 9:00 AM with the opening remarks."
                     },
                     new AIGeneratedQuestionDTO {
@@ -1199,7 +1191,7 @@ namespace ServiceLayer.AI.Prompt
                         QuestionType = "Speaking",
                         StemText = "Could you tell me what Workshop A is about?",
                         ScoreWeight = 3,
-                        Time = 30,
+                        Time = 45,
                         SampleAnswer = "Certainly. Workshop A, which takes place at 10:00 AM, focuses on Marketing Strategies."
                     },
                     new AIGeneratedQuestionDTO {
@@ -1207,7 +1199,7 @@ namespace ServiceLayer.AI.Prompt
                         QuestionType = "Speaking",
                         StemText = "How long is the coffee break?",
                         ScoreWeight = 3,
-                        Time = 30,
+                        Time = 45,
                         SampleAnswer = "Based on the schedule, the coffee break starts at 11:00 AM and Workshop B begins at 11:30 AM, so the coffee break lasts for 30 minutes."
                     }
                 }
@@ -1303,7 +1295,7 @@ namespace ServiceLayer.AI.Prompt
 
 
         // --- Writing Prompts (Updated DTOs) ---
-        private static string CreateWritingPart1Prompt(int quantity)
+        private static string CreateWritingPart1Prompt(int quantity, string safeTopic)
         {
             var exampleDto = new AIGeneratedExamDTO
             {
@@ -1330,7 +1322,7 @@ namespace ServiceLayer.AI.Prompt
                         // Câu mẫu đúng (để AI học cách viết)
                         CorrectAnswer = "null",
                         ScoreWeight = 3,
-                        Time = 90
+                        Time = 60
                     }
                 }
             }
@@ -1341,6 +1333,11 @@ namespace ServiceLayer.AI.Prompt
 
             return $"""
             Bạn là một chuyên gia ra đề thi **TOEIC Writing Questions 1–5** (Write a sentence based on a picture).
+
+            ---
+
+            **Chủ đề:** {safeTopic}
+            (Các bức ảnh và từ vựng nên liên quan đến chủ đề này. Nếu chủ đề là "chung" hoặc "tổng quát", tạo đa dạng về công việc, đời sống, du lịch...)
 
             ---
 
