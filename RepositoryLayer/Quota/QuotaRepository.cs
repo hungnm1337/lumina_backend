@@ -23,10 +23,11 @@ namespace RepositoryLayer.Quota
                 throw new Exception($"User with ID {userId} not found");
             }
 
+            var today = DateTime.UtcNow.Date;
             var hasActiveSubscription = user.Subscriptions.Any(s =>
                 s.Status == "Active" &&
                 s.EndTime.HasValue &&
-                s.EndTime.Value > DateTime.UtcNow);
+                s.EndTime.Value.Date >= today);
 
             return new UserQuotaStatus
             {
