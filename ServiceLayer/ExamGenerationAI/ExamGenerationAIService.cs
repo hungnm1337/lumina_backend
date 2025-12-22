@@ -123,16 +123,19 @@ namespace ServiceLayer.ExamGenerationAI
 
             // Kiểm tra user có chỉ định rõ Part number không
             var lowerRequest = userRequest.ToLower();
-            bool isSkillOnly = (lowerRequest.Contains("listening") || 
-                                lowerRequest.Contains("reading") || 
-                                lowerRequest.Contains("speaking") || 
-                                lowerRequest.Contains("writing") ||
-                                lowerRequest.Contains("nghe") ||
-                                lowerRequest.Contains("đọc") ||
-                                lowerRequest.Contains("nói") ||
-                                lowerRequest.Contains("viết"));
+            bool hasSkillKeyword = (lowerRequest.Contains("listening") || 
+                                    lowerRequest.Contains("reading") || 
+                                    lowerRequest.Contains("speaking") || 
+                                    lowerRequest.Contains("writing") ||
+                                    lowerRequest.Contains("nghe") ||
+                                    lowerRequest.Contains("đọc") ||
+                                    lowerRequest.Contains("nói") ||
+                                    lowerRequest.Contains("viết"));
             
-            if (isSkillOnly && !HasExplicitPartNumber(userRequest))
+            bool hasPartNumber = HasExplicitPartNumber(userRequest);
+
+            //  Có skill nhưng KHÔNG có part number
+            if (hasSkillKeyword && !hasPartNumber)
             {
                 return (false, @"Vui lòng chỉ rõ Part number bạn muốn tạo!
 Ví dụ đúng:
@@ -143,6 +146,30 @@ Không đủ thông tin:
 • Tạo câu listening (thiếu Part number)
 • Cho tôi đề reading (thiếu Part number)
 Hãy cho tôi biết Part cụ thể nhé!");
+            }
+
+            //  Có part number nhưng KHÔNG có skill keyword
+            if (hasPartNumber && !hasSkillKeyword)
+            {
+                return (false, @"Vui lòng chỉ rõ kỹ năng (Skill) bạn muốn tạo!
+
+Ví dụ đúng:
+• Tạo đề Listening Part 3 topic Travel
+• Create Reading Part 6 topic Health
+• Gen Speaking Part 2 về du lịch
+
+Không đủ thông tin:
+• Create exam part 6 topic travel (thiếu skill keyword: Reading)
+• Tạo đề part 3 (thiếu skill: Listening)
+• Part 5 về ngữ pháp (thiếu skill: Reading)
+
+Các skill trong TOEIC:
+• Listening (Part 1-4)
+• Reading (Part 5-7)
+• Speaking (Part 1-5)
+• Writing (Part 1-3)
+
+Hãy nói rõ skill bạn muốn tạo nhé!");
             }
 
             // Kiểm tra Part có tồn tại không
