@@ -86,12 +86,13 @@ namespace lumina.Controllers
             });
         }
 
-        
+
         [HttpGet("statistic-packages")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetFullDashboardStats()
         {
             var now = DateTime.UtcNow;
+            var nowDate = now.Date;
             var firstOfMonth = new DateTime(now.Year, now.Month, 1);
             var endOfMonth = firstOfMonth.AddMonths(1);
 
@@ -101,7 +102,7 @@ namespace lumina.Controllers
                 .ToListAsync();
 
             var activeSubscriptions = await _systemContext.Subscriptions
-                .Where(s => s.Status == "Active" && s.EndTime >= now)
+                .Where(s => s.Status == "Active" && s.EndTime.HasValue && s.EndTime.Value.Date >= nowDate)
                 .Include(s => s.Package)
                 .ToListAsync();
 
@@ -131,7 +132,7 @@ namespace lumina.Controllers
             {
                 if (payment.Package == null) continue;
 
-                var durationDays = payment.Package.DurationInDays ?? 0; 
+                var durationDays = payment.Package.DurationInDays ?? 0;
                 if (!targetDurations.Contains(durationDays)) continue;
 
                 var revenuePerDay = payment.Amount / durationDays;
@@ -216,7 +217,7 @@ namespace lumina.Controllers
             });
         }
 
-       
+
         [HttpGet("user-pro-summary/{userId}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetUserProSummary(int userId)
@@ -283,7 +284,7 @@ namespace lumina.Controllers
                 .FirstOrDefaultAsync();
 
             int remainDays = 0;
-            if (activeSub != null && activeSub.EndTime.HasValue && activeSub.EndTime.Value.Date > now)
+            if (activeSub != null && activeSub.EndTime.HasValue && activeSub.EndTime.Value.Date >= now)
             {
                 remainDays = (int)(activeSub.EndTime.Value.Date - now).TotalDays;
             }
@@ -297,7 +298,7 @@ namespace lumina.Controllers
             });
         }
 
-      
+
         [HttpGet("staff-dashboard")]
         [Authorize(Roles = "Staff")]
         public async Task<IActionResult> GetStaffDashboardStats()
@@ -449,7 +450,7 @@ namespace lumina.Controllers
                 return dateTime.ToString("dd/MM/yyyy");
         }
 
-       
+
         [HttpGet("dashboard-stats")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetDashboardStats()
@@ -474,7 +475,7 @@ namespace lumina.Controllers
             }
         }
 
-      
+
         [HttpGet("revenue-chart")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetRevenueChart([FromQuery] int year = 0)
@@ -501,7 +502,7 @@ namespace lumina.Controllers
             }
         }
 
-        
+
         [HttpGet("user-growth-chart")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetUserGrowthChart([FromQuery] int months = 6)
@@ -550,7 +551,7 @@ namespace lumina.Controllers
             }
         }
 
-      
+
         [HttpGet("daily-analytics")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetDailyAnalytics([FromQuery] int days = 7)
