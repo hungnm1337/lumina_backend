@@ -94,9 +94,6 @@ namespace ServiceLayer.Exam.ExamAttempt
             if (attempt == null)
                 return new ExamAttemptSummaryDTO { Success = false };
 
-            if (attempt.Status == "Completed")
-                return new ExamAttemptSummaryDTO { Success = false };
-
             var userAnswers = await _unitOfWork.UserAnswers
                 .GetAllAsync(ua => ua.AttemptID == attemptId);
 
