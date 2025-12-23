@@ -38,13 +38,24 @@ namespace lumina.Controllers
                     var (partNumber, quantity, topic) = await _aiService.ParseUserRequestAsync(request.UserRequest);
                     
                     // Validate Part request
-                    var (isValid, errorMessage) = _aiService.ValidatePartRequest(partNumber, request.UserRequest);
-                    if (!isValid)
+                    var partValidation = _aiService.ValidatePartRequest(partNumber, request.UserRequest);
+                    if (!partValidation.isValid)
                     {
                         return Ok(new
                         {
                             type = "error",
-                            message = errorMessage
+                            message = partValidation.errorMessage
+                        });
+                    }
+                    
+                    // Validate Quantity
+                    var quantityValidation = _aiService.ValidateQuantity(quantity);
+                    if (!quantityValidation.isValid)
+                    {
+                        return Ok(new
+                        {
+                            type = "error",
+                            message = quantityValidation.errorMessage
                         });
                     }
                     
