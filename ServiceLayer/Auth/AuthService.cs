@@ -196,12 +196,19 @@ public sealed class AuthService : IAuthService
 
     public async Task<VerifyRegistrationResponse> VerifyRegistrationAsync(VerifyRegistrationRequest request)
     {
+        _logger.LogInformation("=== VerifyRegistrationAsync START ===");
+        _logger.LogInformation("Request Email: {Email}, Username: {Username}, OtpCode: {OtpCode}", 
+            request.Email, request.Username, request.OtpCode);
+
         var normalizedEmail = NormalizeEmail(request.Email);
         var normalizedUsername = NormalizeUsername(request.Username);
         var trimmedName = request.Name.Trim();
 
+        _logger.LogInformation("Normalized Email: {Email}, Username: {Username}", normalizedEmail, normalizedUsername);
+
         if (string.IsNullOrWhiteSpace(trimmedName))
         {
+            _logger.LogWarning("Name is empty");
             throw AuthServiceException.BadRequest("Tên không được để trống");
         }
 
@@ -217,27 +224,62 @@ public sealed class AuthService : IAuthService
 
         // First check if email is already registered with an active user
         var activeUserExists = await _unitOfWork.Users.EmailExistsAsync(normalizedEmail, activeOnly: true);
+        _logger.LogInformation("Active user exists check: {Exists}", activeUserExists);
+        
         if (activeUserExists)
         {
+            _logger.LogWarning("Email already registered as active: {Email}", normalizedEmail);
             throw AuthServiceException.Conflict("Email đã được đăng ký");
         }
 
         var tempUser = await _unitOfWork.Users.GetInactiveByEmailWithTokensAsync(normalizedEmail);
+        _logger.LogInformation("TempUser found: {Found}, UserId: {UserId}", 
+            tempUser != null, tempUser?.UserId);
 
         if (tempUser == null)
         {
+            // Check if this email already has an active account (registration was completed)
+            var existingActiveUser = await _unitOfWork.Users.GetByEmailAsync(normalizedEmail);
+            _logger.LogInformation("Existing active user check: {Found}, IsActive: {IsActive}",
+                existingActiveUser != null, existingActiveUser?.IsActive);
+            
+            if (existingActiveUser != null && existingActiveUser.IsActive == true)
+            {
+                _logger.LogWarning("Registration already completed for: {Email}", normalizedEmail);
+                // Registration was already completed - this is likely a retry after network error
+                throw AuthServiceException.Conflict("Tài khoản đã được đăng ký thành công. Vui lòng đăng nhập.");
+            }
+            
+            _logger.LogWarning("No temp user found for: {Email}", normalizedEmail);
             throw AuthServiceException.NotFound("Không tìm thấy thông tin đăng ký. Vui lòng yêu cầu mã OTP mới.");
         }
 
         var registrationToken = await _unitOfWork.PasswordResetTokens.GetActiveTokenByUserIdAsync(tempUser.UserId, asTracking: true);
+        _logger.LogInformation("Registration token found: {Found}, ExpiresAt: {ExpiresAt}", 
+            registrationToken != null, registrationToken?.ExpiresAt);
 
         if (registrationToken == null)
         {
+            // Check if there's a used token - meaning registration might have completed
+            var usedToken = await _unitOfWork.PasswordResetTokens.GetUsedTokenByUserIdAsync(tempUser.UserId);
+            _logger.LogInformation("Used token check: {Found}", usedToken != null);
+            
+            if (usedToken != null)
+            {
+                _logger.LogWarning("OTP already used for user: {UserId}", tempUser.UserId);
+                throw AuthServiceException.Conflict("Mã OTP đã được sử dụng. Vui lòng thử đăng nhập.");
+            }
+            
+            _logger.LogWarning("No active token found, OTP expired for user: {UserId}", tempUser.UserId);
             throw AuthServiceException.BadRequest("OTP không hợp lệ hoặc đã hết hạn");
         }
 
-        if (!BCrypt.Net.BCrypt.Verify(request.OtpCode, registrationToken.CodeHash))
+        var otpVerified = BCrypt.Net.BCrypt.Verify(request.OtpCode, registrationToken.CodeHash);
+        _logger.LogInformation("OTP verification result: {Result}", otpVerified);
+
+        if (!otpVerified)
         {
+            _logger.LogWarning("OTP mismatch for user: {UserId}", tempUser.UserId);
             throw AuthServiceException.BadRequest("Mã OTP không đúng");
         }
 
@@ -272,6 +314,25 @@ public sealed class AuthService : IAuthService
 
             _logger.LogInformation("User registration completed successfully: {Username} ({Email})",
                 normalizedUsername, normalizedEmail);
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            _logger.LogError(ex, "Failed to complete registration for {Email}", normalizedEmail);
+            throw;
+        }
+
+        // Generate tokens AFTER transaction commit succeeds
+        // If token generation fails, user is still registered successfully
+        try
+        {
+            // Load Role for JWT token generation (needed for role claims)
+            if (tempUser.Role == null)
+            {
+                tempUser.Role = await _unitOfWork.Roles.GetAsync(r => r.RoleId == tempUser.RoleId)
+                    ?? throw new InvalidOperationException($"Role {tempUser.RoleId} not found");
+                _logger.LogInformation("Loaded role for user: {RoleId}", tempUser.RoleId);
+            }
 
             var tokenResult = _jwtTokenService.GenerateToken(tempUser);
             var refreshToken = _jwtTokenService.GenerateRefreshToken();
@@ -305,9 +366,10 @@ public sealed class AuthService : IAuthService
         }
         catch (Exception ex)
         {
-            await transaction.RollbackAsync();
-            _logger.LogError(ex, "Failed to complete registration for {Email}", normalizedEmail);
-            throw;
+            // Registration completed but token generation failed
+            // User can still login with their credentials
+            _logger.LogError(ex, "Registration succeeded but token generation failed for {Email}. User can login normally.", normalizedEmail);
+            throw AuthServiceException.ServerError("Đăng ký thành công nhưng không thể tạo token. Vui lòng đăng nhập lại.");
         }
     }
 
