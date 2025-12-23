@@ -15,6 +15,8 @@ namespace ServiceLayer.ExamGenerationAI
 
         (bool isValid, string? errorMessage) ValidatePartRequest(int partNumber, string userRequest);
 
+        (bool isValid, string? errorMessage) ValidateQuantity(int quantity);
+
         Task<AIGeneratedExamDTO> GenerateExamAsync(int partNumber, int quantity, string? topic);
 
         Task<string> GenerateResponseAsync(string prompt);

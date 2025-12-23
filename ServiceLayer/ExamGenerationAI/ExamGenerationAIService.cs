@@ -28,7 +28,11 @@ namespace ServiceLayer.ExamGenerationAI
 
         public async Task<string> GenerateResponseAsync(string prompt)
         {
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(600));
+            // Timeout 120 giây (2 phút) - đủ cho hầu hết request
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(120));
+            
+            Console.WriteLine($"⏳ [OpenAI] Bắt đầu gọi API...");
+            var startTime = DateTime.Now;
             
             var requestBody = new
             {
@@ -46,26 +50,41 @@ namespace ServiceLayer.ExamGenerationAI
 
             try
             {
+                Console.WriteLine($"📤 [OpenAI] Đang gửi request tới API...");
+                
                 var response = await _httpClient.PostAsync(
                     "https://api.openai.com/v1/chat/completions", 
                     content, 
                     cts.Token
                 );
 
+                var elapsed = (DateTime.Now - startTime).TotalSeconds;
+                Console.WriteLine($"⏱️ [OpenAI] Response nhận sau {elapsed:F1} giây");
+
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"❌ [OpenAI] Error {response.StatusCode}: {errorContent}");
                     throw new Exception($"OpenAI API error: {response.StatusCode} - {errorContent}");
                 }
 
                 var responseBody = await response.Content.ReadAsStringAsync();
                 var jsonResponse = JsonConvert.DeserializeObject<dynamic>(responseBody);
                 string messageContent = jsonResponse.choices[0].message.content.ToString();
+                
+                Console.WriteLine($"✅ [OpenAI] Response thành công (độ dài: {messageContent.Length} ký tự)");
                 return messageContent;
             }
             catch (OperationCanceledException)
             {
-                throw new Exception(" Request timeout sau 600 giây. Hãy thử lại hoặc giảm quantity.");
+                var elapsed = (DateTime.Now - startTime).TotalSeconds;
+                Console.WriteLine($" [OpenAI] Request timeout sau {elapsed:F1} giây");
+                throw new Exception(" Request quá thời gian chờ (120 giây). OpenAI API có thể đang chậm, vui lòng thử lại!");
+            }
+            catch (HttpRequestException ex)
+            {
+                Console.WriteLine($" [OpenAI] Network error: {ex.Message}");
+                throw new Exception($"Lỗi kết nối tới OpenAI API: {ex.Message}. Vui lòng kiểm tra internet và thử lại!");
             }
         }
 
@@ -311,6 +330,26 @@ Bạn muốn tạo Part nào?";
 • Part 3: Viết bài luận (1 câu)
 
 Bạn muốn tạo Part nào?";
+        }
+
+        private string GetQuantityErrorMessage(int quantity)
+        {
+            return @"Yêu cầu không hợp lệ.
+Số lượng câu hỏi tối đa là **30 câu**. Vui lòng thử lại!
+**Ví dụ hợp lệ:**
+• Tạo 10 câu Listening Part 1
+• Gen 25 câu Reading Part 5 topic Business
+• Create 15 câu Speaking Part 2";
+        }
+
+        public (bool isValid, string? errorMessage) ValidateQuantity(int quantity)
+        {
+            if (quantity > 30 || quantity < 1)
+            {
+                return (false, GetQuantityErrorMessage(quantity));
+            }
+            
+            return (true, null);
         }
 
         private string GetTOEICStructure()
