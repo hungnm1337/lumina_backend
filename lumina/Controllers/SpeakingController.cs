@@ -33,7 +33,7 @@ public class SpeakingController : ControllerBase
     [HttpPost("submit-answer")]
     public async Task<IActionResult> SubmitAnswer([FromForm] SubmitSpeakingAnswerRequest request)
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(90));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(120)); // Increased from 90s to 120s
 
         // Get userId from token
         var userId = GetUserIdFromToken();
