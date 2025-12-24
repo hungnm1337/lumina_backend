@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using DataLayer.DTOs.Exam;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using ServiceLayer.Extensions;
 
 namespace lumina.Controllers
 {
@@ -40,6 +41,7 @@ namespace lumina.Controllers
         }
 
         [HttpGet("part/{partId:int}")]
+        [Authorize]
         public async Task<ActionResult<ExamPartDTO>> GetExamPartDetailAndQuestion(int partId)
         {
             var part = await _examService.GetExamPartDetailAndQuestionByExamPartID(partId);
@@ -47,6 +49,17 @@ namespace lumina.Controllers
             {
                 return NotFound($"Exam part with ID {partId} not found.");
             }
+
+            // ✅ Check user role - only Staff and Admin see correct answers
+            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+            bool isPrivilegedUser = userRole == "Staff" || userRole == "Admin";
+
+            // ❌ For regular users: remove correct answers and explanations
+            if (!isPrivilegedUser)
+            {
+                part.SanitizeForUser();
+            }
+
             return Ok(part);
         }
 

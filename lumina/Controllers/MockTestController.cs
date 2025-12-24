@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using DataLayer.DTOs.Exam;
 using System.Security.Claims;
 using DataLayer.DTOs.Exam.Speaking;
+using ServiceLayer.Extensions;
 
 namespace lumina.Controllers
 {
@@ -32,6 +33,20 @@ namespace lumina.Controllers
                 {
                     return NotFound("No mock test information found.");
                 }
+
+                // ✅ Check user role - only Staff and Admin see correct answers
+                var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+                bool isPrivilegedUser = userRole == "Staff" || userRole == "Admin";
+
+                // ❌ For regular users: remove correct answers and explanations
+                if (!isPrivilegedUser && result != null)
+                {
+                    foreach (var part in result)
+                    {
+                        part.SanitizeForUser();
+                    }
+                }
+
                 return Ok(result);
             }
             catch (Exception ex)

@@ -33,4 +33,9 @@ public interface IPasswordResetTokenRepository
     /// Remove multiple password reset tokens
     /// </summary>
     void RemoveRange(IEnumerable<PasswordResetToken> tokens);
+
+    /// <summary>
+    /// Get the most recent used token for a user (to check if registration was completed)
+    /// </summary>
+    Task<PasswordResetToken?> GetUsedTokenByUserIdAsync(int userId);
 }

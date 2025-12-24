@@ -159,7 +159,7 @@ Nhiệm vụ: Chấm điểm bài làm Part 1 dựa trên quy tắc cứng, tuy�
 
 --- INPUT DATA ---
 Mô tả ảnh (Context): ""{request.PictureCaption}""
-Từ khóa (Keywords): ""{request.VocabularyRequest}""
+Từ khóa (2 Keywords ngăn nhau bởi dấu \ vd  coffee / morning thì 2 key word là coffee và morning ): ""{request.VocabularyRequest}""
 Bài làm (User Answer):
 >>> BEGIN USER ANSWER
 {request.UserAnswer}
@@ -194,17 +194,17 @@ BƯỚC 2: KIỂM TRA RÀNG BUỘC TỪ KHÓA (1 ĐIỂM)
 
 BƯỚC 3: CHẤM CHẤT LƯỢNG (2 - 3 ĐIỂM)
 (Chỉ thực hiện khi đã qua Bước 1 và 2)
-* ĐIỂM 3: Hoàn hảo (1 câu, đủ từ, đúng ngữ pháp, sát ảnh).
+* ĐIỂM 3: Hoàn hảo (1 câu, đủ 2 từ key word, đúng ngữ pháp, sát ảnh).
 * ĐIỂM 2: Khá (Đúng cấu trúc, đủ từ, nhưng còn lỗi ngữ pháp nhỏ hoặc diễn đạt chưa tự nhiên).
 
 --- OUTPUT JSON ---
 Trả về JSON thuần túy, không Markdown, khớp định dạng sau:
 {{
-    ""TotalScore"": 0,
-    ""GrammarFeedback"": ""[Nhận xét tiếng Việt về ngữ pháp/cấu trúc]"",
-    ""VocabularyFeedback"": ""[Nhận xét tiếng Việt về từ vựng]"",
-    ""ContentAccuracyFeedback"": ""[Nhận xét tiếng Việt về độ chính xác nội dung]"",
-    ""CorrectedAnswerProposal"": ""[Câu gợi ý sửa lỗi hoàn chỉnh viết bằng tiếng anh]""
+    ""TotalScore"": ""[Điểm số ]"",
+    ""GrammarFeedback"": ""[Nhận xét tiếng Việt về ngữ pháp/cấu trúc (Không được để trống)]"",
+    ""VocabularyFeedback"": ""[Nhận xét tiếng Việt về từ vựng Không được để trống]"",
+    ""ContentAccuracyFeedback"": ""[Nhận xét tiếng Việt về độ chính xác nội dung (Không được để trống)]"",
+    ""CorreededAnswerProposal"": ""[Đáp án tham khảo bằng tiếng anh (1 câu hoàn chỉnh chứa 2 từ khóa viết bằng tiếng ANH(Không được để trống))]""
 }}
 ";
         }
