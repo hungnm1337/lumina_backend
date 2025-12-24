@@ -67,11 +67,12 @@ namespace ServiceLayer.Subscription
 
         public async Task<DataLayer.Models.Subscription?> GetActiveSubscriptionAsync(int userId)
         {
+            var today = DateTime.UtcNow.Date;
             return await _context.Subscriptions
                 .Where(s => s.UserId == userId &&
                            s.Status == "Active" &&
                            s.EndTime.HasValue &&
-                           s.EndTime.Value > DateTime.UtcNow)
+                           s.EndTime.Value.Date >= today)
                 .OrderByDescending(s => s.EndTime)
                 .FirstOrDefaultAsync();
         }
