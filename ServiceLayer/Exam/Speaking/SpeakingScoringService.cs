@@ -48,7 +48,7 @@ namespace ServiceLayer.Exam.Speaking
             for (int attempt = 0; attempt < maxRetries; attempt++)
             {
                 await EnsureCloudinaryAssetReady(audioUrl);
-                
+
                 Console.WriteLine($"[Speaking] Azure recognition attempt {attempt + 1}/{maxRetries}");
                 result = await _azureSpeechService.AnalyzePronunciationFromUrlAsync(audioUrl, sampleAnswer, "en-GB");
 
@@ -67,7 +67,7 @@ namespace ServiceLayer.Exam.Speaking
                         Console.WriteLine($"[Speaking] Invalid audio detected - stopping retries");
                         return result;
                     }
-                    
+
                     // EARLY EXIT: If Azure explicitly says "no result", don't waste time retrying
                     if (result.ErrorMessage.Contains("Recognition failed - no result"))
                     {
@@ -98,7 +98,7 @@ namespace ServiceLayer.Exam.Speaking
             {
                 throw new Exception($"Question with ID {questionId} or its sample answer not found.");
             }
-            
+
             string partCode = question.Part?.PartCode ?? "";
 
             var cloudName = _configuration["CloudinarySettings:CloudName"];
@@ -115,12 +115,12 @@ namespace ServiceLayer.Exam.Speaking
             // OPTIMIZATION: Start Azure recognition and NLP scoring in parallel
             // Azure takes 15-25s, we can start preparing NLP while Azure is running
             var azureTask = RetryAzureRecognitionAsync(transformedMp3Url, question.SampleAnswer, maxRetries: 5);
-            
+
             // Wait for Azure to complete
             var azureResult = await azureTask;
 
             bool isTranscriptEmpty = string.IsNullOrWhiteSpace(azureResult.Transcript) || azureResult.Transcript.Trim() == ".";
-            
+
             if (isTranscriptEmpty)
             {
                 Console.WriteLine($"[Speaking] Empty transcript after {5} retries - returning zero score");
@@ -157,7 +157,8 @@ namespace ServiceLayer.Exam.Speaking
                     GrammarScore = 0,
                     VocabularyScore = 0,
                     ContentScore = 0,
-                    SubmittedAt = DateTime.UtcNow
+                    SubmittedAt = DateTime.UtcNow,
+                    SampleAnswer = question.SampleAnswer
                 };
             }
 
@@ -168,22 +169,22 @@ namespace ServiceLayer.Exam.Speaking
 
             // Calculate actual text coverage for Part 1
             double actualCoveragePercent = 100.0;
-            
+
             if (partCode?.ToUpper() == "SPEAKING_PART_1")
             {
                 var transcriptWords = azureResult.Transcript?
                     .Split(new[] { ' ', '\t', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
                     .Length ?? 0;
-                
+
                 var referenceWords = question.SampleAnswer
                     .Split(new[] { ' ', '\t', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
                     .Length;
-                
+
                 if (referenceWords > 0)
                 {
                     actualCoveragePercent = (double)transcriptWords / referenceWords * 100.0;
                 }
-                
+
                 Console.WriteLine(
                     $"[Speaking] Part 1 Coverage: {transcriptWords}/{referenceWords} words = {actualCoveragePercent:F1}%");
             }
@@ -234,7 +235,8 @@ namespace ServiceLayer.Exam.Speaking
                 CompletenessScore = azureResult.CompletenessScore,
                 GrammarScore = nlpResult.Grammar_score,
                 VocabularyScore = Math.Round(nlpResult.Vocabulary_score, 1),
-                ContentScore = nlpResult.Content_score
+                ContentScore = nlpResult.Content_score,
+                SampleAnswer = question.SampleAnswer
             };
         }
 
@@ -248,15 +250,15 @@ namespace ServiceLayer.Exam.Speaking
             {
                 using var client = new HttpClient();
                 client.Timeout = TimeSpan.FromSeconds(5); // 5s timeout per request
-                
+
                 int delayMs = 500;
                 const int maxRetries = 15; // Up to 15 retries
-                
+
                 for (int i = 0; i < maxRetries; i++)
                 {
                     var req = new HttpRequestMessage(HttpMethod.Head, url);
                     var resp = await client.SendAsync(req);
-                    
+
                     if ((int)resp.StatusCode == 200)
                     {
                         if (resp.Content.Headers.ContentLength.HasValue && resp.Content.Headers.ContentLength.Value > 2048)
@@ -272,14 +274,14 @@ namespace ServiceLayer.Exam.Speaking
                     {
                         Console.WriteLine($"[Speaking] Asset not ready (HTTP {resp.StatusCode}), retry {i + 1}/{maxRetries}");
                     }
-                    
+
                     if (i < maxRetries - 1)
                     {
                         await Task.Delay(delayMs);
                         delayMs = Math.Min(delayMs + 500, 2000); // Gradual increase, max 2s
                     }
                 }
-                
+
                 Console.WriteLine($"[Speaking] WARNING: Cloudinary asset verification timeout after {maxRetries} attempts - proceeding anyway");
             }
             catch (Exception ex)
@@ -287,8 +289,8 @@ namespace ServiceLayer.Exam.Speaking
                 Console.WriteLine($"[Speaking] Cloudinary verification error: {ex.Message} - proceeding anyway");
             }
         }
-        
-        
+
+
         [Obsolete("Use ScoringWeightService.CalculateOverallScore() instead", false)]
         private float CalculateOverallScore(string partCode, string questionType, SpeechAnalysisDTO azureResult, NlpResponseDTO nlpResult)
         {
@@ -306,7 +308,7 @@ namespace ServiceLayer.Exam.Speaking
             );
         }
 
-       
+
         private async Task<NlpResponseDTO> GetNlpScoresAsync(string transcript, string sampleAnswer, string questionText, string partCode = null)
         {
             try
@@ -381,7 +383,7 @@ namespace ServiceLayer.Exam.Speaking
             int sampleLength = string.IsNullOrWhiteSpace(sampleAnswer) ? 20 : sampleAnswer.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
 
             float lengthRatio = (float)transcriptLength / Math.Max(sampleLength, 1);
-            contentScore = Math.Min(lengthRatio * 60f, 75f); 
+            contentScore = Math.Min(lengthRatio * 60f, 75f);
 
             if (transcriptLength >= 5)
             {

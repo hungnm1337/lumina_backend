@@ -51,12 +51,15 @@ namespace ServiceLayer.Exam.Speaking
                         attemptId
                     );
 
+                    // Get question to include SampleAnswer in response
+                    var question = await _speakingRepository.GetQuestionWithPartAsync(questionId);
+
                     return new SpeakingSubmitResultDTO
                     {
                         Success = true,
                         IsDuplicate = true,
                         AttemptId = attemptId,
-                        Result = MapExistingToResult(existing)
+                        Result = MapExistingToResult(existing, question?.SampleAnswer)
                     };
                 }
 
@@ -176,7 +179,7 @@ namespace ServiceLayer.Exam.Speaking
         /// <summary>
         /// Maps existing UserAnswerSpeaking to SpeakingScoringResultDTO
         /// </summary>
-        private SpeakingScoringResultDTO MapExistingToResult(UserAnswerSpeaking existing)
+        private SpeakingScoringResultDTO MapExistingToResult(UserAnswerSpeaking existing, string? sampleAnswer = null)
         {
             return new SpeakingScoringResultDTO
             {
@@ -192,7 +195,8 @@ namespace ServiceLayer.Exam.Speaking
                 VocabularyScore = (double)(existing.VocabularyScore ?? 0),
                 ContentScore = (double)(existing.ContentScore ?? 0),
                 OverallScore = (double)(existing.OverallScore ?? 0),
-                SubmittedAt = DateTime.UtcNow
+                SubmittedAt = DateTime.UtcNow,
+                SampleAnswer = sampleAnswer
             };
         }
     }
