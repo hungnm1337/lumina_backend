@@ -6,7 +6,7 @@
         public string Transcript { get; set; }
         public string SavedAudioUrl { get; set; }
         public string AudioUrl { get; set; }
-        public double? OverallScore { get; set; } 
+        public double? OverallScore { get; set; }
 
         public double? PronunciationScore { get; set; }
         public double? AccuracyScore { get; set; }
@@ -18,5 +18,10 @@
         public double? ContentScore { get; set; }
 
         public DateTime SubmittedAt { get; set; }
+
+        /// <summary>
+        /// Sample answer for reference after submission
+        /// </summary>
+        public string? SampleAnswer { get; set; }
     }
 }
