@@ -49,7 +49,7 @@ namespace ServiceLayer.Vocabulary
         public async Task<IEnumerable<SpacedRepetitionDTO>> GetUserRepetitionsAsync(int userId)
         {
             var items = await _unitOfWork.UserSpacedRepetitions.GetByUserIdAsync(userId);
-            var now = DateTime.UtcNow;
+            var today = DateTime.UtcNow.Date; // Chỉ lấy ngày, bỏ giờ
             
             return items.Select(item => new SpacedRepetitionDTO
             {
@@ -64,9 +64,9 @@ namespace ServiceLayer.Vocabulary
                 ReviewCount = item.ReviewCount ?? 0,
                 Intervals = item.Intervals ?? 1,
                 Status = CalculateStatus(item),
-                IsDue = item.NextReviewAt.HasValue && item.NextReviewAt.Value <= now,
+                IsDue = item.NextReviewAt.HasValue && item.NextReviewAt.Value.Date <= today,
                 DaysUntilReview = item.NextReviewAt.HasValue 
-                    ? Math.Max(0, (int)(item.NextReviewAt.Value - now).TotalDays)
+                    ? Math.Max(0, (int)(item.NextReviewAt.Value.Date - today).TotalDays)
                     : 0,
                 BestQuizScore = item.BestQuizScore,
                 LastQuizScore = item.LastQuizScore,
@@ -195,7 +195,7 @@ namespace ServiceLayer.Vocabulary
             
             if (item == null) return null;
 
-            var now = DateTime.UtcNow;
+            var today = DateTime.UtcNow.Date; // Chỉ lấy ngày, bỏ giờ
 
             return new SpacedRepetitionDTO
             {
@@ -210,9 +210,9 @@ namespace ServiceLayer.Vocabulary
                 ReviewCount = item.ReviewCount ?? 0,
                 Intervals = item.Intervals ?? 1,
                 Status = CalculateStatus(item),
-                IsDue = item.NextReviewAt.HasValue && item.NextReviewAt.Value <= now,
+                IsDue = item.NextReviewAt.HasValue && item.NextReviewAt.Value.Date <= today,
                 DaysUntilReview = item.NextReviewAt.HasValue 
-                    ? Math.Max(0, (int)(item.NextReviewAt.Value - now).TotalDays)
+                    ? Math.Max(0, (int)(item.NextReviewAt.Value.Date - today).TotalDays)
                     : 0,
                 BestQuizScore = item.BestQuizScore,
                 LastQuizScore = item.LastQuizScore,
