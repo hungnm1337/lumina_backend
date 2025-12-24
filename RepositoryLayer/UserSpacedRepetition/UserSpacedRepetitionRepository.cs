@@ -35,12 +35,12 @@ namespace RepositoryLayer.UserSpacedRepetition
 
         public async Task<IEnumerable<DataLayer.Models.UserSpacedRepetition>> GetDueForReviewAsync(int userId)
         {
-            var now = DateTime.UtcNow;
+            var today = DateTime.UtcNow.Date; // Chỉ lấy ngày, bỏ giờ
             return await _context.UserSpacedRepetitions
                 .Where(usr => usr.UserId == userId 
                     && usr.VocabularyId != null  
                     && usr.NextReviewAt.HasValue 
-                    && usr.NextReviewAt.Value <= now  
+                    && usr.NextReviewAt.Value.Date <= today  
                     && (usr.Status == "New" || usr.Status == "Learning")
                     && usr.ReviewCount > 0)  
                 .Include(usr => usr.VocabularyList)
