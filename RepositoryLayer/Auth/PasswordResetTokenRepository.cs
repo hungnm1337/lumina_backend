@@ -52,4 +52,13 @@ public class PasswordResetTokenRepository : IPasswordResetTokenRepository
     {
         _context.PasswordResetTokens.RemoveRange(tokens);
     }
+
+    public async Task<PasswordResetToken?> GetUsedTokenByUserIdAsync(int userId)
+    {
+        return await _context.PasswordResetTokens
+            .AsNoTracking()
+            .Where(token => token.UserId == userId && token.UsedAt != null)
+            .OrderByDescending(token => token.UsedAt)
+            .FirstOrDefaultAsync();
+    }
 }
